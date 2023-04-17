@@ -13,7 +13,7 @@ log_formatter_file = logging.Formatter("%(asctime)s, %(levelname)s, %(module)s, 
 log_formatter_console = logging.Formatter("%(levelname)-8s %(module)-10s %(funcName)-20s(%(lineno)d): %(message)s", datefmt='%H:%M:%S')
 
 
-#Setup File handler
+#Setup File handler, change mode tp 'a' to keep the log after relaunch
 file_handler = logging.FileHandler(log_file_path, mode='w')
 file_handler.setFormatter(log_formatter_file)
 file_handler.setLevel(logging.DEBUG)
