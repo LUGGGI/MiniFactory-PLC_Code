@@ -10,8 +10,7 @@ from time import sleep
 from logger import log
 
 class State(Enum):
-    INIT = 0
-    START = 1
+    START = 0
     TRANSPORT = 2        
     END = 20
     ERROR = 30
@@ -22,7 +21,7 @@ class Direction(Enum):
 
 class Conveyor(machine.Machine):
     '''Controls a conveyor
-        Back: where the motor sits
+        Backward: where the motor sits
         Forward: away form Back (motor)
     '''
 
@@ -38,34 +37,25 @@ class Conveyor(machine.Machine):
 
         log.debug("Created Conveyor")
 
-        self.run()
+    def update(self):
+        '''Call in a loop to update and change the state/action'''
+        if self.state == State.START:
+            if self.direction is Direction.FORWARD:
+                log.warning("--Motor forward")
+            else:
+                log.warning("--Motor backward")
 
-    def run(self):
-        '''Runs in an loop until the product is at the end'''
-        
-        if self.direction is Direction.FORWARD:
-            log.warning("Run motor forward")
-            sleep(1)
-        else:
-            log.warning("Run motor backward")
-            sleep(1)
+            self.state = self.switch_state(State.TRANSPORT)
 
-        self.state = self.switch_state(State.TRANSPORT)
-
-        
-        while(self.state != State.END and self.state != State.ERROR):
-            self.update_sensors()
-            if self.sensor_back and self.get_run_time() > (self.time_to_run / 2):
+        if self.state == State.TRANSPORT:
+            if self.sensor_back and self.get_state_time() > (self.time_to_run / 2):
                 self.state = self.switch_state(State.ERROR)
-                break
             
             if self.sensor_front:
                 self.state = self.switch_state(State.END)
-                break
 
-            if self.get_run_time() > (self.time_to_run * 2):
+            if self.get_state_time() > (self.state.value * 2):
                 self.state = self.switch_state(State.ERROR)
-                break
         
         if self.state == State.END:
             self.waiting_for_transport = True
@@ -75,7 +65,10 @@ class Conveyor(machine.Machine):
             self.error_no_product_found = True
             log.error("Error in conveyor")
 
+        sleep(1)
+        self.update_sensors()
+
 
     def update_sensors(self):
-        log.warning("get sensor value")
+        log.info("get sensor value")
         self.sensor_front = True
