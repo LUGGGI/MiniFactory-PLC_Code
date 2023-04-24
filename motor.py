@@ -9,8 +9,8 @@ import inspect
 from logger import log
 
 class Direction(Enum):
-    CW = 0
-    CCW = 1
+    FORWARD = 0
+    BACKWARD = 1
 
 class Motor():
     def __init__(self, name: str):

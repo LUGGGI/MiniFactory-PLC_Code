@@ -5,6 +5,8 @@ Author: Lukas Beck
 Date: 18.04.2023
 '''
 import inspect
+import revpimodio2
+from time import sleep
 from logger import log
 
 class Sensor():
@@ -33,6 +35,32 @@ class Sensor():
         log.warning("--get value for sensor " + self.name + ": " + str(value) + ", for " 
                     + get_source())
         return value
+    
+    def monitor(self):
+        '''monitors the sensor and updates the value'''
+        revpimodio2.RevPiModIO.io[self.name].reg_event(self.update, [edge=FALLING])
+        a: revpimodio2.helper.Event.wait() = revpimodio2.RevPiModIO.io[self.name]
+
+    def update(self, _io_name, _io_value):
+        '''updates the value with the state of the sensor'''
+        self.__value = revpimodio2.RevPiModIO.io[self.name].value
+
+
+    
+    def wait_for_detection(self, timeout: int):
+        '''returns True if product is detected:
+        False: timeout (in s) was reached
+        Debug: returns true after 1s'''
+        # result = revpimodio2.RevPiModIO.io[self.name].wait([edge=revpimodio2.FALLING, exitevent=None, okvalue=None, timeout=timeout]) 
+
+        sleep(1)
+        result = 0
+
+        if result <= 0:
+            return True
+        else:
+            return False
+        
     
 
 def get_source() -> str:
