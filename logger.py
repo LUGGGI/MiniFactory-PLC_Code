@@ -10,8 +10,8 @@ import argparse
 
 log_file_path = "plc.log"
 
-log_formatter_file = logging.Formatter("%(asctime)s, %(levelname)s, %(module)s, %(funcName)s(%(lineno)d), %(message)s", datefmt='%H:%M:%S')
-log_formatter_console = logging.Formatter("%(levelname)-8s %(module)-10s %(funcName)-20s(%(lineno)d): %(message)s", datefmt='%H:%M:%S')
+log_formatter_file = logging.Formatter("%(asctime)s, %(levelname)s, %(threadName)s, %(module)s, %(funcName)s(%(lineno)d), %(message)s", datefmt='%H:%M:%S')
+log_formatter_console = logging.Formatter("%(levelname)-8s %(threadName)-20s %(module)-10s %(funcName)-25s(%(lineno)d): %(message)s", datefmt='%H:%M:%S')
 
 # enable command line arguments
 parser = argparse.ArgumentParser()

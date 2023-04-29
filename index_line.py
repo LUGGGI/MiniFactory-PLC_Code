@@ -22,8 +22,8 @@ class State(Enum):
     END = 0
     ERROR = 0
 
-class DrillAndMill(machine.Machine):
-    '''Controls the drill and mill machine
+class IndexLine(machine.Machine):
+    '''Controls the drill and mill machine and the surrounding conveyors
     '''
 
     sensor_front = False
@@ -39,14 +39,14 @@ class DrillAndMill(machine.Machine):
         self.motor_pusher_in = Motor("pusher_in")
         self.motor_pusher_out = Motor("pusher_out")
 
-        self.conv_in = Conveyor(sensor_check=Sensor("in"), motor=Motor("cv_in"), direction=Direction.BACKWARD, max_transport_time=2)
-        self.conv_mill = Conveyor(sensor_stop=Sensor("mill"), motor=Motor("cv_mill"), direction=Direction.BACKWARD, max_transport_time=2)
-        self.conv_drill = Conveyor(sensor_stop=Sensor("drill"), motor=Motor("cv_drill"), direction=Direction.BACKWARD, max_transport_time=2)
-        self.conv_out = Conveyor(sensor_check=Sensor("out1"), motor=Motor("cv_out"), direction=Direction.BACKWARD, max_transport_time=2)
+        self.conv_in = Conveyor(sensor_check=Sensor("in"), motor=Motor("cv_in"), direction=Direction.BWD, max_transport_time=2)
+        self.conv_mill = Conveyor(sensor_stop=Sensor("mill"), motor=Motor("cv_mill"), direction=Direction.BWD, max_transport_time=2)
+        self.conv_drill = Conveyor(sensor_stop=Sensor("drill"), motor=Motor("cv_drill"), direction=Direction.BWD, max_transport_time=2)
+        self.conv_out = Conveyor(sensor_check=Sensor("out1"), motor=Motor("cv_out"), direction=Direction.BWD, max_transport_time=2)
 
         # retract pusher
-        self.motor_pusher_in.start(Direction.BACKWARD)
-        self.motor_pusher_out.start(Direction.BACKWARD)
+        self.motor_pusher_in.start(Direction.BWD)
+        self.motor_pusher_out.start(Direction.BWD)
         sleep(1) # _DEBUG
         self.motor_pusher_in.stop()
         self.motor_pusher_out.stop()
@@ -64,7 +64,7 @@ class DrillAndMill(machine.Machine):
         if self.state == State.TRANSPORT_TO_MILL:
             self.conv_in.run()
 
-            self.motor_pusher_in.start(Direction.FORWARD)
+            self.motor_pusher_in.start(Direction.FWD)
             sleep(1) # _DEBUG
             self.motor_pusher_in.stop()
 
@@ -73,7 +73,7 @@ class DrillAndMill(machine.Machine):
             self.state = self.switch_state(State.MILLING)
         
         if self.state == State.MILLING:
-            self.motor_mill.start(Direction.FORWARD)
+            self.motor_mill.start(Direction.FWD)
             sleep(1) # _DEBUG
             self.motor_mill.stop()
 

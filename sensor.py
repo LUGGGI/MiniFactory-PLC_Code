@@ -10,6 +10,7 @@ from time import sleep
 from logger import log
 
 class Sensor():
+    '''Interface for light barries'''
     __value = False
     __was_true = False
     def __init__(self, name: str):
@@ -38,8 +39,8 @@ class Sensor():
     
     def monitor(self):
         '''monitors the sensor and updates the value'''
-        revpimodio2.RevPiModIO.io[self.name].reg_event(self.update, [edge=FALLING])
-        a: revpimodio2.helper.Event.wait() = revpimodio2.RevPiModIO.io[self.name]
+        # revpimodio2.RevPiModIO.io[self.name].reg_event(self.update, [edge=FALLING])
+        # a: revpimodio2.helper.Event.wait() = revpimodio2.RevPiModIO.io[self.name]
 
     def update(self, _io_name, _io_value):
         '''updates the value with the state of the sensor'''

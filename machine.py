@@ -11,14 +11,16 @@ class Machine:
     '''Parent class for alle machine modules'''
 
     ready_for_next = False
-    waiting_for_transport = False
+    ready_for_transport = False
     error_no_product_found = False
 
 
-    def __init__(self):
+    def __init__(self, revpi, name):
+        self.rev_pi = revpi
+        self.name = name
         self.time_start = datetime.now()
         
-        log.debug("Created Maschine")
+        log.debug("Created Maschine for: " + self.name)
 
     def get_run_time(self) -> int:
         '''Get run time of machine in seconds since creation of object'''
@@ -37,5 +39,5 @@ class Machine:
     def switch_state(self, state):
         '''Switch to given state and save state start time'''
         self.state_time_start = datetime.now()
-        log.info("Switching state to: " + str(state) + " in " + str(type(self).__name__))
+        log.info("Switching state to: " + str(state) + " in " + self.name)
         return state
