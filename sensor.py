@@ -29,6 +29,10 @@ class Sensor():
         except RuntimeError as error:
             log.debug(error)
 
+    def remove_monitor(self):
+        '''Stop monitoring sensor'''
+        self.revpi.io[self.name].unreg_event(event_prod_det_sensor, edge=self.edge)
+
     def is_detected(self) -> bool:
         '''->True if product was detected'''
         if product_detected:
@@ -37,9 +41,14 @@ class Sensor():
         else:
             return False
         
-    def remove_monitor(self):
-        '''Stop monitoring sensor'''
-        self.revpi.io[self.name].unreg_event(event_prod_det_sensor, edge=self.edge)
+    def wait_for_product(self, edge=BOTH, timeout_in_s=10):
+        '''Pauses thread until a product is detected, panics if timeout is reached'''
+        if self.revpi.io[self.name].wait(edge=edge, timeout=timeout_in_s*1000) == False:
+            # sensor detected product
+            log.info("Product detected at: " + self.name) 
+        else:
+            raise(Exception("No product found at: " + self.name))       
+    
     
         
 def event_prod_det_sensor(io_name, _io_value):

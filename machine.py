@@ -18,7 +18,7 @@ class Machine:
 
 
     def __init__(self, revpi, name):
-        self.rev_pi = revpi
+        self.revpi = revpi
         self.name = name
         self.time_start = datetime.now()
         
@@ -42,5 +42,5 @@ class Machine:
         '''Switch to given state and save state start time'''
         self.state_time_start = datetime.now()
         self.state_is_init = False
-        log.info("Switching state to: " + str(state) + " in " + self.name)
+        log.warning(self.name + ": Switching state to: " + str(state))
         return state

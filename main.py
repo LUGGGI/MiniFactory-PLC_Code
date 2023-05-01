@@ -1,6 +1,12 @@
 '''
-Main Loop for MiniFactory project
-
+Main Loop for MiniFactory project for machines:
+Conveyor
+PunchMach
+Warehouse
+VacRobot
+GripRobot
+SortLine
+MPStation
 Author: Lukas Beck
 Date: 29.04.2023
 '''
@@ -12,10 +18,12 @@ from logger import log
 from sensor import Sensor
 from machine import Machine
 from conveyor import Conveyor
+from punch_mach import PunchMach
 
 class State(Enum):
     CB1 = 1
     CB2 = 2
+    PM = 3
     END = 100
     ERROR = 999
 
@@ -26,7 +34,7 @@ class MainLoop:
         self.revpi.mainloop(blocking=False)
 
         self.machine = Machine(self.revpi, "Main")
-        self.state = self.machine.switch_state(State.CB1)
+        self.state = self.machine.switch_state(State.PM)
 
         while(True):
             if self.mainloop() == False:
@@ -39,6 +47,9 @@ class MainLoop:
         self.revpi.exit(full=True)
 
     def mainloop(self):
+        if self.state == State.PM:
+             self.state_pm()
+
         if self.state == State.CB1:
             self.state_cb1()
 
@@ -76,6 +87,17 @@ class MainLoop:
             del self.cb2
             self.state = self.machine.switch_state(State.END)
         elif self.cb2.error_no_product_found:
+            self.state = self.machine.switch_state(State.ERROR)
+
+    def state_pm(self):
+        if self.machine.state_is_init == False:
+                self.pm = PunchMach(self.revpi, "PM")
+                self.pm.run()
+                self.machine.state_is_init = True
+        elif self.pm.ready_for_transport:
+            del self.pm
+            self.state = self.machine.switch_state(State.END)
+        elif self.pm.error_no_product_found:
             self.state = self.machine.switch_state(State.ERROR)
 
 # Start RevPiApp app

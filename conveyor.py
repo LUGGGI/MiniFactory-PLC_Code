@@ -1,20 +1,21 @@
 '''
-This module controls a conveyor, it inherits form machine
+This module controls a conveyor, it inherits from machine
 
 Author: Lukas Beck
-Date: 29.04.2023
+Date: 01.05.2023
 '''
 import threading
 from enum import Enum
+
 from logger import log
-from motor import Motor
 from machine import Machine
+from motor import Motor
 
 
 class State(Enum):
     START = 0     
-    END = 1
-    ERROR = 2
+    END = 100
+    ERROR = 999
 
 
 class Conveyor(Machine):
@@ -22,25 +23,25 @@ class Conveyor(Machine):
 
     def __init__(self, revpi, name: str):
         super().__init__(revpi, name)
-
+        self.state = None
         log.debug("Created Conveyor: " + self.name)
 
     def __del__(self):
         log.debug("Destroyed Conveyor: " + self.name)
 
-    def run_to_stop_sensor(self, direction: str, sensor: str, timeout_in_s: int):
+    def run_to_stop_sensor(self, direction: str, sensor: str, timeout_in_s: int, blocking=False):
         '''Runs the conveyor until the product has reached the stop sensor'''
         # call this function again as a thread
-        if threading.current_thread().name == "MainThread":
+        if threading.current_thread().name != self.name and blocking == False:
             threading.Thread(target=self.run_to_stop_sensor, args=(direction, sensor, timeout_in_s), name=self.name).start()
             return
         
         self.state = self.switch_state(State.START)
         try:
-            motor = Motor(self.rev_pi, self.name)
+            motor = Motor(self.revpi, self.name)
             motor.run_to_sensor(direction, sensor, timeout_in_s)
         except Exception as error:
-            log.error(error)
+            log.exception(error)
             self.state = self.switch_state(State.ERROR)
         else:
             self.state = self.switch_state(State.END)
@@ -50,13 +51,13 @@ class Conveyor(Machine):
     def run_for_time(self, direction: str, check_sensor: str, run_for_in_s: int):
         '''Runs the conveyor for given amount of seconds, checks for product with check sensor'''
         # call this function again as a thread
-        if threading.current_thread().name == "MainThread":
+        if threading.current_thread().name != self.name:
             threading.Thread(target=self.run_for_time, args=(direction, check_sensor, run_for_in_s), name=self.name).start()
             return
 
         self.state = self.switch_state(State.START)
         try:
-            motor = Motor(self.rev_pi, self.name)
+            motor = Motor(self.revpi, self.name)
             motor.run_for_time(direction, check_sensor, run_for_in_s)
         except Exception as error:
             log.exception(error)

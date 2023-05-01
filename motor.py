@@ -43,7 +43,7 @@ class Motor():
         else:
             # product not detected and timeout reached
             self.revpi.io[motor].value = False
-            raise(Exception("No product found at: " + stop_sensor + ", stopped motor: " + motor))
+            log.exception("No product found at: " + stop_sensor + ", stopped motor: " + motor)
 
     def run_for_time(self, direction: str, check_sensor: str, wait_time_in_s):
         '''Run motor for certain amount of time, checks with sensor if product was ever detected
@@ -69,9 +69,9 @@ class Motor():
 
         if check_sensor:
             if sens.is_detected() == False:
-                raise(Exception("No product detected at: " + check_sensor + ", stopped motor: " + motor))
+                log.exception("No product detected at: " + check_sensor + ", stopped motor: " + motor)
             
-        log.info("Wait time reached and product detected at: " + str(check_sensor) + ", stopped motor: " + motor)
+        log.info("Run time reached and product detected at: " + str(check_sensor) + ", stopped motor: " + motor)
 
 # debug function gets source objects
 def get_source() -> str:

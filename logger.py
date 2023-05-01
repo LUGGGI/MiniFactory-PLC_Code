@@ -8,6 +8,7 @@ Date: 17.04.2023
 import logging
 import argparse
 
+STD_LEVEL = "INFO"
 log_file_path = "plc.log"
 
 log_formatter_file = logging.Formatter("%(asctime)s, %(levelname)s, %(threadName)s, %(module)s, %(funcName)s(%(lineno)d), %(message)s", datefmt='%H:%M:%S')
@@ -15,7 +16,7 @@ log_formatter_console = logging.Formatter("%(levelname)-8s %(threadName)-20s %(m
 
 # enable command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("--log", choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="DEBUG", help="change output of consol")
+parser.add_argument("--log", choices=["DEBUG", "INFO", "WARNING", "ERROR"], default=STD_LEVEL, help="change output of consol")
 log_level: str = parser.parse_args().log
 
 # Setup File handler, change mode tp 'a' to keep the log after relaunch
