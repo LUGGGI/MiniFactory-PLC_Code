@@ -14,6 +14,8 @@ class Machine:
     ready_for_transport = False
     error_no_product_found = False
 
+    state_is_init = False
+
 
     def __init__(self, revpi, name):
         self.rev_pi = revpi
@@ -39,5 +41,6 @@ class Machine:
     def switch_state(self, state):
         '''Switch to given state and save state start time'''
         self.state_time_start = datetime.now()
+        self.state_is_init = False
         log.info("Switching state to: " + str(state) + " in " + self.name)
         return state

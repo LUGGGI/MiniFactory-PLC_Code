@@ -5,65 +5,50 @@ Author: Lukas Beck
 Date: 18.04.2023
 '''
 import inspect
-import revpimodio2
-from time import sleep
+from revpimodio2 import RevPiModIO, BOTH
 from logger import log
 
+product_detected = False
+
 class Sensor():
-    '''Interface for light barries'''
-    __value = False
-    __was_true = False
-    def __init__(self, name: str):
+    '''Monitoring of senors'''
+    def __init__(self, revpi: RevPiModIO, name: str, edge=BOTH):
+        self.revpi = revpi
         self.name = name
+        self.edge = edge
 
-        log.debug("Created Sensor: " + name)
+        log.debug("Created Sensor: " + self.name)
 
-    def get_value(self, was_true_enable=False) -> bool:
-        '''returns the value of the sensor (True/False)
-        was_true_enable: Sensor returns true if it was ever true
-        Debug: returns true'''
-        self.__value = True # _DEBUG
+    def __del__(self):
+        log.debug("Destroyed Sensor: " + self.name)
 
-        # Save if True
-        if not self.__was_true and self.__value:
-            self.__was_true = True
+    def start_monitor(self):
+        '''Start monitoring the sensor'''
+        try:
+            self.revpi.io[self.name].reg_event(event_prod_det_sensor, edge=self.edge)
+        except RuntimeError as error:
+            log.debug(error)
 
-        if was_true_enable:
-            value = self.__was_true
-        else:
-            value = self.__value
-            
-        log.warning("--get value for sensor " + self.name + ": " + str(value) + ", for " 
-                    + get_source())
-        return value
-    
-    def monitor(self):
-        '''monitors the sensor and updates the value'''
-        # revpimodio2.RevPiModIO.io[self.name].reg_event(self.update, [edge=FALLING])
-        # a: revpimodio2.helper.Event.wait() = revpimodio2.RevPiModIO.io[self.name]
-
-    def update(self, _io_name, _io_value):
-        '''updates the value with the state of the sensor'''
-        self.__value = revpimodio2.RevPiModIO.io[self.name].value
-
-
-    
-    def wait_for_detection(self, timeout: int):
-        '''returns True if product is detected:
-        False: timeout (in s) was reached
-        Debug: returns true after 1s'''
-        # result = revpimodio2.RevPiModIO.io[self.name].wait([edge=revpimodio2.FALLING, exitevent=None, okvalue=None, timeout=timeout]) 
-
-        sleep(1)
-        result = 0
-
-        if result <= 0:
+    def is_detected(self) -> bool:
+        '''->True if product was detected'''
+        if product_detected:
+            self.remove_monitor()
             return True
         else:
             return False
         
+    def remove_monitor(self):
+        '''Stop monitoring sensor'''
+        self.revpi.io[self.name].unreg_event(event_prod_det_sensor, edge=self.edge)
     
+        
+def event_prod_det_sensor(io_name, _io_value):
+    '''set product_detected to True'''
+    log.debug("Product detected at: " + str(io_name))
+    global product_detected 
+    product_detected = True    
 
+# debug function gets source object
 def get_source() -> str:
     name = str(inspect.stack()[3][4][0]).strip()
     file = str(inspect.stack()[3][1]).rpartition("\\")[2]

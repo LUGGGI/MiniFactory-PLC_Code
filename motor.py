@@ -7,9 +7,12 @@ Date: 29.04.2023
 
 import inspect
 import time
-
 from revpimodio2 import RevPiModIO, BOTH, RISING
+
 from logger import log
+from sensor import Sensor
+
+product_detected = False
 
 class Motor():
     '''Control for motors and associated sensors and reference switches'''
@@ -54,30 +57,23 @@ class Motor():
         self.revpi.io[motor].value = True 
         log.info("Started motor: " + motor)
 
-        self.__product_detected = False
+        
         if check_sensor:
             # register event on sensor
-            self.revpi.mainloop(blocking=False)
-            self.revpi.io[check_sensor].reg_event(self.__event_product_detected, edge=RISING)
+            sens = Sensor(self.revpi, check_sensor, RISING)
+            sens.start_monitor()
 
         time.sleep(wait_time_in_s) # Wait for given time
 
         self.revpi.io[motor].value = False 
 
         if check_sensor:
-            self.revpi.io[check_sensor].unreg_event(self.__event_product_detected, edge=RISING)
-            self.revpi.exit(full=False)
-            if self.__product_detected == False:
+            if sens.is_detected() == False:
                 raise(Exception("No product detected at: " + check_sensor + ", stopped motor: " + motor))
             
         log.info("Wait time reached and product detected at: " + str(check_sensor) + ", stopped motor: " + motor)
 
-
-    def __event_product_detected(self, io_name, _io_value):
-        '''set __product_detected to True'''
-        log.debug("Product detected at: " + str(io_name))
-        self.__product_detected = True
-
+# debug function gets source objects
 def get_source() -> str:
     name = str(inspect.stack()[3][4][0]).strip()
     file = str(inspect.stack()[3][1]).rpartition("\\")[2]
