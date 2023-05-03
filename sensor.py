@@ -41,9 +41,9 @@ class Sensor():
         else:
             return False
         
-    def wait_for_product(self, edge=BOTH, timeout_in_s=10):
+    def wait_for_product(self, timeout_in_s=10):
         '''Pauses thread until a product is detected, panics if timeout is reached'''
-        if self.revpi.io[self.name].wait(edge=edge, timeout=timeout_in_s*1000) == False:
+        if self.revpi.io[self.name].wait(edge=self.edge, timeout=timeout_in_s*1000) == False:
             # sensor detected product
             log.info("Product detected at: " + self.name) 
         else:
@@ -53,7 +53,7 @@ class Sensor():
         
 def event_prod_det_sensor(io_name, _io_value):
     '''set product_detected to True'''
-    log.debug("Product detected at: " + str(io_name))
+    log.info("Product detected at: " + str(io_name))
     global product_detected 
     product_detected = True    
 

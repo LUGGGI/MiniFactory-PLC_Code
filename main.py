@@ -30,7 +30,11 @@ class State(Enum):
 class MainLoop:
     def __init__(self):
         # setup RevpiModIO
-        self.revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi\RevPi82247.img")
+        try:
+            self.revpi = RevPiModIO(autorefresh=True)
+        except:
+            # load simulation if not connected to factory
+            self.revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi\RevPi82247.img")
         self.revpi.mainloop(blocking=False)
 
         self.machine = Machine(self.revpi, "Main")

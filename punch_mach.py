@@ -33,40 +33,35 @@ class PunchMach(Machine):
         log.debug("Destroyed Punching Machine: " + self.name)
 
     def run(self):
-        if threading.current_thread().name == "MainThread":
+        if threading.current_thread().name != self.name:
             threading.Thread(target=self.run, args=(), name=self.name).start()
             return
         try:
             self.state = self.switch_state(State.CB_IN)
             # Move product from connected conveyor belt to inner conveyor belt
             cb = Conveyor(self.revpi, "CB2")
-            cb.run_for_time("FWD", "CB2_SENS_END", 10)
+            cb.run_to_stop_sensor("FWD", "PM_SENS_IN")
 
-            wait_for_cb = Sensor(self.revpi, "CB2_SENS_END")
-            wait_for_cb.wait_for_product()
+            Sensor(self.revpi, "CB2_SENS_END").wait_for_product()
 
             self.state = self.switch_state(State.CB_PUNCH_TO)
             # raise puncher
             puncher = Motor(self.revpi, self.name)
-            t_puncher = threading.Thread(target=puncher.run_to_sensor, args=("UP", "PM_REF_SW_TOP"), name="PM_UP")
-            t_puncher.start()
+            puncher.run_to_sensor("UP", "PM_REF_SW_TOP", as_thread=True)
             # Move product from inner conveyor belt to puncher
             cb_punch = Conveyor(self.revpi, "PM_CB")
             cb_punch.run_to_stop_sensor("FWD", "PM_SENS_PM", 10, blocking=True)
 
             self.state = self.switch_state(State.PUNCHING)
             log.info("Punching product")
-            t_puncher.join()
             puncher.run_to_sensor("DOWN", "PM_REF_SW_BOTTOM")
             # raise puncher
-            t_puncher = threading.Thread(target=puncher.run_to_sensor, args=("UP", "PM_REF_SW_TOP"), name="PM_UP2")
-            t_puncher.start()
+            puncher.run_to_sensor("UP", "PM_REF_SW_TOP", as_thread=True)
 
             self.state = self.switch_state(State.CB_PUNCH_FROM)
             #  Move product from puncher to connected conveyor
-            cb_punch.run_for_time("BWD", "PM_SENS_IN", 10)
-            wait_for_cb_punch = Sensor(self.revpi, "PM_SENS_IN")
-            wait_for_cb_punch.wait_for_product()
+            cb_punch.run_to_stop_sensor("BWD", "CB2_SENS_END")
+            Sensor(self.revpi, "PM_SENS_IN").wait_for_product()
 
             self.state = self.switch_state(State.CB_IN)
             # Move product to end of connected conveyor belt
