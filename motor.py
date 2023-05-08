@@ -4,7 +4,6 @@ This module handles communication with motor
 Author: Lukas Beck
 Date: 29.04.2023
 '''
-from email.policy import default
 import threading
 import inspect
 import time
@@ -34,26 +33,53 @@ class Motor():
         '''
         motor = self.name + "_" + direction
         # call this function again as a thread
-        if as_thread == True and threading.current_thread().name != motor:
+        if as_thread == True:
             threading.Thread(target=self.run_to_sensor, args=(direction, stop_sensor, timeout_in_s), name=motor).start()
             return
         
-        # check if stop_sensor is a reverence switch
+        # check if stop_sensor is a reverence switch and already pressed
         if stop_sensor.find("REF_SW") != -1 and self.revpi.io[stop_sensor].value == True:
             log.info("Detection already at stop position: " + stop_sensor + ", for: " + motor)
             return
 
         #start motor
-        self.revpi.io[motor].value = True 
         log.info("Started motor: " + motor)
+        self.revpi.io[motor].value = True 
 
         try:
             Sensor(self.revpi, stop_sensor, BOTH).wait_for_product(timeout_in_s)
         except Exception as error:
             log.exception(error)
         finally:
-            self.revpi.io[motor].value = False 
             log.info("Stopped motor: " + motor)
+            self.revpi.io[motor].value = False 
+
+    def run_to_count(self, direction: str, encoder: str, trigger_value: int, timeout_in_s=10, as_thread=False):
+        '''run the motor until the trigger_value is reached
+        
+        trigger_value: The value the motor would end up if it started from reverence switch'''
+        motor = self.name + "_" + direction
+        # call this function again as a thread
+        if as_thread == True:
+            threading.Thread(target=self.run_to_sensor, args=(direction, encoder, trigger_value, timeout_in_s), name=motor).start()
+            return
+        
+        is_counter = False
+        # TODO change to COUNTER
+        if encoder.find("COUNT") != -1:
+            is_counter = True
+
+        #start motor
+        log.info("Started motor: " + motor)
+        self.revpi.io[motor].value = True 
+
+        try:
+            Sensor(self.revpi, encoder).wait_for_encoder(trigger_value, is_counter, timeout_in_s)
+        except Exception as error:
+            log.exception(error)
+        finally:
+            log.info("Stopped motor: " + motor)
+            self.revpi.io[motor].value = False 
 
     def run_for_time(self, direction: str, check_sensor: str, wait_time_in_s):
         '''Run motor for certain amount of time, checks with sensor if product was ever detected
@@ -64,8 +90,8 @@ class Motor():
         '''
         motor = self.name + "_" + direction
 
-        self.revpi.io[motor].value = True 
         log.info("Started motor: " + motor)
+        self.revpi.io[motor].value = True 
 
         
         if check_sensor:

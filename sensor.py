@@ -5,14 +5,24 @@ Author: Lukas Beck
 Date: 18.04.2023
 '''
 import inspect
+import time
+from enum import Enum
+from typing import Counter
 from revpimodio2 import RevPiModIO, BOTH
 from logger import log
 
 product_detected = False
 
+class Type(Enum):
+    SENSOR = 0
+    COUNTER = 1
+    ENCODER = 2
+
 class Sensor():
+    CYCLE_TIME = 0.02 # s
+    counter_offset = 0
     '''Monitoring of senors'''
-    def __init__(self, revpi: RevPiModIO, name: str, edge=BOTH):
+    def __init__(self, revpi: RevPiModIO, name: str, edge=BOTH, type=Type.SENSOR):
         self.revpi = revpi
         self.name = name
         self.edge = edge
@@ -47,9 +57,40 @@ class Sensor():
             # sensor detected product
             log.info("Product detected at: " + self.name) 
         else:
-            raise(Exception("No product found at: " + self.name))       
-    
-    
+            raise(Exception("No product found at: " + self.name))   
+   
+    def wait_for_encoder(self, trigger_value: int, is_counter=False, timeout_in_s=10):
+        '''Pauses thread until the encoder/counter reached the trigger_value
+        
+        trigger_value: The value the motor would end up if it started from reverence switch'''
+        counter = self.revpi.io[self.name].value
+        start = time.time()
+        higher = True
+        # check running direction
+        if trigger_value < counter - self.counter_offset :
+            higher = False
+            self.counter_start = counter
+
+        while(True):
+            if higher and self.revpi.io[self.name].value - self.counter_offset >= trigger_value:
+                break
+            elif not higher and is_counter and self.positive_to_negativ() - self.counter_offset <= trigger_value:
+                break
+            elif not higher and self.revpi.io[self.name].value <= trigger_value:
+                break
+            elif time.time() >= start + timeout_in_s:
+                raise(Exception("No product found at: " + self.name))
+            time.sleep(self.CYCLE_TIME)
+
+        log.info("Count reached at: " + self.name) 
+        if is_counter:
+            self.counter_offset = self.revpi.io[self.name].value - trigger_value
+
+    def positive_to_negativ(self):
+        '''converts the upwards counting value to a from counter_start downwards counting value'''
+        counter = self.revpi.io[self.name].value
+        return counter - 2 * (counter - self.counter_start)
+        
         
 def event_prod_det_sensor(io_name, _io_value):
     '''set product_detected to True'''
