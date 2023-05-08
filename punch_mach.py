@@ -50,7 +50,7 @@ class PunchMach(Machine):
             puncher.run_to_sensor("UP", "PM_REF_SW_TOP", as_thread=True)
             # Move product from inner conveyor belt to puncher
             cb_punch = Conveyor(self.revpi, "PM_CB")
-            cb_punch.run_to_stop_sensor("FWD", "PM_SENS_PM", 10, blocking=True)
+            cb_punch.run_to_stop_sensor("FWD", "PM_SENS_PM", 10, as_thread=False)
 
             self.state = self.switch_state(State.PUNCHING)
             log.info("Punching product")
@@ -65,7 +65,7 @@ class PunchMach(Machine):
 
             self.state = self.switch_state(State.CB_IN)
             # Move product to end of connected conveyor belt
-            cb.run_to_stop_sensor("BWD", "CB2_SENS_START", 10, blocking=True)
+            cb.run_to_stop_sensor("BWD", "CB2_SENS_START", 10, as_thread=False)
 
             
 

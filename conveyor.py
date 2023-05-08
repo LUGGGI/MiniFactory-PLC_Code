@@ -29,10 +29,10 @@ class Conveyor(Machine):
     def __del__(self):
         log.debug("Destroyed Conveyor: " + self.name)
 
-    def run_to_stop_sensor(self, direction: str, sensor: str, timeout_in_s=10, blocking=False):
+    def run_to_stop_sensor(self, direction: str, sensor: str, timeout_in_s=10, as_thread=True):
         '''Runs the conveyor until the product has reached the stop sensor'''
         # call this function again as a thread
-        if blocking == False and threading.current_thread().name != self.name:
+        if as_thread == True and threading.current_thread().name != self.name:
             threading.Thread(target=self.run_to_stop_sensor, args=(direction, sensor, timeout_in_s), name=self.name).start()
             return
         
