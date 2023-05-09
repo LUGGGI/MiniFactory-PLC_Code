@@ -9,11 +9,13 @@ from enum import Enum
 
 from logger import log
 from machine import Machine
+from sensor import Sensor
 from motor import Motor
 
 
 class State(Enum):
-    START = 0     
+    WAIT = 0
+    START = 1     
     END = 100
     ERROR = 999
 
@@ -29,17 +31,22 @@ class Conveyor(Machine):
     def __del__(self):
         log.debug("Destroyed Conveyor: " + self.name)
 
-    def run_to_stop_sensor(self, direction: str, sensor: str, timeout_in_s=10, as_thread=True):
+    def run_to_stop_sensor(self, direction: str, stop_sensor: str, start_sensor: str=None, timeout_in_s=10, as_thread=False):
         '''Runs the conveyor until the product has reached the stop sensor'''
         # call this function again as a thread
-        if as_thread == True and threading.current_thread().name != self.name:
-            threading.Thread(target=self.run_to_stop_sensor, args=(direction, sensor, timeout_in_s), name=self.name).start()
+        if as_thread == True:
+            self.thread = threading.Thread(target=self.run_to_stop_sensor, args=(direction, stop_sensor, timeout_in_s), name=self.name)
+            self.thread.start()
             return
+        
+        if start_sensor != None:
+            # wait for start sensor to detect product
+            Sensor(self.revpi, start_sensor).wait_for_detect()
         
         self.state = self.switch_state(State.START)
         try:
             motor = Motor(self.revpi, self.name)
-            motor.run_to_sensor(direction, sensor, timeout_in_s)
+            motor.run_to_sensor(direction, stop_sensor, timeout_in_s)
         except Exception as error:
             log.exception(error)
             self.state = self.switch_state(State.ERROR)
@@ -48,11 +55,12 @@ class Conveyor(Machine):
         finally:
             self.end()
 
-    def run_for_time(self, direction: str, check_sensor: str, run_for_in_s=5):
+    def run_for_time(self, direction: str, check_sensor: str, run_for_in_s=5, as_thread=False):
         '''Runs the conveyor for given amount of seconds, checks for product with check sensor'''
         # call this function again as a thread
-        if threading.current_thread().name != self.name:
-            threading.Thread(target=self.run_for_time, args=(direction, check_sensor, run_for_in_s), name=self.name).start()
+        if as_thread == True:
+            self.thread = threading.Thread(target=self.run_for_time, args=(direction, check_sensor, run_for_in_s), name=self.name)
+            self.thread.start()
             return
 
         self.state = self.switch_state(State.START)

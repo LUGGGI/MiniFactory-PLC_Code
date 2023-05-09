@@ -9,6 +9,7 @@ from logger import log
 
 class Machine:
     '''Parent class for alle machine modules'''
+    thread = None
 
     ready_for_next = False
     ready_for_transport = False

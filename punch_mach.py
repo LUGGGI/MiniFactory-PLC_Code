@@ -32,17 +32,16 @@ class PunchMach(Machine):
     def __del__(self):
         log.debug("Destroyed Punching Machine: " + self.name)
 
-    def run(self):
-        if threading.current_thread().name != self.name:
-            threading.Thread(target=self.run, args=(), name=self.name).start()
+    def run(self, as_thread=False):
+        if  as_thread == True:
+            self.thread = threading.Thread(target=self.run, args=(), name=self.name)
+            self.thread.start()
             return
         try:
             self.state = self.switch_state(State.CB_IN)
             # Move product from connected conveyor belt to inner conveyor belt
             cb = Conveyor(self.revpi, "CB2")
-            cb.run_to_stop_sensor("FWD", "PM_SENS_IN")
-
-            Sensor(self.revpi, "CB2_SENS_END").wait_for_product()
+            cb.run_to_stop_sensor("FWD", "PM_SENS_IN", "CB2_SENS_END")
 
             self.state = self.switch_state(State.CB_PUNCH_TO)
             # raise puncher
@@ -50,7 +49,7 @@ class PunchMach(Machine):
             puncher.run_to_sensor("UP", "PM_REF_SW_TOP", as_thread=True)
             # Move product from inner conveyor belt to puncher
             cb_punch = Conveyor(self.revpi, "PM_CB")
-            cb_punch.run_to_stop_sensor("FWD", "PM_SENS_PM", 10, as_thread=False)
+            cb_punch.run_to_stop_sensor("FWD", "PM_SENS_PM")
 
             self.state = self.switch_state(State.PUNCHING)
             log.info("Punching product")
@@ -60,14 +59,11 @@ class PunchMach(Machine):
 
             self.state = self.switch_state(State.CB_PUNCH_FROM)
             #  Move product from puncher to connected conveyor
-            cb_punch.run_to_stop_sensor("BWD", "CB2_SENS_END")
-            Sensor(self.revpi, "PM_SENS_IN").wait_for_product()
+            cb_punch.run_to_stop_sensor("BWD", "CB2_SENS_END", "PM_SENS_IN")
 
             self.state = self.switch_state(State.CB_IN)
             # Move product to end of connected conveyor belt
-            cb.run_to_stop_sensor("BWD", "CB2_SENS_START", 10, as_thread=False)
-
-            
+            cb.run_to_stop_sensor("BWD", "CB2_SENS_START")
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
