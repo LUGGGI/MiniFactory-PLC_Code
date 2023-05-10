@@ -10,7 +10,7 @@ import argparse
 
 STD_LEVEL_CONSOLE = "INFO"
 
-LEVEL_FILE = logging.INFO
+LEVEL_FILE = logging.DEBUG
 log_file_path = "plc.log"
 
 log_formatter_file = logging.Formatter("%(asctime)s, %(levelname)-8s, %(threadName)-20s, %(module)-10s, %(funcName)-25s(%(lineno)3d), %(message)s")

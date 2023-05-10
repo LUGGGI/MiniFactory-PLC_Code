@@ -51,19 +51,21 @@ class Sensor():
         else:
             return False
         
-    def wait_for_product(self, timeout_in_s=10):
-        '''Pauses thread until a product is detected, panics if timeout is reached'''
+    def wait_for_detect(self, timeout_in_s=10):
+        '''Pauses thread until ad detection occurs, panics if timeout is reached'''
         if self.revpi.io[self.name].wait(edge=self.edge, timeout=timeout_in_s*1000) == False:
             # sensor detected product
             log.info("Product detected at: " + self.name) 
         else:
-            raise(Exception("No product found at: " + self.name))   
+            raise(Exception("No detection at: " + self.name))   
    
     def wait_for_encoder(self, trigger_value: int, is_counter=False, timeout_in_s=10):
         '''Pauses thread until the encoder/counter reached the trigger_value
         
         trigger_value: The value the motor would end up if it started from reverence switch'''
         counter = self.revpi.io[self.name].value
+        if counter > 10000:
+            raise(Exception("Counter negativ for: " + self.name))
         start = time.time()
         higher = True
         # check running direction
@@ -73,16 +75,19 @@ class Sensor():
 
         while(True):
             if higher and self.revpi.io[self.name].value - self.counter_offset >= trigger_value:
+                log.info("Count reached at: " + self.name + ": " + str(self.revpi.io[self.name].value - self.counter_offset)) 
                 break
             elif not higher and is_counter and self.positive_to_negativ() - self.counter_offset <= trigger_value:
+                log.info("Count reached at: " + self.name + ": " + str(self.positive_to_negativ() - self.counter_offset)) 
                 break
             elif not higher and self.revpi.io[self.name].value <= trigger_value:
+                log.info("Count reached at: " + self.name + ": " + str(self.revpi.io[self.name].value)) 
                 break
             elif time.time() >= start + timeout_in_s:
-                raise(Exception("No product found at: " + self.name))
+                raise(Exception("No detection at: " + self.name))
             time.sleep(self.CYCLE_TIME)
 
-        log.info("Count reached at: " + self.name) 
+
         if is_counter:
             self.counter_offset = self.revpi.io[self.name].value - trigger_value
 
@@ -90,6 +95,21 @@ class Sensor():
         '''converts the upwards counting value to a from counter_start downwards counting value'''
         counter = self.revpi.io[self.name].value
         return counter - 2 * (counter - self.counter_start)
+
+    def reset_encoder(self):
+        '''resets the encoder or counter to 0'''
+        for i in range(15):
+            self.revpi.io[self.name].reset()
+            # delay until the motor has stopped
+            time.sleep(0.04)
+            if self.revpi.io[self.name].value == 0:
+                break
+
+        log.info("Reset encoder: " + self.name)
+
+    def get_encoder_value(self):
+        '''returns the current value of the encoder'''
+        return self.revpi.io[self.name].value - self.counter_offset
         
         
 def event_prod_det_sensor(io_name, _io_value):

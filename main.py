@@ -15,15 +15,19 @@ from enum import Enum
 from revpimodio2 import RevPiModIO
 
 from logger import log
+from robot_3d import Robot3D
 from sensor import Sensor
+from motor import Motor
 from machine import Machine
 from conveyor import Conveyor
 from punch_mach import PunchMach
 
 class State(Enum):
+    INIT = 0
     CB1 = 1
     CB2 = 2
     PM = 3
+    GR1 = 4
     END = 100
     ERROR = 999
 
@@ -38,7 +42,7 @@ class MainLoop:
         self.revpi.mainloop(blocking=False)
 
         self.machine = Machine(self.revpi, "Main")
-        self.state = self.machine.switch_state(State.PM)
+        self.state = self.machine.switch_state(State.GR1)
 
         while(True):
             if self.mainloop() == False:
@@ -51,6 +55,31 @@ class MainLoop:
         self.revpi.exit(full=True)
 
     def mainloop(self):
+        if self.state == State.INIT:
+            
+            motor = Motor(self.revpi, "GR1")
+            motor.run_to_encoder_start("UP", "GR1_REF_SW_VERTICAL", "GR1_VERTICAL_ENCODER", as_thread=True)
+
+
+            motor2 = Motor(self.revpi, "GR1")
+            motor2.run_to_encoder_start("BWD", "GR1_REF_SW_HORIZONTAL", "GR1_HORIZONTAL_COUNTER", as_thread=True)
+
+            motor.thread.join()
+            motor2.thread.join()
+            log.info("reset done")
+            sleep(2)
+
+            motor.run_to_encoder_value("DOWN", "GR1_VERTICAL_ENCODER", 1000, as_thread=True)
+            motor2.run_to_encoder_value("FWD", "GR1_HORIZONTAL_COUNTER", 50, as_thread=True)
+
+            while(motor.running or motor2.running):
+                sleep(0.2)
+            self.state = self.machine.switch_state(State.END)
+
+            
+        if self.state == State.GR1:
+             self.state_gr1()
+
         if self.state == State.PM:
              self.state_pm()
 
@@ -68,6 +97,18 @@ class MainLoop:
         return True
     ####################################################################################################
     # Methods that control the different states for the
+    def state_gr1(self):
+        if self.machine.state_is_init == False:
+                self.gr1 = Robot3D(self.revpi, "GR1")
+                self.gr1.init()
+                self.gr1.run()
+                self.machine.state_is_init = True
+        elif self.gr1.ready_for_transport:
+            del self.gr1
+            self.state = self.machine.switch_state(State.END)
+        elif self.gr1.error_no_product_found:
+            self.state = self.machine.switch_state(State.ERROR)
+
     def state_cb1(self):
         if self.machine.state_is_init == False:
                 self.cb1 = Conveyor(self.revpi, "CB1")

@@ -26,13 +26,11 @@ def set_all_output_to_false():
 
     revpi.exit()
 
-    sleep(1)
+# def exit_handler():
+#     atexit.register(set_all_output_to_false)
 
-def exit_handler():
-    atexit.register(set_all_output_to_false)
-
-
-set_all_output_to_false()
+while(True):
+    set_all_output_to_false()
 # All Outputs
 '''
 GR3_OPEN
