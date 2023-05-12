@@ -4,128 +4,120 @@ This module controls the 3D Robots, it inherits from machine
 Author: Lukas Beck
 Date: 01.05.2023
 '''
+
 import threading
-from enum import Enum
-from time import sleep
+from turtle import position
 
 from logger import log
 from machine import Machine
 from sensor import Sensor
 from motor import Motor
 
-axes = {
-    "horizontal": {
-        "init_dir": "BWD",
-        "ref_sw": "GR1_REF_SW_HORIZONTAL",
-        "encoder": "GR1_HORIZONTAL_COUNTER"
-    },
-    "vertical": {
-        "init_dir": "UP",
-        "ref_sw": "GR1_REF_SW_VERTICAL",
-        "encoder": "GR1_VERTICAL_ENCODER"
-    },
-    "rotation": {
-        "init_dir": "CW",
-        "ref_sw": "GR1_REF_SW_ROTATION",
-        "encoder": "GR1_ROTATION_ENCODER"
-    },
-}
+running_position = (1,2,3)
 
-'''
-cb1: 2150, 180, 50
-'''
+class Position:
+    '''holds a value for each axis'''
+    def __init__(self, rotation: int, horizontal: int, vertical: int) -> None:
+        self.rotation = rotation
+        self.horizontal = horizontal
+        self.vertical = vertical
 
-class State(Enum):
-    INIT = 0
-    END = 100
-    ERROR = 999
+    def __str__(self) -> str:
+        return f"({self.rotation}, {self.horizontal},  {self.vertical})"  
 
 class Robot3D(Machine):
     '''Controls the 3D Robot'''
 
     def __init__(self, revpi, name: str):
         super().__init__(revpi, name)
-        self.state = None
+
+        self.move_threshold_rot = 40
+        self.move_threshold_hor = 40
+        self.move_threshold_ver = 40
+
+        # get encoder names
+        enc_rot = self.name + "_ROTATION_ENCODER"
+        enc_hor = self.name + "_HORIZONTAL_ENCODER"
+        enc_ver = self.name + "_VERTICAL_ENCODER"
+        if self.name.find("GR") != -1:
+            enc_hor = self.name + "_HORIZONTAL_COUNTER"
+            self.move_threshold_hor = 2
+
+        # get encoder
+        self.encoder_rot = Sensor(self.revpi, enc_rot)
+        self.encoder_hor = Sensor(self.revpi, enc_hor)
+        self.encoder_ver = Sensor(self.revpi, enc_ver)
+
+        # get motors
+        self.motor_rot = Motor(self.revpi, self.name, "rotation")
+        self.motor_hor = Motor(self.revpi, self.name, "horizontal")
+        self.motor_ver = Motor(self.revpi, self.name, "vertical")
+
         log.debug("Created 3D Robot: " + self.name)
 
     def __del__(self):
         log.debug("Destroyed 3D Robot: " + self.name)
 
-    def init(self, as_tread=False):
-        '''Moves the Gripper robot into his init position'''
+    def move_all_axes(self, position: Position, as_thread=False):
+        '''Makes linear move to give position, set a axis to -1 to not move that axis\\
+        position: (rotation, horizontal, vertical): int
+        '''
         # call this function again as a thread
-        if as_tread:
-            self.thread = threading.Thread(target=self.init, args=(), name=self.name + "_INIT")
+        if as_thread:
+            self.thread = threading.Thread(target=self.move_all_axes, args=(position,), name=self.name)
             self.thread.start()
             return
         
-        self.state = self.switch_state(State.INIT)
+        log.info("Moving axes to position: " + str(position))
+        # get current position
+        current_position = Position(
+            self.encoder_rot.get_encoder_value(),
+            self.encoder_hor.get_encoder_value(),
+            self.encoder_ver.get_encoder_value()
+        )
 
-        vertical = Motor(self.revpi, self.name, "vertical")
-        horizontal = Motor(self.revpi, self.name, "horizontal")
-        rotation = Motor(self.revpi, self.name, "rotation")
-        claw = Motor(self.revpi, self.name, "claw")
+        # get motor directions
+        dir_rot = "CCW"
+        dir_hor = "FWD"
+        dir_ver = "DOWN"
+        if position.rotation < current_position.rotation:
+            dir_rot = "CW"
+        if position.horizontal < current_position.horizontal:
+            dir_hor = "BWD"
+        if position.vertical < current_position.vertical:
+            dir_ver = "UP"
 
-        vertical.run_to_encoder_start("UP", self.name + "_REF_SW_VERTICAL", self.name + "_VERTICAL_ENCODER", as_thread=True)
-        horizontal.run_to_encoder_start("BWD", self.name + "_REF_SW_HORIZONTAL", self.name + "_HORIZONTAL_COUNTER", as_thread=True)
-        sleep(1)
-        rotation.run_to_encoder_start("CW", self.name + "_REF_SW_ROTATION", self.name + "_ROTATION_ENCODER", timeout_in_s=20, as_thread=True)
-        claw.run_to_encoder_start("OPEN", self.name + "_REF_SW_CLAW", self.name + "_CLAW_COUNTER", as_thread=True)
-
-        vertical.thread.join()
-        horizontal.thread.join()
-        rotation.thread.join()
-        claw.thread.join()
-
-        log.info("3D Robot in init position")
-
-    def run(self, as_tread=False):
-        if as_tread:
-            self.thread = threading.Thread(target=self.run, args=(), name=self.name)
-            self.thread.start()
+        
+        # move to position
+        self.move_axis(self.motor_rot, position.rotation, current_position.rotation, self.move_threshold_rot, dir_rot, self.encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
+        self.move_axis(self.motor_hor, position.horizontal, current_position.horizontal, self.move_threshold_hor, dir_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
+        self.move_axis(self.motor_ver, position.vertical, current_position.vertical, self.move_threshold_ver, dir_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
+        try:
+            self.motor_rot.thread.join()
+        except:
+            pass
+        try:
+            self.motor_hor.thread.join()
+        except:
+            pass
+        try:
+            self.motor_ver.thread.join()
+        except:
+            pass
+        log.info("Move complete to: " + str(position))
+        
+    def move_axis(self, motor: Motor, trigger_value: int, current_value: int, move_threshold: int, direction: str, encoder: Sensor, re_sw: str, timeout_in_s=10, as_thread=False):
+        '''moves one axis to the given trigger value'''
+        # if trigger_value (position) is -1 do not move that axis
+        if trigger_value == -1:
             return
-
-        vertical = Motor(self.revpi, self.name, "vertical")
-        rotation = Motor(self.revpi, self.name, "rotation")
-        horizontal = Motor(self.revpi, self.name, "horizontal")
-        claw = Motor(self.revpi, self.name, "claw")
-
-        # move to moving position
-        claw.run_to_encoder_value("CLOSE", "GR1_CLAW_COUNTER", 10, as_thread=True)
-        vertical.run_to_encoder_value("DOWN", "GR1_VERTICAL_ENCODER", 1400, as_thread=True)
-
-        
-
-        # move to cb1
-        rotation.run_to_encoder_value("CCW", "GR1_ROTATION_ENCODER", 190, as_thread=True)
-        horizontal.run_to_encoder_value("FWD", "GR1_HORIZONTAL_COUNTER", 60, as_thread=True)
-        rotation.thread.join()
-        vertical.thread.join()
-
-        # grip product
-        vertical.run_to_encoder_value("DOWN", "GR1_VERTICAL_ENCODER", 2050, as_thread=False)
-        claw.run_to_encoder_value("CLOSE", "GR1_CLAW_COUNTER", 15, as_thread=False)
-        vertical.run_to_encoder_value("UP", "GR1_VERTICAL_ENCODER", 1400, as_thread=False)
-
-        # move to cb3
-        # rotation.run_to_encoder_value("CCW", "GR1_ROTATION_ENCODER", 2380, as_thread=True)
-        # horizontal.run_to_encoder_value("BWD", "GR1_HORIZONTAL_COUNTER", 0, as_thread=True)
-        # rotation.thread.join()
-
-        # move to cb2
-        rotation.run_to_encoder_value("CCW", "GR1_ROTATION_ENCODER", 3832, as_thread=True)
-        horizontal.run_to_encoder_value("FWD", "GR1_HORIZONTAL_COUNTER", 80, as_thread=True)
-        rotation.thread.join()
-        vertical.thread.join()
-
-        # release product
-        vertical.run_to_encoder_value("DOWN", "GR1_VERTICAL_ENCODER", 2050, as_thread=False)
-        claw.run_to_encoder_value("OPEN", "GR1_CLAW_COUNTER", 10, as_thread=True)
-        vertical.run_to_encoder_value("UP", "GR1_VERTICAL_ENCODER", 1500, as_thread=False)
-        
-
-        log.info("3D Robot in endposition")
-        self.ready_for_transport = True
-        return
-
-        
+        # if trigger value is 0 move to init position
+        if trigger_value == 0:
+            motor.run_to_encoder_start(direction, re_sw, encoder, timeout_in_s, as_thread)
+        # if trigger value is the same as the current value don't move
+        elif abs(current_value - trigger_value) < move_threshold:
+            log.info("Axis already at value: " + self.name + motor.type)
+        # move to value
+        else:
+            motor.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread)
+                

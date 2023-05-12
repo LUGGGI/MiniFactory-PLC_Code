@@ -5,6 +5,8 @@ Author: Lukas Beck
 Date: 10.04.2023
 '''
 from datetime import datetime
+
+from revpimodio2 import RevPiModIO
 from logger import log
 
 class Machine:
@@ -18,7 +20,7 @@ class Machine:
     state_is_init = False
 
 
-    def __init__(self, revpi, name):
+    def __init__(self, revpi: RevPiModIO, name: str):
         self.revpi = revpi
         self.name = name
         self.time_start = datetime.now()

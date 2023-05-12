@@ -7,22 +7,17 @@ Date: 18.04.2023
 import inspect
 import time
 from enum import Enum
-from typing import Counter
 from revpimodio2 import RevPiModIO, BOTH
 from logger import log
 
 product_detected = False
 
-class Type(Enum):
-    SENSOR = 0
-    COUNTER = 1
-    ENCODER = 2
 
 class Sensor():
     CYCLE_TIME = 0.02 # s
     counter_offset = 0
     '''Monitoring of senors'''
-    def __init__(self, revpi: RevPiModIO, name: str, edge=BOTH, type=Type.SENSOR):
+    def __init__(self, revpi: RevPiModIO, name: str, edge=BOTH):
         self.revpi = revpi
         self.name = name
         self.edge = edge
@@ -55,17 +50,20 @@ class Sensor():
         '''Pauses thread until ad detection occurs, panics if timeout is reached'''
         if self.revpi.io[self.name].wait(edge=self.edge, timeout=timeout_in_s*1000) == False:
             # sensor detected product
-            log.info("Product detected at: " + self.name) 
+            log.info("Detection at: " + self.name) 
         else:
             raise(Exception("No detection at: " + self.name))   
    
-    def wait_for_encoder(self, trigger_value: int, is_counter=False, timeout_in_s=10):
+    def wait_for_encoder(self, trigger_value: int, timeout_in_s=10):
         '''Pauses thread until the encoder/counter reached the trigger_value
         
         trigger_value: The value the motor would end up if it started from reverence switch'''
         counter = self.revpi.io[self.name].value
         if counter > 10000:
             raise(Exception("Counter negativ for: " + self.name))
+        is_counter = False
+        if self.name.find("COUNTER") != -1:
+            is_counter = True
         start = time.time()
         higher = True
         # check running direction
@@ -114,7 +112,7 @@ class Sensor():
         
 def event_prod_det_sensor(io_name, _io_value):
     '''set product_detected to True'''
-    log.info("Product detected at: " + str(io_name))
+    log.info("Detection at: " + str(io_name))
     global product_detected 
     product_detected = True    
 

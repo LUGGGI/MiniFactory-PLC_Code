@@ -15,7 +15,7 @@ from enum import Enum
 from revpimodio2 import RevPiModIO
 
 from logger import log
-from robot_3d import Robot3D
+from grip_robot import GripRobot
 from sensor import Sensor
 from motor import Motor
 from machine import Machine
@@ -99,9 +99,10 @@ class MainLoop:
     # Methods that control the different states for the
     def state_gr1(self):
         if self.machine.state_is_init == False:
-                self.gr1 = Robot3D(self.revpi, "GR1")
+                self.gr1 = GripRobot(self.revpi, "GR1")
                 self.gr1.init()
                 self.gr1.run()
+                # self.gr1.ready_for_transport = True
                 self.machine.state_is_init = True
         elif self.gr1.ready_for_transport:
             del self.gr1

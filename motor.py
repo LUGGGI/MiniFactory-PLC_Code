@@ -17,7 +17,6 @@ product_detected = False
 class Motor():
     '''Control for motors and associated sensors and reference switches'''
     thread = None
-    running = False
     def __init__(self, revpi: RevPiModIO,  name: str, type=""):
         self.name = name
         self.revpi = revpi
@@ -39,7 +38,6 @@ class Motor():
             self.thread = threading.Thread(target=self.run_to_sensor, args=(direction, stop_sensor, timeout_in_s), name=motor)
             self.thread.start()
             return
-        self.running = True
 
         # check if stop_sensor is a reverence switch and already pressed
         if stop_sensor.find("REF_SW") != -1 and self.revpi.io[stop_sensor].value == True:
@@ -56,12 +54,12 @@ class Motor():
             log.exception(error)
         finally:
             log.info("Stopped motor: " + motor)
-            self.revpi.io[motor].value = False 
-            self.running = False
+            self.revpi.io[motor].value = False
 
-    def run_to_encoder_value(self, direction: str, encoder: str, trigger_value: int, timeout_in_s=10, as_thread=False):
+    def run_to_encoder_value(self, direction: str, encoder: Sensor, trigger_value: int, timeout_in_s=20, as_thread=False):
         '''run the motor until the trigger_value is reached
-        
+
+            encoder: has to be a Sensor object
             trigger_value: The value the motor would end up if it started from reverence switch'''
         motor = self.name + "_" + direction
         # call this function again as a thread
@@ -69,53 +67,42 @@ class Motor():
             self.thread = threading.Thread(target=self.run_to_encoder_value, args=(direction, encoder, trigger_value, timeout_in_s, False), name=motor)
             self.thread.start()
             return
-        self.running = True
-
-        is_counter = False
-        if encoder.find("COUNTER") != -1:
-            is_counter = True
-
-        if trigger_value == 0:
-            self.run_to_encoder_start(direction, self.name + "_REF_SW_HORIZONTAL", encoder, as_thread=False)
-            return 
 
         #start motor
         log.info("Started motor: " + motor)
         self.revpi.io[motor].value = True 
 
         try:
-            Sensor(self.revpi, encoder).wait_for_encoder(trigger_value, is_counter, timeout_in_s)
+            encoder.wait_for_encoder(trigger_value, timeout_in_s)
         except Exception as error:
             log.exception(error)
         finally:
             log.info("Stopped motor: " + motor)
-            self.revpi.io[motor].value = False 
-            self.running = False
+            self.revpi.io[motor].value = False
 
-    def run_to_encoder_start(self, direction: str, stop_sensor: str, encoder: str, timeout_in_s=10, as_thread=False):
-        '''runs to the encoder reverence switch and resets the counter to 0'''
+    def run_to_encoder_start(self, direction: str, stop_sensor: str, encoder: Sensor, timeout_in_s=10, as_thread=False):
+        '''runs to the encoder reverence switch and resets the counter to 0
+        
+            encoder: has to be a Sensor object'''
         motor = self.name + "_" + direction
         # call this function again as a thread
         if as_thread == True:
             self.thread = threading.Thread(target=self.run_to_encoder_start, args=(direction, stop_sensor, encoder, timeout_in_s, False), name=motor)
             self.thread.start()
             return
-        self.running = True
 
         try:
             self.run_to_sensor(direction, stop_sensor, timeout_in_s, as_thread=False)
         except Exception as error:
             log.exception(error)
 
-        Sensor(self.revpi, encoder).reset_encoder()
+        encoder.reset_encoder()
         log.info("Reset encoder motor: " + motor)
-        self.running = False
 
 
     def run_for_time(self, direction: str, check_sensor: str, wait_time_in_s):
         '''Run motor for certain amount of time, checks with sensor if product was ever detected'''
         motor = self.name + "_" + direction
-        self.running = True
 
         log.info("Started motor: " + motor)
         self.revpi.io[motor].value = True 
@@ -135,7 +122,6 @@ class Motor():
                 log.exception("No product detected at: " + check_sensor + ", stopped motor: " + motor)
             
         log.info("Run time reached and product detected at: " + str(check_sensor) + ", stopped motor: " + motor)
-        self.running = False
 
 # debug function gets source objects
 def get_source() -> str:
