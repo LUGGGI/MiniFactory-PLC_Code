@@ -13,9 +13,10 @@ class Machine:
     '''Parent class for alle machine modules'''
     thread = None
 
+    stage = 0 # can count up the stages of a machine
     ready_for_next = False
     ready_for_transport = False
-    error_no_product_found = False
+    error_exception_in_machine = False
 
     state_is_init = False
 

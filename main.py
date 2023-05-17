@@ -15,12 +15,12 @@ from enum import Enum
 from revpimodio2 import RevPiModIO
 
 from logger import log
-from grip_robot import GripRobot
 from sensor import Sensor
 from motor import Motor
 from machine import Machine
 from conveyor import Conveyor
 from punch_mach import PunchMach
+from grip_robot import GripRobot, Position
 
 class State(Enum):
     INIT = 0
@@ -30,6 +30,7 @@ class State(Enum):
     GR1 = 4
     END = 100
     ERROR = 999
+    TEST = 1000
 
 class MainLoop:
     def __init__(self):
@@ -42,7 +43,7 @@ class MainLoop:
         self.revpi.mainloop(blocking=False)
 
         self.machine = Machine(self.revpi, "Main")
-        self.state = self.machine.switch_state(State.GR1)
+        self.state = self.machine.switch_state(State.TEST)
 
         while(True):
             if self.mainloop() == False:
@@ -55,25 +56,20 @@ class MainLoop:
         self.revpi.exit(full=True)
 
     def mainloop(self):
-        if self.state == State.INIT:
+        if self.state == State.TEST:
             
             motor = Motor(self.revpi, "GR1")
-            motor.run_to_encoder_start("UP", "GR1_REF_SW_VERTICAL", "GR1_VERTICAL_ENCODER", as_thread=True)
+            # try:
+            #     motor.run_to_encoder_value("UP", Sensor(self.revpi, "GR1_VERTICAL_ENCODER"), 300, timeout_in_s=5)
+            # except Exception as error:
+            #     log.exception(error)
 
-
-            motor2 = Motor(self.revpi, "GR1")
-            motor2.run_to_encoder_start("BWD", "GR1_REF_SW_HORIZONTAL", "GR1_HORIZONTAL_COUNTER", as_thread=True)
-
-            motor.thread.join()
-            motor2.thread.join()
-            log.info("reset done")
-            sleep(2)
-
-            motor.run_to_encoder_value("DOWN", "GR1_VERTICAL_ENCODER", 1000, as_thread=True)
-            motor2.run_to_encoder_value("FWD", "GR1_HORIZONTAL_COUNTER", 50, as_thread=True)
-
-            while(motor.running or motor2.running):
-                sleep(0.2)
+            gr1 = GripRobot(self.revpi, "GR1")
+            try:
+                gr1.move_axis(motor, 300, 100, 40, "UP", Sensor(self.revpi, "GR1_VERTICAL_ENCODER"), None, timeout_in_s=3)
+            except Exception as error:
+                log.exception(error)
+            
             self.state = self.machine.switch_state(State.END)
 
             
@@ -100,15 +96,28 @@ class MainLoop:
     def state_gr1(self):
         if self.machine.state_is_init == False:
                 self.gr1 = GripRobot(self.revpi, "GR1")
-                self.gr1.init()
-                self.gr1.run()
-                # self.gr1.ready_for_transport = True
+                self.gr1.init(as_thread=True)
                 self.machine.state_is_init = True
+        
+        elif not self.gr1.thread.is_alive() and self.gr1.stage == 0:
+            # get product from cb1
+            self.gr1.move_to_position(Position(225, 60, 2050), at_product=False, as_thread=True)
+            self.gr1.stage = 1
+        elif not self.gr1.thread.is_alive() and self.gr1.stage == 1:
+            # move product to cb3
+            self.gr1.move_to_position(Position(2380, 0, 2050), at_product=True, as_thread=True)
+            self.gr1.stage = 2
+        elif not self.gr1.thread.is_alive() and self.gr1.stage == 2:
+            # move product to cb2
+            self.gr1.move_to_position(Position(3832, 0, 2050), at_product=True, as_thread=True)
+            self.gr1.stage = 2
+             
+        
+        if self.gr1.error_exception_in_machine:
+            self.state = self.machine.switch_state(State.ERROR)
         elif self.gr1.ready_for_transport:
             del self.gr1
             self.state = self.machine.switch_state(State.END)
-        elif self.gr1.error_no_product_found:
-            self.state = self.machine.switch_state(State.ERROR)
 
     def state_cb1(self):
         if self.machine.state_is_init == False:
@@ -118,33 +127,33 @@ class MainLoop:
                 self.start_cb2 = Sensor(self.revpi, "CB1_SENS_END")
                 self.start_cb2.start_monitor()
                 self.machine.state_is_init = True
+        if self.cb1.error_no_product_found:
+            self.state = self.machine.switch_state(State.ERROR)
         elif self.start_cb2.is_detected():
             del self.cb1
             self.state = self.machine.switch_state(State.CB2)
-        elif self.cb1.error_no_product_found:
-            self.state = self.machine.switch_state(State.ERROR)
 
     def state_cb2(self):
         if self.machine.state_is_init == False:
                 self.cb2 = Conveyor(self.revpi, "CB2")
                 self.cb2.run_to_stop_sensor("FWD", "CB2_SENS_END", 10)
                 self.machine.state_is_init = True
+        if self.cb2.error_no_product_found:
+            self.state = self.machine.switch_state(State.ERROR)
         elif self.cb2.ready_for_transport:
             del self.cb2
             self.state = self.machine.switch_state(State.END)
-        elif self.cb2.error_no_product_found:
-            self.state = self.machine.switch_state(State.ERROR)
 
     def state_pm(self):
         if self.machine.state_is_init == False:
                 self.pm = PunchMach(self.revpi, "PM")
                 self.pm.run()
                 self.machine.state_is_init = True
+        if self.pm.error_no_product_found:
+            self.state = self.machine.switch_state(State.ERROR)
         elif self.pm.ready_for_transport:
             del self.pm
             self.state = self.machine.switch_state(State.END)
-        elif self.pm.error_no_product_found:
-            self.state = self.machine.switch_state(State.ERROR)
 
 # Start RevPiApp app
 if __name__ == "__main__":

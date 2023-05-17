@@ -50,8 +50,8 @@ class Motor():
 
         try:
             Sensor(self.revpi, stop_sensor, BOTH).wait_for_detect(timeout_in_s)
-        except Exception as error:
-            log.exception(error)
+        except:
+            raise
         finally:
             log.info("Stopped motor: " + motor)
             self.revpi.io[motor].value = False
@@ -74,8 +74,8 @@ class Motor():
 
         try:
             encoder.wait_for_encoder(trigger_value, timeout_in_s)
-        except Exception as error:
-            log.exception(error)
+        except:
+            raise
         finally:
             log.info("Stopped motor: " + motor)
             self.revpi.io[motor].value = False
@@ -93,8 +93,8 @@ class Motor():
 
         try:
             self.run_to_sensor(direction, stop_sensor, timeout_in_s, as_thread=False)
-        except Exception as error:
-            log.exception(error)
+        except:
+            raise
 
         encoder.reset_encoder()
         log.info("Reset encoder motor: " + motor)
