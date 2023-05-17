@@ -1,0 +1,7 @@
+import inspect
+# debug function gets source object
+def get_source() -> str:
+    name = str(inspect.stack()[3][4][0]).strip()
+    file = str(inspect.stack()[3][1]).rpartition("\\")[2]
+    line = str(inspect.stack()[3][2])
+    return "<" + file + ">(" + line + ") " + name
