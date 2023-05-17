@@ -9,7 +9,6 @@ from enum import Enum
 
 from logger import log
 from machine import Machine
-from sensor import Sensor
 from motor import Motor
 from conveyor import Conveyor
 

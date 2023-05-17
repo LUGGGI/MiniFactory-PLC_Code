@@ -41,7 +41,7 @@ class GripRobot(Robot3D):
         log.debug("Created Gripper Robot: " + self.name)
 
     def __del__(self):
-        log.debug("Destroyed 3D Robot: " + self.name)
+        log.debug("Destroyed Vacuum Robot: " + self.name)
 
     def init(self, as_thread=False):
         '''Move to init position.
@@ -78,7 +78,7 @@ class GripRobot(Robot3D):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.move_to_position, args=(position, at_product), name=self.name)
+            self.thread = threading.Thread(target=self.move_to_position, args=(position, at_product, over_init_position), name=self.name)
             self.thread.start()
             return
         

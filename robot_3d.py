@@ -118,10 +118,10 @@ class Robot3D(Machine):
         :trigger_value: Encoder-Value at which the motor stops
         :current_value: Current Encoder-Value to determine if move is necessary
         :move_threshold: Value that has at min to be traveled to start the motor
-        :direction: Motor direction 
+        :direction: Motor direction, (everything after {NAME}_)
         :encoder: Sensor object
         :ref_sw: Reference Switch at which the motor stops if it runs to the encoder start 
-        :timeout_in_s Time after which an exception is raised
+        :timeout_in_s: Time after which an exception is raised
         :as_thread: Runs the function as a thread
 
         -> Panics if timeout is reached (no detection happened)
