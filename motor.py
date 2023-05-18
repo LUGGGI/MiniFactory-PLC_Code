@@ -115,9 +115,9 @@ class Motor():
 
         if check_sensor:
             if sens.is_detected() == False:
-                raise(Exception("No product detected at: " + check_sensor + ", stopped motor: " + motor))
+                raise(Exception("No product detected at: " + check_sensor + ", stopped motor: " + self.name + "_" + direction))
             
-        log.info("Run time reached and product detected at: " + str(check_sensor) + ", stopped motor: " + motor)
+        log.info("Run time reached and product detected at: " + str(check_sensor) + ", stopped motor: " + self.name + "_" + direction)
 
     def start(self, direction: str):
         '''Start Motor

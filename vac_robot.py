@@ -61,10 +61,11 @@ class VacRobot(Robot3D):
             self.move_all_axes(Position(-1,-1,1400), as_thread=False)
             self.move_all_axes(Position(0,0,0), as_thread=True)
         except Exception as error:
+            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
-
-        log.info("Moved to init position: " + self.name)
+        else:
+            log.info("Moved to init position: " + self.name)
 
     def move_to_position(self, position: Position, at_product=False, over_init_position=False, as_thread=False):
         '''Moves to the given position.
@@ -92,6 +93,7 @@ class VacRobot(Robot3D):
                 self.compressor.start(self.COMPRESSOR)
                 self.valve.start(self.VALVE)
             except Exception as error:
+                self.state = self.switch_state(State.ERROR)
                 self.error_exception_in_machine = True
                 log.exception(error)
                 return
@@ -113,9 +115,9 @@ class VacRobot(Robot3D):
         except Exception as error:
             self.error_exception_in_machine = True
             log.exception(error)
-
-        self.state = self.switch_state(State.END)
-        log.info("Position reached: " + str(position))
+        else:
+            self.state = self.switch_state(State.END)
+            log.info("Position reached: " + str(position))
 
         # if moved product
         if at_product:

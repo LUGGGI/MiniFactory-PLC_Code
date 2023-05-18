@@ -25,8 +25,8 @@ class State(Enum):
 class GripRobot(Robot3D):
     '''Controls the Gripper Robot
     
-    init(): Move to init position
-    move_to_position(): Moves to given position
+    init(): Move to init position.
+    move_to_position(): Moves to given position.
     '''
     GRIPPER_CLOSED = 15
     GRIPPER_OPENED = 9
@@ -42,6 +42,7 @@ class GripRobot(Robot3D):
 
     def __del__(self):
         log.debug("Destroyed Vacuum Robot: " + self.name)
+
 
     def init(self, as_thread=False):
         '''Move to init position.
@@ -63,10 +64,12 @@ class GripRobot(Robot3D):
             self.motor_claw.run_to_encoder_start("OPEN", self.name + "_REF_SW_CLAW", self.encoder_claw)
             self.motor_claw.run_to_encoder_value("CLOSE", self.encoder_claw, self.GRIPPER_OPENED)
         except Exception as error:
+            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
-
-        log.info("Moved to init position: " + self.name)
+        else:
+            log.info("Moved to init position: " + self.name)
+            
 
     def move_to_position(self, position: Position, at_product=False, over_init_position=False, as_thread=False):
         '''Moves to the given position.
@@ -93,6 +96,7 @@ class GripRobot(Robot3D):
             try:
                 self.motor_claw.run_to_encoder_value("CLOSE", self.encoder_claw, self.GRIPPER_CLOSED)
             except Exception as error:
+                self.state = self.switch_state(State.ERROR)
                 self.error_exception_in_machine = True
                 log.exception(error)
                 return
@@ -111,11 +115,12 @@ class GripRobot(Robot3D):
             self.state = self.switch_state(State.RELEASE)
             self.motor_claw.run_to_encoder_value("OPEN", self.encoder_claw, self.GRIPPER_OPENED)
         except Exception as error:
+            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
-
-        self.state = self.switch_state(State.END)
-        log.info("Position reached: " + str(position))
+        else:
+            self.state = self.switch_state(State.END)
+            log.info("Position reached: " + str(position))
 
         # if moved product
         if at_product:
