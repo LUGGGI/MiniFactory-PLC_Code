@@ -41,11 +41,11 @@ class Conveyor(Machine):
         
         if start_sensor != None:
             # wait for start sensor to detect product
-            Sensor(self.revpi, start_sensor).wait_for_detect()
+            Sensor(self.__revpi, start_sensor).wait_for_detect()
         
         self.state = self.switch_state(State.START)
         try:
-            motor = Motor(self.revpi, self.name)
+            motor = Motor(self.__revpi, self.name)
             motor.run_to_sensor(direction, stop_sensor, stop_delay_in_ms, timeout_in_s)
         except Exception as error:
             log.exception(error)

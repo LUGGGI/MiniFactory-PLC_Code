@@ -45,14 +45,14 @@ class Robot3D(Machine):
             self.move_threshold_hor = 2
 
         # get encoder
-        self.encoder_rot = Sensor(self.revpi, enc_rot)
-        self.encoder_hor = Sensor(self.revpi, enc_hor)
-        self.encoder_ver = Sensor(self.revpi, enc_ver)
+        self.encoder_rot = Sensor(self.__revpi, enc_rot)
+        self.encoder_hor = Sensor(self.__revpi, enc_hor)
+        self.encoder_ver = Sensor(self.__revpi, enc_ver)
 
         # get motors
-        self.motor_rot = Motor(self.revpi, self.name, "rotation")
-        self.motor_hor = Motor(self.revpi, self.name, "horizontal")
-        self.motor_ver = Motor(self.revpi, self.name, "vertical")
+        self.motor_rot = Motor(self.__revpi, self.name, "rotation")
+        self.motor_hor = Motor(self.__revpi, self.name, "horizontal")
+        self.motor_ver = Motor(self.__revpi, self.name, "vertical")
 
         log.debug("Created 3D Robot: " + self.name)
 
@@ -108,7 +108,7 @@ class Robot3D(Machine):
             self.motor_ver.thread.join()
 
         log.info("Move complete to: " + str(position))
-        
+
         
     def move_axis(self, motor: Motor, trigger_value: int, current_value: int, move_threshold: int, direction: str, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
         '''Moves one axis to the given trigger value.

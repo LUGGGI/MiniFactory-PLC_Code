@@ -36,8 +36,8 @@ class VacRobot(Robot3D):
         super().__init__(revpi, name)
         self.state = None
 
-        self.compressor = Motor(self.revpi, self.name, "compressor")
-        self.valve = Motor(self.revpi, self.name, "valve")
+        self.compressor = Motor(self.__revpi, self.name, "compressor")
+        self.valve = Motor(self.__revpi, self.name, "valve")
 
         log.debug("Created Vacuum Robot: " + self.name)
 

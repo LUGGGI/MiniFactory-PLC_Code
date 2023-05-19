@@ -35,8 +35,8 @@ class GripRobot(Robot3D):
         self.state = None
 
         # get encoder and motor for claw
-        self.encoder_claw = Sensor(self.revpi, self.name + "_CLAW_COUNTER")
-        self.motor_claw = Motor(self.revpi, self.name, "claw")
+        self.encoder_claw = Sensor(self.__revpi, self.name + "_CLAW_COUNTER")
+        self.motor_claw = Motor(self.__revpi, self.name, "claw")
 
         log.debug("Created Gripper Robot: " + self.name)
 
@@ -69,7 +69,7 @@ class GripRobot(Robot3D):
             log.exception(error)
         else:
             log.info("Moved to init position: " + self.name)
-            
+
 
     def move_to_position(self, position: Position, at_product=False, over_init_position=False, as_thread=False):
         '''Moves to the given position.

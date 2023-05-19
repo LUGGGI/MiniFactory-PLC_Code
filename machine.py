@@ -22,29 +22,30 @@ class Machine:
 
 
     def __init__(self, revpi: RevPiModIO, name: str):
-        self.revpi = revpi
         self.name = name
-        self.time_start = datetime.now()
+        self.__revpi = revpi
+        self.__time_start = datetime.now()
+        self.__state_time_start = datetime.now()
         
         log.debug("Created Maschine for: " + self.name)
 
     def get_run_time(self) -> int:
         '''Get run time of machine in seconds since creation of object'''
-        run_time = (datetime.now() - self.time_start).total_seconds()
+        run_time = (datetime.now() - self.__time_start).total_seconds()
         log.info("Runtime: " + str(run_time))
         run_time = round(run_time)
         return run_time
     
     def get_state_time(self) -> int:
         '''Get run time of state in seconds since switch'''
-        state_time = (datetime.now() - self.state_time_start).total_seconds()
+        state_time = (datetime.now() - self.__state_time_start).total_seconds()
         log.info(str(self.state) + " time: " + str(state_time))
         state_time = round(state_time)
         return state_time
     
     def switch_state(self, state):
         '''Switch to given state and save state start time'''
-        self.state_time_start = datetime.now()
+        self.__state_time_start = datetime.now()
         self.state_is_init = False
         log.warning(self.name + ": Switching state to: " + str(state))
         return state

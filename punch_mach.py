@@ -24,11 +24,11 @@ class State(Enum):
 class PunchMach(Machine):
 
     def __init__(self, revpi, name: str):
+        '''Initializes the Punching Maschine
+        
+        '''
         super().__init__(revpi, name)
         self.state = None
-        self.cb2 = Conveyor(self.revpi, "CB2")
-        self.puncher = Motor(self.revpi, self.name)
-        self.cb_punch = Conveyor(self.revpi, "PM_CB")
         
         log.debug("Created Punching Machine: " + self.name)
 
@@ -36,34 +36,42 @@ class PunchMach(Machine):
         log.debug("Destroyed Punching Machine: " + self.name)
 
     def run(self, as_thread=False):
+        '''Runs the Punching Maschine routine.
+        
+        :as_thread: Runs the function as a thread
+        '''
         if  as_thread == True:
             self.thread = threading.Thread(target=self.run, args=(), name=self.name)
             self.thread.start()
             return
         try:
+            cb2 = Conveyor(self.__revpi, "CB2")
+            puncher = Motor(self.__revpi, self.name)
+            cb_punch = Conveyor(self.__revpi, "PM_CB")
+
             self.state = self.switch_state(State.CB_IN)
             # Move product from connected conveyor belt to inner conveyor belt
-            self.cb2.run_to_stop_sensor("FWD", "PM_SENS_IN", "CB2_SENS_END")
+            cb2.run_to_stop_sensor("FWD", "PM_SENS_IN", "CB2_SENS_END")
 
             self.state = self.switch_state(State.CB_PUNCH_TO)
             # raise puncher
-            self.puncher.run_to_sensor("UP", "PM_REF_SW_TOP", as_thread=True)
+            puncher.run_to_sensor("UP", "PM_REF_SW_TOP", as_thread=True)
             # Move product from inner conveyor belt to puncher
-            self.cb_punch.run_to_stop_sensor("FWD", "PM_SENS_PM")
+            cb_punch.run_to_stop_sensor("FWD", "PM_SENS_PM")
 
             self.state = self.switch_state(State.PUNCHING)
             log.info("Punching product")
-            self.puncher.run_to_sensor("DOWN", "PM_REF_SW_BOTTOM")
+            puncher.run_to_sensor("DOWN", "PM_REF_SW_BOTTOM")
             # raise puncher
-            self.puncher.run_to_sensor("UP", "PM_REF_SW_TOP", as_thread=True)
+            puncher.run_to_sensor("UP", "PM_REF_SW_TOP", as_thread=True)
 
             self.state = self.switch_state(State.CB_PUNCH_FROM)
             #  Move product from puncher to connected conveyor
-            self.cb_punch.run_to_stop_sensor("BWD", "CB2_SENS_END", "PM_SENS_IN")
+            cb_punch.run_to_stop_sensor("BWD", "CB2_SENS_END", "PM_SENS_IN")
 
             self.state = self.switch_state(State.CB_IN)
             # Move product to end of connected conveyor belt
-            self.cb2.run_to_stop_sensor("BWD", "CB2_SENS_START")
+            cb2.run_to_stop_sensor("BWD", "CB2_SENS_START")
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
