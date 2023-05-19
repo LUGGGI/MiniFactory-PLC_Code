@@ -8,7 +8,7 @@ from enum import Enum
 from time import sleep
 from logger import log
 from sensor import Sensor
-from motor import Motor, Direction
+from actuator import Actuator, Direction
 import machine
 from conveyor import Conveyor
 
@@ -34,15 +34,15 @@ class IndexLine(machine.Machine):
         self.direction = direction
         self.state = self.switch_state(State.INIT)
 
-        self.motor_mill = Motor("mill")
-        self.motor_drill = Motor("drill")
-        self.motor_pusher_in = Motor("pusher_in")
-        self.motor_pusher_out = Motor("pusher_out")
+        self.motor_mill = Actuator("mill")
+        self.motor_drill = Actuator("drill")
+        self.motor_pusher_in = Actuator("pusher_in")
+        self.motor_pusher_out = Actuator("pusher_out")
 
-        self.conv_in = Conveyor(sensor_check=Sensor("in"), motor=Motor("cv_in"), direction=Direction.BWD, max_transport_time=2)
-        self.conv_mill = Conveyor(sensor_stop=Sensor("mill"), motor=Motor("cv_mill"), direction=Direction.BWD, max_transport_time=2)
-        self.conv_drill = Conveyor(sensor_stop=Sensor("drill"), motor=Motor("cv_drill"), direction=Direction.BWD, max_transport_time=2)
-        self.conv_out = Conveyor(sensor_check=Sensor("out1"), motor=Motor("cv_out"), direction=Direction.BWD, max_transport_time=2)
+        self.conv_in = Conveyor(sensor_check=Sensor("in"), motor=Actuator("cv_in"), direction=Direction.BWD, max_transport_time=2)
+        self.conv_mill = Conveyor(sensor_stop=Sensor("mill"), motor=Actuator("cv_mill"), direction=Direction.BWD, max_transport_time=2)
+        self.conv_drill = Conveyor(sensor_stop=Sensor("drill"), motor=Actuator("cv_drill"), direction=Direction.BWD, max_transport_time=2)
+        self.conv_out = Conveyor(sensor_check=Sensor("out1"), motor=Actuator("cv_out"), direction=Direction.BWD, max_transport_time=2)
 
         # retract pusher
         self.motor_pusher_in.start(Direction.BWD)

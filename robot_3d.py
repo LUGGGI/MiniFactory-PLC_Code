@@ -9,7 +9,7 @@ import threading
 from logger import log
 from machine import Machine
 from sensor import Sensor
-from motor import Motor
+from actuator import Actuator
 
 
 class Position:
@@ -50,9 +50,9 @@ class Robot3D(Machine):
         self.encoder_ver = Sensor(self.__revpi, enc_ver)
 
         # get motors
-        self.motor_rot = Motor(self.__revpi, self.name, "rotation")
-        self.motor_hor = Motor(self.__revpi, self.name, "horizontal")
-        self.motor_ver = Motor(self.__revpi, self.name, "vertical")
+        self.motor_rot = Actuator(self.__revpi, self.name, "rotation")
+        self.motor_hor = Actuator(self.__revpi, self.name, "horizontal")
+        self.motor_ver = Actuator(self.__revpi, self.name, "vertical")
 
         log.debug("Created 3D Robot: " + self.name)
 
@@ -110,7 +110,7 @@ class Robot3D(Machine):
         log.info("Move complete to: " + str(position))
 
         
-    def move_axis(self, motor: Motor, trigger_value: int, current_value: int, move_threshold: int, direction: str, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
+    def move_axis(self, motor: Actuator, trigger_value: int, current_value: int, move_threshold: int, direction: str, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
         '''Moves one axis to the given trigger value.
         
         :motor: Motor object 

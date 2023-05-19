@@ -10,7 +10,7 @@ from enum import Enum
 from logger import log
 from machine import Machine
 from sensor import Sensor
-from motor import Motor
+from actuator import Actuator
 
 
 class State(Enum):
@@ -45,7 +45,7 @@ class Conveyor(Machine):
         
         self.state = self.switch_state(State.START)
         try:
-            motor = Motor(self.__revpi, self.name)
+            motor = Actuator(self.__revpi, self.name)
             motor.run_to_sensor(direction, stop_sensor, stop_delay_in_ms, timeout_in_s)
         except Exception as error:
             log.exception(error)

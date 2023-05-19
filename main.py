@@ -16,7 +16,7 @@ from revpimodio2 import RevPiModIO
 
 from logger import log
 from sensor import Sensor
-from motor import Motor
+from actuator import Actuator
 from machine import Machine
 from conveyor import Conveyor
 from punch_mach import PunchMach
@@ -58,7 +58,7 @@ class MainLoop:
     def mainloop(self):
         if self.state == State.TEST:
             
-            motor = Motor(self.revpi, "GR1")
+            motor = Actuator(self.revpi, "GR1")
             # try:
             #     motor.run_to_encoder_value("UP", Sensor(self.revpi, "GR1_VERTICAL_ENCODER"), 300, timeout_in_s=5)
             # except Exception as error:

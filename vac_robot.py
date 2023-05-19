@@ -9,7 +9,7 @@ from enum import Enum
 
 from logger import log
 from sensor import Sensor
-from motor import Motor
+from actuator import Actuator
 from robot_3d import Robot3D, Position
 
 class State(Enum):
@@ -36,8 +36,8 @@ class VacRobot(Robot3D):
         super().__init__(revpi, name)
         self.state = None
 
-        self.compressor = Motor(self.__revpi, self.name, "compressor")
-        self.valve = Motor(self.__revpi, self.name, "valve")
+        self.compressor = Actuator(self.__revpi, self.name, "compressor")
+        self.valve = Actuator(self.__revpi, self.name, "valve")
 
         log.debug("Created Vacuum Robot: " + self.name)
 

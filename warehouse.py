@@ -10,7 +10,7 @@ from enum import Enum
 from logger import log
 from machine import Machine
 from sensor import Sensor
-from motor import Motor
+from actuator import Actuator
 from conveyor import Conveyor
  
 class State(Enum):
@@ -56,9 +56,9 @@ class Warehouse(Machine):
         self.encoder_ver = Sensor(self.__revpi, self.name + "_VERTICAL_ENCODER")
 
         # get motors
-        self.motor_loading = Motor(self.__revpi, self.name + "_ARM", "loading")
-        self.motor_hor = Motor(self.__revpi, self.name + "_CRANE", "horizontal")
-        self.motor_ver = Motor(self.__revpi, self.name + "_ARM", "vertical")
+        self.motor_loading = Actuator(self.__revpi, self.name + "_ARM", "loading")
+        self.motor_hor = Actuator(self.__revpi, self.name + "_CRANE", "horizontal")
+        self.motor_ver = Actuator(self.__revpi, self.name + "_ARM", "vertical")
 
         log.debug("Created Warehouse: " + self.name)
 
@@ -209,7 +209,7 @@ class Warehouse(Machine):
         log.info("Moved crane to: " + str(f"({horizontal},{vertical})"))
 
         
-    def move_axis(self, motor: Motor, trigger_value: int, current_value: int, move_threshold: int, direction: str, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
+    def move_axis(self, motor: Actuator, trigger_value: int, current_value: int, move_threshold: int, direction: str, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
         '''Moves one axis to the given trigger value.
         
         :motor: Motor object 

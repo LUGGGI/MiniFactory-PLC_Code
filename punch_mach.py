@@ -9,7 +9,7 @@ from enum import Enum
 
 from logger import log
 from machine import Machine
-from motor import Motor
+from actuator import Actuator
 from conveyor import Conveyor
 
 class State(Enum):
@@ -46,7 +46,7 @@ class PunchMach(Machine):
             return
         try:
             cb2 = Conveyor(self.__revpi, "CB2")
-            puncher = Motor(self.__revpi, self.name)
+            puncher = Actuator(self.__revpi, self.name)
             cb_punch = Conveyor(self.__revpi, "PM_CB")
 
             self.state = self.switch_state(State.CB_IN)

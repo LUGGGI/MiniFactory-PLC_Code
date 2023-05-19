@@ -9,7 +9,7 @@ from enum import Enum
 
 from logger import log
 from sensor import Sensor
-from motor import Motor
+from actuator import Actuator
 from robot_3d import Robot3D, Position
 
 class State(Enum):
@@ -36,7 +36,7 @@ class GripRobot(Robot3D):
 
         # get encoder and motor for claw
         self.encoder_claw = Sensor(self.__revpi, self.name + "_CLAW_COUNTER")
-        self.motor_claw = Motor(self.__revpi, self.name, "claw")
+        self.motor_claw = Actuator(self.__revpi, self.name, "claw")
 
         log.debug("Created Gripper Robot: " + self.name)
 
