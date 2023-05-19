@@ -126,7 +126,7 @@ class Actuator():
             raise
 
 
-    def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str==None):
+    def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None):
         '''Run Actuator for certain amount of time.
         
         :direction: Actuator direction, (last part of whole name)

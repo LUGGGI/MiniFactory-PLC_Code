@@ -2,7 +2,7 @@
 This module controls the Punching Line with the connected conveyor, it inherits from machine
 
 Author: Lukas Beck
-Date: 01.05s.2023
+Date: 19.05.2023
 '''
 import threading
 from enum import Enum
@@ -22,10 +22,16 @@ class State(Enum):
     ERROR = 999
 
 class PunchMach(Machine):
+    '''Controls the Punching Maschine.
+    
+    run(): Runs the Punching Maschine routine.
+    '''
 
     def __init__(self, revpi, name: str):
-        '''Initializes the Punching Maschine
+        '''Initializes the Punching Maschine.
         
+        :revpi: RevPiModIO Object to control the motors and sensors
+        :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
         super().__init__(revpi, name)
         self.state = None
@@ -40,10 +46,11 @@ class PunchMach(Machine):
         
         :as_thread: Runs the function as a thread
         '''
-        if  as_thread == True:
+        if as_thread == True:
             self.thread = threading.Thread(target=self.run, args=(), name=self.name)
             self.thread.start()
             return
+        
         try:
             cb2 = Conveyor(self.__revpi, "CB2")
             puncher = Actuator(self.__revpi, self.name)
