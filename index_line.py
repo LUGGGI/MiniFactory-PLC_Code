@@ -1,93 +1,133 @@
 '''
-This module controls the Indexed Line with two Machining Stations (Mill and Drill), it inherits form machine
+This module controls the Indexed Line with two Machining Stations (Mill and Drill), it inherits from machine
 
 Author: Lukas Beck
-Date: 18.04.2023
+Date: 20.05.2023
 '''
-from enum import Enum
+import threading
 from time import sleep
+from enum import Enum
+
 from logger import log
 from sensor import Sensor
-from actuator import Actuator, Direction
-import machine
+from machine import Machine
+from actuator import Actuator
 from conveyor import Conveyor
 
 class State(Enum):
     INIT = 0
-    TRANSPORT_TO_MILL = 0
-    MILLING = 0        
-    TRANSPORT_TO_DRILL = 0
-    DRILLING = 0  
-    TRANSPORT_TO_END = 0      
-    END = 0
-    ERROR = 0
+    TO_MILL = 1
+    MILLING = 2        
+    TO_DRILL = 3
+    DRILLING = 4
+    TO_OUT = 5      
+    END = 100
+    ERROR = 999
 
-class IndexLine(machine.Machine):
+class IndexLine(Machine):
     '''Controls the drill and mill machine and the surrounding conveyors
+
+    run(): Runs the Index Line routine.
     '''
+    __TIME_MILLING = 1
+    __TIME_DRILLING = 1
 
-    sensor_front = False
-    sensor_back = False
 
-    def __init__(self, direction):
-        super().__init__()
-        self.direction = direction
-        self.state = self.switch_state(State.INIT)
+    def __init__(self, revpi, name: str):
+        '''Initializes the Multi Purpose Station
+        
+        :revpi: RevPiModIO Object to control the motors and sensors
+        :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        '''
+        super().__init__(revpi, name)
+        
+        log.debug("Created Index Line: " + self.name)
+    
 
-        self.motor_mill = Actuator("mill")
-        self.motor_drill = Actuator("drill")
-        self.motor_pusher_in = Actuator("pusher_in")
-        self.motor_pusher_out = Actuator("pusher_out")
+    def __del__(self):
+        log.debug("Destroyed Index Line: " + self.name)
 
-        self.conv_in = Conveyor(sensor_check=Sensor("in"), motor=Actuator("cv_in"), direction=Direction.BWD, max_transport_time=2)
-        self.conv_mill = Conveyor(sensor_stop=Sensor("mill"), motor=Actuator("cv_mill"), direction=Direction.BWD, max_transport_time=2)
-        self.conv_drill = Conveyor(sensor_stop=Sensor("drill"), motor=Actuator("cv_drill"), direction=Direction.BWD, max_transport_time=2)
-        self.conv_out = Conveyor(sensor_check=Sensor("out1"), motor=Actuator("cv_out"), direction=Direction.BWD, max_transport_time=2)
 
-        # retract pusher
-        self.motor_pusher_in.start(Direction.BWD)
-        self.motor_pusher_out.start(Direction.BWD)
-        sleep(1) # _DEBUG
-        self.motor_pusher_in.stop()
-        self.motor_pusher_out.stop()
+    def run(self, as_thread=False):
+        '''Runs the Index Line routine.
+        
+        :as_thread: Runs the function as a thread
+        '''      
+        if as_thread == True:
+            self.thread = threading.Thread(target=self.run, args=(), name=self.name)
+            self.thread.start()
+            return
+        
+        try:
+            cb_mill = Conveyor(self.revpi, self.name + "_CB_MIll")
 
-        log.debug("Created DrillAndMill")
-        self.state = self.switch_state(State.TRANSPORT_TO_MILL)
+            # Move product to Mill
+            self.state = self.switch_state(State.TO_MILL)
+            pusher_in = Actuator(self.revpi, self.name + "_PUSH1")
+            cb_start = Conveyor(self.revpi, self.name + "_CB_START")
 
-    def run(self):
-        '''runs the drill and mill until end or error'''
-        while not self.waiting_for_transport and not self.error_no_product_found:
-            self.update()        
+            # move pusher to back
+            pusher_in.run_to_sensor("BWD", self.name + "_REF_SW_PUSH1_BACK", as_thread=True) 
+            # move product to pusher_in
+            cb_start.run_to_stop_sensor("", self.name + "_REF_SW_PUSH1_FRONT", as_thread=True)
+            # wait for product to be detected by sensor 
+            Sensor(self.revpi, self.name + "_SENS_PUSH1").wait_for_detect()
+            sleep(1) # wait for product to be in front of pusher
+            # push product to cb_mill
+            pusher_in.thread.join()
+            pusher_in.run_to_sensor("FWD", self.name + "_REF_SW_PUSH1_FRONT", as_thread=True) 
+            cb_mill.run_to_stop_sensor("", self.name + "_SENS_MILL")
+            # move pusher back to back
+            pusher_in.run_to_sensor("BWD", self.name + "_REF_SW_PUSH1_BACK", as_thread=True)
 
-    def update(self):
-        '''Call in a loop to update and change the state/action'''
-        if self.state == State.TRANSPORT_TO_MILL:
-            self.conv_in.run()
+            del pusher_in
+            del cb_start
 
-            self.motor_pusher_in.start(Direction.FWD)
-            sleep(1) # _DEBUG
-            self.motor_pusher_in.stop()
-
-            self.conv_mill.run()
-
+            # Milling
             self.state = self.switch_state(State.MILLING)
-        
-        if self.state == State.MILLING:
-            self.motor_mill.start(Direction.FWD)
-            sleep(1) # _DEBUG
-            self.motor_mill.stop()
+            Actuator(self.revpi, self.name + "_MILL_MOTOR").run_for_time("", self.__TIME_MILLING)
 
-            self.state = self.switch_state(State.TRANSPORT_TO_DRILL)
 
-        if self.state == State.TRANSPORT_TO_DRILL:
-            self.conv_mill.run()
-        
-        if self.state == State.END:
-            self.waiting_for_transport = True
-            log.info("End of Conveyor")
-        
-        if self.state == State.ERROR:
-            self.error_no_product_found = True
-            log.error("Error in conveyor")
+            cb_drill = Conveyor(self.revpi, self.name + "_CB_DRIll")
 
-        sleep(1)
+            # Move product to Drill
+            self.state = self.switch_state(State.TO_DRILL)
+            cb_mill.run_to_stop_sensor("", self.name + "_SENS_DRILL")
+            cb_drill.run_to_stop_sensor("", self.name + "_SENS_DRILL")
+
+            del cb_mill
+
+
+            # Drilling
+            self.state = self.switch_state(State.DRILLING)
+            Actuator(self.revpi, self.name + "_DRILL_MOTOR").run_for_time("", self.__TIME_DRILLING)
+
+
+            # Move product to Out
+            self.state = self.switch_state(State.TO_OUT)
+            pusher_out = Actuator(self.revpi, self.name + "_PUSH2")
+            cb_end = Conveyor(self.revpi, self.name + "_CB_END")
+
+            # move pusher to back
+            pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", as_thread=True)
+            # move product to pusher_out
+            cb_end.run_to_stop_sensor("", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True)
+            sleep(1) # wait for product to be in front of pusher
+            # push product to out
+            pusher_out.thread.join()
+            pusher_out.run_to_sensor("FWD", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True) 
+            cb_end.run_to_stop_sensor("", self.name + "_SENS_END", stop_delay_in_ms=1000)
+            # move pusher back to back
+            pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", as_thread=True) 
+
+            del pusher_out
+            del cb_drill
+            del cb_end
+
+        except Exception as error:
+            self.state = self.switch_state(State.ERROR)
+            self.error_exception_in_machine = True
+            log.exception(error)
+        else:
+            self.state = self.switch_state(State.END)
+            self.ready_for_transport = True    
