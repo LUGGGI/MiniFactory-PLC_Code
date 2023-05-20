@@ -35,8 +35,8 @@ class GripRobot(Robot3D):
         self.state = None
 
         # get encoder and motor for claw
-        self.encoder_claw = Sensor(self.__revpi, self.name + "_CLAW_COUNTER")
-        self.motor_claw = Actuator(self.__revpi, self.name, "claw")
+        self.encoder_claw = Sensor(self.revpi, self.name + "_CLAW_COUNTER")
+        self.motor_claw = Actuator(self.revpi, self.name, "claw")
 
         log.debug("Created Gripper Robot: " + self.name)
 

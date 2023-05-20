@@ -52,9 +52,9 @@ class PunchMach(Machine):
             return
         
         try:
-            cb2 = Conveyor(self.__revpi, "CB2")
-            puncher = Actuator(self.__revpi, self.name)
-            cb_punch = Conveyor(self.__revpi, "PM_CB")
+            cb2 = Conveyor(self.revpi, "CB2")
+            puncher = Actuator(self.revpi, self.name)
+            cb_punch = Conveyor(self.revpi, "PM_CB")
 
             self.state = self.switch_state(State.CB_IN)
             # Move product from connected conveyor belt to inner conveyor belt

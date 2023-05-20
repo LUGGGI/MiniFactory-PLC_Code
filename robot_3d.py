@@ -45,14 +45,14 @@ class Robot3D(Machine):
             self.move_threshold_hor = 2
 
         # get encoder
-        self.encoder_rot = Sensor(self.__revpi, enc_rot)
-        self.encoder_hor = Sensor(self.__revpi, enc_hor)
-        self.encoder_ver = Sensor(self.__revpi, enc_ver)
+        self.encoder_rot = Sensor(self.revpi, enc_rot)
+        self.encoder_hor = Sensor(self.revpi, enc_hor)
+        self.encoder_ver = Sensor(self.revpi, enc_ver)
 
         # get motors
-        self.motor_rot = Actuator(self.__revpi, self.name, "rotation")
-        self.motor_hor = Actuator(self.__revpi, self.name, "horizontal")
-        self.motor_ver = Actuator(self.__revpi, self.name, "vertical")
+        self.motor_rot = Actuator(self.revpi, self.name, "rotation")
+        self.motor_hor = Actuator(self.revpi, self.name, "horizontal")
+        self.motor_ver = Actuator(self.revpi, self.name, "vertical")
 
         log.debug("Created 3D Robot: " + self.name)
 

@@ -61,18 +61,18 @@ class MPStation(Machine):
             return
 
         try:
-            compressor = Actuator(self.__revpi, self.name + "_COMPRESSOR")
+            compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
             compressor.start("")
 
             # Move oven tray into oven and close door
             self.state = self.switch_state(State.OVEN)
-            tray = Actuator(self.__revpi, self.name + "_OVEN_TRAY")
-            oven_door_valve = Actuator(self.__revpi, self.name + "_VALVE_OVEN_DOOR")
+            tray = Actuator(self.revpi, self.name + "_OVEN_TRAY")
+            oven_door_valve = Actuator(self.revpi, self.name + "_VALVE_OVEN_DOOR")
 
             oven_door_valve.start("") # open door
             tray.run_to_sensor("IN", self.name + "_REF_SW_OVEN_TRAY_IN") # move tray in
             oven_door_valve.stop("") # close door
-            Actuator(self.__revpi, self.name + "_LIGHT_OVEN").run_for_time("", self.__TIME_OVEN) # turn light on for time
+            Actuator(self.revpi, self.name + "_LIGHT_OVEN").run_for_time("", self.__TIME_OVEN) # turn light on for time
             oven_door_valve.start("") # open door
             tray.run_to_sensor("OUT", self.name + "_REF_SW_OVEN_TRAY_OUT") # move tray out
             oven_door_valve.stop("") # close door
@@ -83,9 +83,9 @@ class MPStation(Machine):
 
             # move product to table with vacuum gripper
             self.state = self.switch_state(State.TO_TABLE)
-            vg_valve = Actuator(self.__revpi, self.name + "_VALVE_VG_VACUUM")
-            vg_lower_valve = Actuator(self.__revpi, self.name + "_VALVE_VG_LOWER")
-            vg_motor = Actuator(self.__revpi, self.name + "_VG")
+            vg_valve = Actuator(self.revpi, self.name + "_VALVE_VG_VACUUM")
+            vg_lower_valve = Actuator(self.revpi, self.name + "_VALVE_VG_LOWER")
+            vg_motor = Actuator(self.revpi, self.name + "_VG")
 
             vg_valve.start("") # start vacuum at gripper
             vg_lower_valve.run_for_time("", 1) # lower gripper
@@ -100,7 +100,7 @@ class MPStation(Machine):
             del vg_motor
 
 
-            table = Actuator(self.__revpi, self.name + "_TABLE")
+            table = Actuator(self.revpi, self.name + "_TABLE")
 
             # rotate table to saw
             self.state = self.switch_state(State.TO_SAW)
@@ -109,13 +109,13 @@ class MPStation(Machine):
             
             # sawing
             self.state = self.switch_state(State.SAWING)
-            Actuator(self.__revpi, self.name + "_SAW").run_for_time("", self.__TIME_SAW)
+            Actuator(self.revpi, self.name + "_SAW").run_for_time("", self.__TIME_SAW)
 
 
             # move product to cb
             self.state = self.switch_state(State.TO_CB)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_CB") # rotate table to cb
-            Actuator(self.__revpi, self.name + "_VALVE_TABLE_PISTON").run_for_time("", 1)
+            Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON").run_for_time("", 1)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table back to vg
 
             del table
@@ -125,7 +125,7 @@ class MPStation(Machine):
 
             # run cb
             self.state = self.switch_state(State.CB)
-            Conveyor(self.__revpi, self.name + "_CB").run_to_stop_sensor("FWD", self.name + "_SENS_CB")
+            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", self.name + "_SENS_CB")
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)

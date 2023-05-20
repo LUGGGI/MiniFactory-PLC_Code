@@ -23,7 +23,7 @@ class Machine:
 
     def __init__(self, revpi: RevPiModIO, name: str):
         self.name = name
-        self.__revpi = revpi
+        self.revpi = revpi
         self.__time_start = datetime.now()
         self.__state_time_start = datetime.now()
         

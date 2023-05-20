@@ -49,16 +49,16 @@ class Warehouse(Machine):
         self.move_threshold_ver = 40
 
         # get conveyor
-        self.cb = Conveyor(self.__revpi, self.name + "_CB")
+        self.cb = Conveyor(self.revpi, self.name + "_CB")
 
         # get encoder
-        self.encoder_hor = Sensor(self.__revpi, self.name + "_HORIZONTAL_ENCODER")
-        self.encoder_ver = Sensor(self.__revpi, self.name + "_VERTICAL_ENCODER")
+        self.encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER")
+        self.encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER")
 
         # get motors
-        self.motor_loading = Actuator(self.__revpi, self.name + "_ARM", "loading")
-        self.motor_hor = Actuator(self.__revpi, self.name + "_CRANE", "horizontal")
-        self.motor_ver = Actuator(self.__revpi, self.name + "_ARM", "vertical")
+        self.motor_loading = Actuator(self.revpi, self.name + "_ARM", "loading")
+        self.motor_hor = Actuator(self.revpi, self.name + "_CRANE", "horizontal")
+        self.motor_ver = Actuator(self.revpi, self.name + "_ARM", "vertical")
 
         log.debug("Created Warehouse: " + self.name)
 
