@@ -95,9 +95,9 @@ class Robot3D(Machine):
 
         
         # move to position
-        self.move_axis(self.motor_rot, position.rotation, current_position.rotation, self.move_threshold_rot, dir_rot, self.encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
-        self.move_axis(self.motor_hor, position.horizontal, current_position.horizontal, self.move_threshold_hor, dir_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
-        self.move_axis(self.motor_ver, position.vertical, current_position.vertical, self.move_threshold_ver, dir_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
+        self.motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.move_threshold_rot, self.encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
+        self.motor_hor.move_axis(dir_hor, position.horizontal, current_position.horizontal, self.move_threshold_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
+        self.motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.move_threshold_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
 
         # wait for end of each move
         if self.motor_rot.thread.is_alive():
@@ -108,33 +108,4 @@ class Robot3D(Machine):
             self.motor_ver.thread.join()
 
         log.info("Move complete to: " + str(position))
-
-        
-    def move_axis(self, motor: Actuator, trigger_value: int, current_value: int, move_threshold: int, direction: str, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
-        '''Moves one axis to the given trigger value.
-        
-        :motor: Motor object 
-        :trigger_value: Encoder-Value at which the motor stops
-        :current_value: Current Encoder-Value to determine if move is necessary
-        :move_threshold: Value that has at min to be traveled to start the motor
-        :direction: Motor direction, (everything after {NAME}_)
-        :encoder: Sensor object
-        :ref_sw: Reference Switch at which the motor stops if it runs to the encoder start 
-        :timeout_in_s: Time after which an exception is raised
-        :as_thread: Runs the function as a thread
-
-        -> Panics if timeout is reached (no detection happened)
-        '''
-        # if trigger_value (position) is -1 do not move that axis
-        if trigger_value == -1:
-            return
-        # if trigger value is 0 move to init position
-        if trigger_value == 0:
-            motor.run_to_encoder_start(direction, ref_sw, encoder, timeout_in_s, as_thread)
-        # if trigger value is the same as the current value don't move
-        elif abs(current_value - trigger_value) < move_threshold:
-            log.info("Axis already at value: " + self.name + motor.type)
-        # move to value
-        else:
-            motor.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread)
   

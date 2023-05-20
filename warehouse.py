@@ -24,6 +24,18 @@ class State(Enum):
     END = 100
     ERROR = 999
 
+class ShelfPos(Enum):
+    # [Horizontal, Vertical]
+    SHELF_1_1 = [1500, 200]
+    SHELF_1_2 = [1500, 950]
+    SHELF_1_3 = [1500, 1700]
+    SHELF_2_1 = [2675, 200]
+    SHELF_2_2 = [2675, 950]
+    SHELF_2_3 = [2650, 1700]
+    SHELF_3_1 = [3825, 200]
+    SHELF_3_2 = [3825, 950]
+    SHELF_3_3 = [3825, 1700]
+
 class Warehouse(Machine):
     '''Controls the Warehouse
     
@@ -32,11 +44,9 @@ class Warehouse(Machine):
     move_to_position(): Moves Crane given coordinates.
     move_axis(): Moves one axis to the given trigger value.
     '''
+    POS_CB_HORIZONTAL = 75
+    POS_CB_VERTICAL = 1500
 
-    POS_CB_HORIZONTAL = 0
-    POS_CB_VERTICAL = 500
-
-    
 
     def __init__(self, revpi, name: str):
         super().__init__(revpi, name)
@@ -62,22 +72,25 @@ class Warehouse(Machine):
 
         log.debug("Created Warehouse: " + self.name)
 
+
     def __del__(self):
         log.debug("Destroyed Warehouse: " + self.name)
 
-    def store_product(self, horizontal: int, vertical: int, as_thread=False):
+
+    def store_product(self, shelf: ShelfPos, as_thread=False):
         '''Stores a product at given position.
 
-        :horizontal: horizontal coordinate
-        :vertical: vertical coordinate
+        :shelf: a position of a shelf defined in ShelfPos
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.store_product, args=(horizontal, vertical), name=self.name)
+            self.thread = threading.Thread(target=self.store_product, args=(shelf,), name=self.name)
             self.thread.start()
             return
         
+        horizontal = shelf[0]
+        vertical = shelf[1]
         log.info("Store product at: " + str(f"({horizontal},{vertical})"))
         try:
             # move product to inside
@@ -115,7 +128,8 @@ class Warehouse(Machine):
             self.ready_for_next = True
             log.info("Product stored at: " + str(f"({horizontal},{vertical})"))
 
-    def retrieve_product(self, horizontal: int, vertical: int, as_thread=False):
+
+    def retrieve_product(self, shelf: ShelfPos, as_thread=False):
         '''Retrieves a product from given position.
 
         :horizontal: horizontal coordinate
@@ -124,10 +138,12 @@ class Warehouse(Machine):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.retrieve_product, args=(horizontal, vertical), name=self.name)
+            self.thread = threading.Thread(target=self.retrieve_product, args=(shelf,), name=self.name)
             self.thread.start()
             return
         
+        horizontal = shelf[0]
+        vertical = shelf[1]
         log.info("Retrieve product from: " + str(f"({horizontal},{vertical})"))
         try:
             # move to given rack
@@ -197,8 +213,8 @@ class Warehouse(Machine):
 
         
         # move to position
-        self.move_axis(self.motor_hor, horizontal, current_horizontal, self.move_threshold_hor, dir_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
-        self.move_axis(self.motor_ver, vertical, current_vertical, self.move_threshold_ver, dir_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
+        self.motor_hor.move_axis(dir_hor, horizontal, current_horizontal, self.move_threshold_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
+        self.motor_ver.move_axis(dir_ver, vertical, current_vertical, self.move_threshold_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
 
         # wait for end of each move
         if self.motor_hor.thread.is_alive():
@@ -208,32 +224,3 @@ class Warehouse(Machine):
 
         log.info("Moved crane to: " + str(f"({horizontal},{vertical})"))
 
-        
-    def move_axis(self, motor: Actuator, trigger_value: int, current_value: int, move_threshold: int, direction: str, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
-        '''Moves one axis to the given trigger value.
-        
-        :motor: Motor object 
-        :trigger_value: Encoder-Value at which the motor stops
-        :current_value: Current Encoder-Value to determine if move is necessary
-        :move_threshold: Value that has at min to be traveled to start the motor
-        :direction: Motor direction, (everything after {NAME}_)
-        :encoder: Sensor object
-        :ref_sw: Reference Switch at which the motor stops if it runs to the encoder start 
-        :timeout_in_s: Time after which an exception is raised
-        :as_thread: Runs the function as a thread
-
-        -> Panics if timeout is reached (no detection happened)
-        '''
-        # if trigger_value (position) is -1 do not move that axis
-        if trigger_value == -1:
-            return
-        # if trigger value is 0 move to init position
-        if trigger_value == 0:
-            motor.run_to_encoder_start(direction, ref_sw, encoder, timeout_in_s, as_thread)
-        # if trigger value is the same as the current value don't move
-        elif abs(current_value - trigger_value) < move_threshold:
-            log.info("Axis already at value: " + self.name + motor.type)
-        # move to value
-        else:
-            motor.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread)
-  

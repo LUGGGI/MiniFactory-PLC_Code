@@ -76,6 +76,31 @@ class Actuator():
             #stop actuator
             self.stop(direction)
 
+    
+    def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None):
+        '''Run Actuator for certain amount of time.
+        
+        :direction: Actuator direction, (last part of whole name)
+        :wait_time_in_s: Time after which the actuator stops
+        :check_sensor: If given, checks if detection occurs if not ->panics
+        '''
+        #start actuator
+        self.start(direction)
+        
+        if check_sensor:
+            # register event on sensor
+            sensor = Sensor(self.__revpi, check_sensor)
+            sensor.start_monitor()
+
+        time.sleep(wait_time_in_s) # Wait for given time
+        log.info("Run time reached: " + self.name + "_" + direction)
+
+        #stop actuator
+        self.stop(direction)
+
+        if check_sensor and sensor.is_detected() == False:
+            raise(Exception("No detection at: " + check_sensor))
+
 
     def run_to_encoder_value(self, direction: str, encoder: Sensor, trigger_value: int, timeout_in_s=20, as_thread=False):
         '''Run Actuator until the trigger_value of encoder is reached.
@@ -126,29 +151,32 @@ class Actuator():
             raise
 
 
-    def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None):
-        '''Run Actuator for certain amount of time.
+    def move_axis(self, direction: str, trigger_value: int, current_value: int, move_threshold: int, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
+        '''Moves a axis to the given trigger value.
         
         :direction: Actuator direction, (last part of whole name)
-        :wait_time_in_s: Time after which the actuator stops
-        :check_sensor: If given, checks if detection occurs if not ->panics
+        :trigger_value: Encoder-Value at which the motor stops
+        :current_value: Current Encoder-Value to determine if move is necessary
+        :move_threshold: Value that has at min to be traveled to start the motor
+        :encoder: Sensor object
+        :ref_sw: Reference Switch at which the motor stops if it runs to the encoder start 
+        :timeout_in_s: Time after which an exception is raised
+        :as_thread: Runs the function as a thread
+
+        -> Panics if timeout is reached (no detection happened)
         '''
-        #start actuator
-        self.start(direction)
-        
-        if check_sensor:
-            # register event on sensor
-            sensor = Sensor(self.__revpi, check_sensor)
-            sensor.start_monitor()
-
-        time.sleep(wait_time_in_s) # Wait for given time
-        log.info("Run time reached: " + self.name + "_" + direction)
-
-        #stop actuator
-        self.stop(direction)
-
-        if check_sensor and sensor.is_detected() == False:
-            raise(Exception("No detection at: " + check_sensor))
+        # if trigger_value (position) is -1 do not move that axis
+        if trigger_value == -1:
+            return
+        # if trigger value is 0 move to init position
+        if trigger_value == 0:
+            self.run_to_encoder_start(direction, ref_sw, encoder, timeout_in_s, as_thread)
+        # if trigger value is the same as the current value don't move
+        elif abs(current_value - trigger_value) < move_threshold:
+            log.info("Axis already at value: " + self.name + self.type)
+        # move to value
+        else:
+            self.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread)
 
 
     def start(self, direction: str):
