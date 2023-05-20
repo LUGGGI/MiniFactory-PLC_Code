@@ -16,6 +16,7 @@ class Sensor():
     counter_offset = 0
     '''Control for Senors
     
+    detect(): Returns value of Sensor
     start_monitor(): Start monitoring sensor for detection.
     remove_monitor(): Stop monitoring sensor.
     is_detected(): Returns True if product was detected.
@@ -41,6 +42,11 @@ class Sensor():
 
     def __del__(self):
         log.debug("Destroyed Sensor: " + self.name)
+
+    
+    def detect(self) -> bool:
+        '''Returns value of Sensor'''
+        return self.__revpi.io[self.name].value     
 
 
     def start_monitor(self, edge=BOTH):

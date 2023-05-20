@@ -15,7 +15,6 @@ from actuator import Actuator
 from conveyor import Conveyor
 
 class State(Enum):
-    INIT = 0
     TO_MILL = 1
     MILLING = 2        
     TO_DRILL = 3
@@ -25,7 +24,7 @@ class State(Enum):
     ERROR = 999
 
 class IndexLine(Machine):
-    '''Controls the drill and mill machine and the surrounding conveyors
+    '''Controls the Index Line
 
     run(): Runs the Index Line routine.
     '''
@@ -34,7 +33,7 @@ class IndexLine(Machine):
 
 
     def __init__(self, revpi, name: str):
-        '''Initializes the Multi Purpose Station
+        '''Initializes the Index Line
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
