@@ -68,7 +68,7 @@ class Actuator():
         self.start(direction)
 
         try:
-            Sensor(self.__revpi, stop_sensor).wait_for_detect(timeout_in_s)
+            Sensor(self.__revpi, stop_sensor).wait_for_detect(timeout_in_s=timeout_in_s)
             time.sleep(stop_delay_in_ms/1000)
         except:
             raise
@@ -157,7 +157,7 @@ class Actuator():
         :direction: Motor direction, (last part of whole name)
         '''
         actuator = self.name + "_" + direction
-        log.info("Started motor: " + actuator)
+        log.info("Started actuator: " + actuator)
         self.__revpi.io[actuator].value = True 
 
 
@@ -167,5 +167,5 @@ class Actuator():
         :direction: Motor direction, (last part of whole name)
         '''
         actuator = self.name + "_" + direction
-        log.info("Started motor: " + actuator)
+        log.info("Stopped actuator: " + actuator)
         self.__revpi.io[actuator].value = False 
