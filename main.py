@@ -14,6 +14,7 @@ from time import sleep
 from enum import Enum
 from revpimodio2 import RevPiModIO
 
+from exit_handler import ExitHandler
 from logger import log
 from sensor import Sensor
 from actuator import Actuator
@@ -42,16 +43,18 @@ class MainLoop:
             self.revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi\RevPi82247.img")
         self.revpi.mainloop(blocking=False)
 
-        self.machine = Machine(self.revpi, "Main")
-        self.state = self.machine.switch_state(State.TEST)
+        self.exit_handler = ExitHandler(self.revpi)
 
-        while(True):
+        self.machine = Machine(self.revpi, "Main")
+        self.state = self.machine.switch_state(State.CB1)
+
+        while(not self.machine.error_exception_in_machine):
             if self.mainloop() == False:
                 break
             sleep(1)
 
     def __del__(self):
-        log.debug("End of program")
+        log.info("End of program")
         sleep(1)
         self.revpi.exit(full=True)
 
@@ -87,6 +90,7 @@ class MainLoop:
 
         if self.state == State.ERROR:
             log.error("Error in Mainloop")
+            self.exit_handler.stop_factory()
             return False
         elif self.state == State.END:
             return False
@@ -122,12 +126,12 @@ class MainLoop:
     def state_cb1(self):
         if self.machine.state_is_init == False:
                 self.cb1 = Conveyor(self.revpi, "CB1")
-                self.cb1.run_for_time("FWD", "CB1_SENS_END", 10)
+                self.cb1.run_to_stop_sensor("FWD", "CB1_SENS_END")
 
                 self.start_cb2 = Sensor(self.revpi, "CB1_SENS_END")
                 self.start_cb2.start_monitor()
                 self.machine.state_is_init = True
-        if self.cb1.error_no_product_found:
+        if self.cb1.error_exception_in_machine:
             self.state = self.machine.switch_state(State.ERROR)
         elif self.start_cb2.is_detected():
             del self.cb1
@@ -136,9 +140,9 @@ class MainLoop:
     def state_cb2(self):
         if self.machine.state_is_init == False:
                 self.cb2 = Conveyor(self.revpi, "CB2")
-                self.cb2.run_to_stop_sensor("FWD", "CB2_SENS_END", 10)
+                self.cb2.run_to_stop_sensor("FWD", "CB2_SENS_END")
                 self.machine.state_is_init = True
-        if self.cb2.error_no_product_found:
+        if self.cb2.error_exception_in_machine:
             self.state = self.machine.switch_state(State.ERROR)
         elif self.cb2.ready_for_transport:
             del self.cb2
