@@ -57,12 +57,14 @@ class Machine:
         return state_time
     
 
-    def switch_state(self, state):
+    def switch_state(self, state, wait=False):
         '''Switch to given state and save state start time.
         
         :state: state Enum to switch to
         '''
+        if wait:
+            input("Press any key to go to switch: "  + self.name + " to state: "+ str(state.name) + "...")
         self.__state_time_start = datetime.now()
         self.state_is_init = False
-        log.warning(self.name + ": Switching state to: " + str(state))
+        log.warning(self.name + ": Switching state to: " + str(state.name))
         return state
