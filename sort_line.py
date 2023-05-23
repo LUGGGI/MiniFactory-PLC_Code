@@ -1,9 +1,12 @@
-'''
-This module controls the Sorting Line, it inherits from machine
+'''This module controls the Sorting Line, it inherits from machine'''
 
-Author: Lukas Beck
-Date: 20.05.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import threading
 from time import sleep
 from enum import Enum

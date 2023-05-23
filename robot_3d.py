@@ -1,9 +1,12 @@
-'''
-This module controls the 3D Robots, it inherits from machine
+'''This module controls the 3D Robots, it inherits from Machine'''
 
-Author: Lukas Beck
-Date: 18.05.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import threading
 
 from logger import log
@@ -23,13 +26,18 @@ class Position:
         return f"({self.rotation}, {self.horizontal},  {self.vertical})"  
 
 class Robot3D(Machine):
-    '''Controls the 3D Robot
+    '''Controls the 3D Robot.
     
     move_all_axes(): Makes linear move to give position.
     move_axis(): Moves one axis to the given trigger value.
     '''
 
     def __init__(self, revpi, name: str):
+        '''Initializes the 3D Robot
+        
+        :revpi: RevPiModIO Object to control the motors and sensors
+        :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        '''
         super().__init__(revpi, name)
 
         self.move_threshold_rot = 40

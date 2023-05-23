@@ -1,9 +1,11 @@
-'''
-This module allows logging to file and console
+'''This module allows logging to file and console'''
 
-Author: Lukas Beck
-Date: 17.04.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
 
 import logging
 import argparse

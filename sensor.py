@@ -1,9 +1,12 @@
-'''
-This module handles communication with Sensors
+'''This module handles communication with Sensors'''
 
-Author: Lukas Beck
-Date: 19.15.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import time
 from revpimodio2 import RevPiModIO, BOTH
 

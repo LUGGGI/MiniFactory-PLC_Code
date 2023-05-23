@@ -1,9 +1,12 @@
-'''
-This module controls the Gripper Robots, it inherits from Robot3D
+'''This module controls the Gripper Robots, it inherits from Robot3D'''
 
-Author: Lukas Beck
-Date: 17.05.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import threading
 from enum import Enum
 

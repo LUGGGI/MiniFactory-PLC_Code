@@ -1,24 +1,37 @@
-'''
-This stops the factory
+'''This handles exit/stop of factory'''
 
-Author: Lukas Beck
-Date: 20.05.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 from revpimodio2 import RevPiModIO
 import signal
 
 from logger import log
+
 class ExitHandler:
+    '''Stops the factory, and handles CTRL+C
+    
+    stop_factory: Disables the API for factory and stops all Actuators
+    '''
     def __init__(self, revpi: RevPiModIO) -> None:
+        '''Initializes the ExitHandler
+        
+        :revpi: RevPiModIO Object to control the motors and sensors
+        '''
         self.revpi = revpi
 
         signal.signal(signal.SIGINT, self.stop_factory)
 
-    def stop_factory(self, signal=None, frame=None ):
-        '''Disables the api for factory and stops all motors'''
+
+    def stop_factory(self, *_):
+        '''Disables the API for factory and stops all Actuators'''
 
         log.info("Program aborted: ")
-        self.revpi.cleanup()
+        self.revpi.cleanup() # stop API access for factory
 
         try:
             exit_revpi = RevPiModIO(autorefresh=True)

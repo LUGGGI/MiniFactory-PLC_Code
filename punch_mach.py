@@ -1,9 +1,12 @@
-'''
-This module controls the Punching Line with the connected conveyor, it inherits from machine
+'''This module controls the Punching Line with the connected Conveyor, it inherits from Machine'''
 
-Author: Lukas Beck
-Date: 19.05.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import threading
 from enum import Enum
 
@@ -82,7 +85,7 @@ class PunchMach(Machine):
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
-            self.error_no_product_found = True
+            self.error_exception_in_machine = True
             log.exception(error)
         else:
             self.state = self.switch_state(State.END)

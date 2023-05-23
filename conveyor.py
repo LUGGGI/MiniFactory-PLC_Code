@@ -1,9 +1,12 @@
-'''
-This module controls a Conveyor, it inherits from Machine
+'''This module controls a Conveyor, it inherits from Machine'''
 
-Author: Lukas Beck
-Date: 20.05.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import threading
 from enum import Enum
 
@@ -66,9 +69,12 @@ class Conveyor(Machine):
             motor = Actuator(self.revpi, self.name)
             motor.run_to_sensor(direction, stop_sensor, stop_delay_in_ms, timeout_in_s)
         except Exception as error:
-            log.exception(error)
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
+            if self.name.find("_") != -1: # if called from another module
+                raise
+            else:
+                log.exception(error)
         else:
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
@@ -95,9 +101,12 @@ class Conveyor(Machine):
             encoder.reset_encoder()
             Actuator(self.revpi, self.name).run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s)
         except Exception as error:
-            log.exception(error)
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
+            if self.name.find("_") != -1: # if called from another module
+                raise
+            else:
+                log.exception(error)
         else:
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True

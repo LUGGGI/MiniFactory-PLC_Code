@@ -1,9 +1,12 @@
-'''
-This module handles communication with Actuators
+'''This module handles communication with Actuators'''
 
-Author: Lukas Beck
-Date: 19.05.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import threading
 import time
 from revpimodio2 import RevPiModIO
@@ -22,6 +25,8 @@ class Actuator():
     run_for_time(): Run Actuator for certain amount of time.
     '''
     thread = None
+
+
     def __init__(self, revpi: RevPiModIO, name: str, type=""):
         '''Initializes the Actuator
         
@@ -179,21 +184,25 @@ class Actuator():
             self.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread)
 
 
-    def start(self, direction: str):
+    def start(self, direction: str=""):
         '''Start Actuator
         
         :direction: Motor direction, (last part of whole name)
         '''
-        actuator = self.name + "_" + direction
+        actuator = self.name
+        if direction != "":
+            actuator += "_" + direction
         log.info("Started actuator: " + actuator)
         self.__revpi.io[actuator].value = True 
 
 
-    def stop(self, direction: str):
+    def stop(self, direction: str=""):
         '''Stop Actuator
         
         :direction: Motor direction, (last part of whole name)
         '''
-        actuator = self.name + "_" + direction
+        actuator = self.name
+        if direction != "":
+            actuator += "_" + direction
         log.info("Stopped actuator: " + actuator)
         self.__revpi.io[actuator].value = False 

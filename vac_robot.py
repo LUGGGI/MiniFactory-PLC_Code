@@ -1,14 +1,16 @@
-'''
-This module controls the Vacuum Robot, it inherits from Robot3D
+'''This module controls the Vacuum Robot, it inherits from Robot3D'''
 
-Author: Lukas Beck
-Date: 17.05.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import threading
 from enum import Enum
 
 from logger import log
-from sensor import Sensor
 from actuator import Actuator
 from robot_3d import Robot3D, Position
 
@@ -33,6 +35,11 @@ class VacRobot(Robot3D):
 
 
     def __init__(self, revpi, name: str):
+        '''Initializes the Vacuum Robot.
+        
+        :revpi: RevPiModIO Object to control the motors and sensors
+        :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        '''
         super().__init__(revpi, name)
         self.state = None
 
@@ -41,8 +48,10 @@ class VacRobot(Robot3D):
 
         log.debug("Created Vacuum Robot: " + self.name)
 
+
     def __del__(self):
         log.debug("Destroyed Vacuum Robot: " + self.name)
+
 
     def init(self, as_thread=False):
         '''Move to init position.
@@ -66,6 +75,7 @@ class VacRobot(Robot3D):
             log.exception(error)
         else:
             log.info("Moved to init position: " + self.name)
+            
 
     def move_to_position(self, position: Position, at_product=False, over_init_position=False, as_thread=False):
         '''Moves to the given position.
