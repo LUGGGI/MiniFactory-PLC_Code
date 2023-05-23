@@ -1,9 +1,12 @@
-'''
-This module controls the Warehouse, it inherits from machine
+'''This module controls the Warehouse, it inherits from Machine'''
 
-Author: Lukas Beck
-Date: 18.05.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import threading
 from enum import Enum
 
@@ -19,22 +22,22 @@ class State(Enum):
     MOVING_TO_RACK = 2
     GETTING_PRODUCT = 3
     SETTING_PRODUCT = 4
-    CB_BWD = 4
-    CB_FWD = 5
+    CB_BWD = 5
+    CB_FWD = 6
     END = 100
     ERROR = 999
 
 class ShelfPos(Enum):
     # [Horizontal, Vertical]
-    SHELF_1_1 = [1500, 200]
-    SHELF_1_2 = [1500, 950]
-    SHELF_1_3 = [1500, 1700]
+    SHELF_1_1 = [1540, 200]
+    SHELF_1_2 = [1540, 900]
+    SHELF_1_3 = [1540, 1700]
     SHELF_2_1 = [2675, 200]
-    SHELF_2_2 = [2675, 950]
-    SHELF_2_3 = [2650, 1700]
-    SHELF_3_1 = [3825, 200]
-    SHELF_3_2 = [3825, 950]
-    SHELF_3_3 = [3825, 1700]
+    SHELF_2_2 = [2675, 900]
+    SHELF_2_3 = [2675, 1700]
+    SHELF_3_1 = [3840, 200]
+    SHELF_3_2 = [3840, 900]
+    SHELF_3_3 = [3840, 1700]
 
 class Warehouse(Machine):
     '''Controls the Warehouse
@@ -44,11 +47,16 @@ class Warehouse(Machine):
     move_to_position(): Moves Crane given coordinates.
     move_axis(): Moves one axis to the given trigger value.
     '''
-    POS_CB_HORIZONTAL = 75
-    POS_CB_VERTICAL = 1500
+    POS_CB_HORIZONTAL = 55
+    POS_CB_VERTICAL = 1400
 
 
     def __init__(self, revpi, name: str):
+        '''Initializes the Warehouse
+        
+        :revpi: RevPiModIO Object to control the motors and sensors
+        :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        '''
         super().__init__(revpi, name)
         self.state = None
 
@@ -77,6 +85,35 @@ class Warehouse(Machine):
         log.debug("Destroyed Warehouse: " + self.name)
 
 
+    def init(self, as_thread=False):
+        '''Move to init position.
+        
+        :as_thread: Runs the function as a thread
+        '''
+        # call this function again as a thread
+        if as_thread:
+            self.thread = threading.Thread(target=self.init, args=(), name=self.name)
+            self.thread.start()
+            return
+        self.state = self.switch_state(State.INIT)
+        self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
+        self.move_to_position(0, 0)
+
+    def test(self, as_thread=False):
+        # call this function again as a thread
+        if as_thread:
+            self.thread = threading.Thread(target=self.test, args=(), name=self.name)
+            self.thread.start()
+            return
+
+        for pos in ShelfPos:
+            self.state = self.switch_state(State.MOVING_TO_RACK, True)
+            self.move_to_position(pos.value[0], pos.value[1])
+
+        self.ready_for_transport = True
+
+
+
     def store_product(self, shelf: ShelfPos, as_thread=False):
         '''Stores a product at given position.
 
@@ -89,35 +126,36 @@ class Warehouse(Machine):
             self.thread.start()
             return
         
-        horizontal = shelf[0]
-        vertical = shelf[1]
+        horizontal = shelf.value[0]
+        vertical = shelf.value[1]
         log.info("Store product at: " + str(f"({horizontal},{vertical})"))
         try:
-            # move product to inside
-            self.state = self.switch_state(State.CB_BWD)
-            self.cb.run_to_stop_sensor("BWD", self.name + "_SENS_IN", as_thread=True)
-
-            # move to cb
-            self.state = self.switch_state(State.MOVING_TO_CB)
+            # move crane to cb
+            self.state = self.switch_state(State.MOVING_TO_CB, True)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
             self.move_to_position(self.POS_CB_HORIZONTAL, self.POS_CB_VERTICAL)
-            self.cb.thread.join()
+            self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
+
+            # move product to inside
+            self.state = self.switch_state(State.CB_FWD, True)
+            self.cb.run_to_stop_sensor("FWD", self.name + "_SENS_IN")
 
             # get product from cb
-            self.state = self.switch_state(State.GETTING_PRODUCT)
-            self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
+            self.state = self.switch_state(State.GETTING_PRODUCT, True)
             self.move_to_position(-1, self.POS_CB_VERTICAL - 100)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
 
-            # move to given rack
-            self.state = self.switch_state(State.MOVING_TO_RACK)
+            # move crane to given rack
+            self.state = self.switch_state(State.MOVING_TO_RACK, True)
             self.move_to_position(horizontal, vertical - 100)
 
             # store product in rack
-            self.state = self.switch_state(State.SETTING_PRODUCT)
+            self.state = self.switch_state(State.SETTING_PRODUCT, True)
             self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
             self.move_to_position(-1, vertical)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK, as_thread=True)
+
+            self.init(as_thread=True) # return to start
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -126,6 +164,7 @@ class Warehouse(Machine):
         else:
             self.state = self.switch_state(State.END)
             self.ready_for_next = True
+            self.stage += 1
             log.info("Product stored at: " + str(f"({horizontal},{vertical})"))
 
 
@@ -142,34 +181,34 @@ class Warehouse(Machine):
             self.thread.start()
             return
         
-        horizontal = shelf[0]
-        vertical = shelf[1]
+        horizontal = shelf.value[0]
+        vertical = shelf.value[1]
         log.info("Retrieve product from: " + str(f"({horizontal},{vertical})"))
         try:
             # move to given rack
-            self.state = self.switch_state(State.MOVING_TO_RACK)
+            self.state = self.switch_state(State.MOVING_TO_RACK, True)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
             self.move_to_position(horizontal, vertical)
 
             # get product from rack
-            self.state = self.switch_state(State.GETTING_PRODUCT)
+            self.state = self.switch_state(State.GETTING_PRODUCT, True)
             self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
-            self.move_to_position(-1, self.POS_CB_VERTICAL - 100)
+            self.move_to_position(-1, vertical - 100)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
 
             # move to cb
-            self.state = self.switch_state(State.MOVING_TO_CB)
+            self.state = self.switch_state(State.MOVING_TO_CB, True)
             self.move_to_position(self.POS_CB_HORIZONTAL, self.POS_CB_VERTICAL - 100)
 
             # put product on cb
-            self.state = self.switch_state(State.SETTING_PRODUCT)
+            self.state = self.switch_state(State.SETTING_PRODUCT, True)
             self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
-            self.move_to_position(-1, vertical)
+            self.move_to_position(-1, self.POS_CB_VERTICAL)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK, as_thread=True)
 
             # move product to outside
-            self.state = self.switch_state(State.CB_FWD)
-            self.cb.run_to_stop_sensor("FWD", self.name + "_SENS_OUT")
+            self.state = self.switch_state(State.CB_BWD, True)
+            self.cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT")
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -178,6 +217,7 @@ class Warehouse(Machine):
         else:
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
+            self.stage += 1
             log.info("Retrieved product from: " + str(f"({horizontal},{vertical})"))
 
 
@@ -207,7 +247,7 @@ class Warehouse(Machine):
         dir_hor = "TO_RACK"
         dir_ver = "DOWN"
         if horizontal < current_horizontal:
-            dir_hor = "TO_RACK"
+            dir_hor = "TO_CB"
         if vertical < current_vertical:
             dir_ver = "UP"
 
