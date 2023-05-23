@@ -15,8 +15,6 @@ from logger import log
 detection = False
 
 class Sensor():
-    CYCLE_TIME = 0.02 # s
-    counter_offset = 0
     '''Control for Senors
     
     detect(): Returns value of Sensor
@@ -29,6 +27,9 @@ class Sensor():
     reset_encoder(): Resets the encoder or counter to 0.
     get_encoder_value(): Returns the current value of the encoder.
     '''
+    CYCLE_TIME = 0.02 # s
+    counter_offset = 0
+    encoder_pre_stop = 30
 
     def __init__(self, revpi: RevPiModIO, name: str):
         '''Initializes the Sensor
@@ -116,6 +117,13 @@ class Sensor():
         if trigger_value < counter - self.counter_offset :
             higher = False
             self.counter_start = counter
+        
+        # stop actuator a bit bevor to account for overrun
+        if self.name.find("ENCODER") != -1:
+            if higher:
+                trigger_value -= self.encoder_pre_stop 
+            else:
+                trigger_value += self.encoder_pre_stop
 
         while(True):
             # wait for encoder or counter to be higher than the trigger_value
@@ -153,11 +161,11 @@ class Sensor():
         for i in range(15):
             self.__revpi.io[self.name].reset()
             # wait until the actuator has stopped
-            time.sleep(0.04)
+            time.sleep(0.06)
             if self.__revpi.io[self.name].value == 0:
-                break
-
-        log.info("Reset encoder: " + self.name)
+                log.info("Reset encoder: " + self.name)
+                return
+        raise(Exception(self.name + ": ERROR while reset"))
 
 
     def get_encoder_value(self):

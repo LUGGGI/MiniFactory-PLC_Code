@@ -64,6 +64,8 @@ class Actuator():
             self.thread.start()
             return
 
+        log.info(actuator + ": Actuator running to sensor: " + stop_sensor)
+
         # check if stop_sensor is a reverence switch and already pressed
         if stop_sensor.find("REF_SW") != -1 and self.__revpi.io[stop_sensor].value == True:
             log.info("Detection already at stop position: " + stop_sensor + ", for: " + actuator)
@@ -89,6 +91,8 @@ class Actuator():
         :wait_time_in_s: Time after which the actuator stops
         :check_sensor: If given, checks if detection occurs if not ->panics
         '''
+        log.info(self.name + "_" + direction + ": Actuator running for time: " + wait_time_in_s)
+
         #start actuator
         self.start(direction)
         
@@ -122,6 +126,8 @@ class Actuator():
             self.thread.start()
             return
 
+        log.info(self.name + "_" + direction + ": Actuator moving to value: " + str(trigger_value) + ", at: " + encoder.name)
+
         #start actuator
         self.start(direction)
 
@@ -149,6 +155,7 @@ class Actuator():
             self.thread.start()
             return
 
+        log.info(self.name + "_" + direction + ": Actuator moving to encoder start")
         try:
             self.run_to_sensor(direction, stop_sensor, timeout_in_s, as_thread=False)
             encoder.reset_encoder()
