@@ -1,9 +1,12 @@
-'''
-This module controls the Multi Purpose Station, it inherits from machine
+'''This module controls the Multi Purpose Station, it inherits from Machine'''
 
-Author: Lukas Beck
-Date: 01.05s.2023
-'''
+__author__ = "Lukas Beck"
+__email__ = "st166506@stud.uni-stuttgart.de"
+__copyright__ = "Lukas Beck"
+
+__license__ = "GPL"
+__version__ = "2023.05.23"
+
 import threading
 from time import sleep
 from enum import Enum
@@ -61,19 +64,21 @@ class MPStation(Machine):
             return
 
         try:
-            compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
-            compressor.start("")
 
             # Move oven tray into oven and close door
             self.state = self.switch_state(State.OVEN)
+            compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
             tray = Actuator(self.revpi, self.name + "_OVEN_TRAY")
             oven_door_valve = Actuator(self.revpi, self.name + "_VALVE_OVEN_DOOR")
 
+            compressor.start("")
             oven_door_valve.start("") # open door
+            sleep(0.2)
             tray.run_to_sensor("IN", self.name + "_REF_SW_OVEN_TRAY_IN") # move tray in
             oven_door_valve.stop("") # close door
             Actuator(self.revpi, self.name + "_LIGHT_OVEN").run_for_time("", self.__TIME_OVEN) # turn light on for time
             oven_door_valve.start("") # open door
+            # sleep(0.5)
             tray.run_to_sensor("OUT", self.name + "_REF_SW_OVEN_TRAY_OUT") # move tray out
             oven_door_valve.stop("") # close door
 
@@ -86,21 +91,23 @@ class MPStation(Machine):
             vg_valve = Actuator(self.revpi, self.name + "_VALVE_VG_VACUUM")
             vg_lower_valve = Actuator(self.revpi, self.name + "_VALVE_VG_LOWER")
             vg_motor = Actuator(self.revpi, self.name + "_VG")
+            table = Actuator(self.revpi, self.name + "_TABLE")
 
-            vg_valve.start("") # start vacuum at gripper
+            table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
+
+            vg_motor.run_to_sensor("TO_OVEN", self.name + "_REF_SW_VG_OVEN") # move vg to oven
             vg_lower_valve.run_for_time("", 1) # lower gripper
+            vg_valve.start("") # create vacuum at gripper
             sleep(1) # wait for gripper to be at top
             vg_motor.run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE") # move vg to table
             vg_lower_valve.run_for_time("", 1) # lower gripper
             vg_valve.stop("") # stop vacuum at gripper
-            vg_motor.run_to_sensor("TO_OVEN", self.name + "_REF_SW_VG_OVEN", as_thread=True) # move vg back to oven
+            # vg_motor.run_to_sensor("TO_OVEN", self.name + "_REF_SW_VG_OVEN", as_thread=True) # move vg back to oven
 
             del vg_valve
             del vg_lower_valve
             del vg_motor
 
-
-            table = Actuator(self.revpi, self.name + "_TABLE")
 
             # rotate table to saw
             self.state = self.switch_state(State.TO_SAW)
@@ -117,9 +124,9 @@ class MPStation(Machine):
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_CB") # rotate table to cb
             Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON").run_for_time("", 1)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table back to vg
+            compressor.stop("")
 
             del table
-            compressor.stop("")
             del compressor
 
 
@@ -129,7 +136,7 @@ class MPStation(Machine):
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
-            self.error_no_product_found = True
+            self.error_exception_in_machine = True
             log.exception(error)
         else:
             self.state = self.switch_state(State.END)
