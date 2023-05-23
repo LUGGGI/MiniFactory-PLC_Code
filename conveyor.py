@@ -56,7 +56,7 @@ class Conveyor(Machine):
         '''
         # call this function again as a thread
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run_to_stop_sensor, args=(direction, stop_sensor, stop_delay_in_ms, timeout_in_s), name=self.name)
+            self.thread = threading.Thread(target=self.run_to_stop_sensor, args=(direction, stop_sensor, start_sensor, stop_delay_in_ms, timeout_in_s), name=self.name)
             self.thread.start()
             return
         
