@@ -94,9 +94,9 @@ class Sensor():
         '''
         if self.__revpi.io[self.name].wait(edge=edge, timeout=timeout_in_s*1000) == False:
             # sensor detected product
-            log.info("Detection at: " + self.name) 
+            log.info(f"{self.name} :Detection") 
         else:
-            raise(Exception("No detection at: " + self.name))
+            raise(Exception(f"{self.name} :No detection"))
            
    
     def wait_for_encoder(self, trigger_value: int, timeout_in_s=10):
@@ -109,7 +109,7 @@ class Sensor():
         '''
         counter = self.__revpi.io[self.name].value
         if counter > 10000:
-            raise(Exception("Counter negativ for: " + self.name))
+            raise(Exception(f"{self.name} :Counter negativ"))
         
         start = time.time()
         higher = True
@@ -128,19 +128,19 @@ class Sensor():
         while(True):
             # wait for encoder or counter to be higher than the trigger_value
             if higher and self.__revpi.io[self.name].value - self.counter_offset >= trigger_value:
-                log.info("Count reached at: " + self.name + ": " + str(self.__revpi.io[self.name].value - self.counter_offset)) 
+                log.info(f"{self.name} :Count reached: " + str(self.__revpi.io[self.name].value - self.counter_offset)) 
                 break
             # wait for counter to be lower that trigger_value
             elif not higher and self.name.find("COUNTER") != -1 and self.__positive_to_negativ() - self.counter_offset <= trigger_value:
-                log.info("Count reached at: " + self.name + ": " + str(self.__positive_to_negativ() - self.counter_offset)) 
+                log.info(f"{self.name} :Count reached: " + str(self.__positive_to_negativ() - self.counter_offset)) 
                 break
             # wait for encoder to be lower that trigger_value
             elif not higher and self.__revpi.io[self.name].value <= trigger_value:
-                log.info("Count reached at: " + self.name + ": " + str(self.__revpi.io[self.name].value)) 
+                log.info(f"{self.name} :Count reached: " + str(self.__revpi.io[self.name].value)) 
                 break
             # check if timeout time is reached 
             elif time.time() >= start + timeout_in_s:
-                raise(Exception("No detection at: " + self.name))
+                raise(Exception(f"{self.name} :No detection"))
             
             # wait for next cycle
             time.sleep(self.CYCLE_TIME)
@@ -165,7 +165,7 @@ class Sensor():
             if self.__revpi.io[self.name].value == 0:
                 log.info("Reset encoder: " + self.name)
                 return
-        raise(Exception(self.name + ": ERROR while reset"))
+        raise(Exception(f"{self.name} :ERROR while reset"))
 
 
     def get_encoder_value(self):
@@ -173,8 +173,8 @@ class Sensor():
         return self.__revpi.io[self.name].value - self.counter_offset
         
         
-def event_det_at_sensor(io_name, _):
+def event_det_at_sensor(io_name, __):
     '''Set detection to True'''
-    log.info("Detection at: " + str(io_name))
+    log.info(f"{io_name} :Detection")
     global detection 
     detection = True    

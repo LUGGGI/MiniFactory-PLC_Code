@@ -34,14 +34,13 @@ class VacRobot(Robot3D):
     VALVE = "VALVE_VACUUM"
 
 
-    def __init__(self, revpi, name: str):
+    def __init__(self, revpi, name: str, moving_position=Position(-1, -1, 1400)):
         '''Initializes the Vacuum Robot.
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
-        super().__init__(revpi, name)
-        self.state = None
+        super().__init__(revpi, name, moving_position)
 
         self.compressor = Actuator(self.revpi, self.name, "compressor")
         self.valve = Actuator(self.revpi, self.name, "valve")
@@ -126,8 +125,9 @@ class VacRobot(Robot3D):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            self.state = self.switch_state(State.END)
             log.info("Position reached: " + str(position))
+            self.state = self.switch_state(State.END)
+            self.stage += 1
 
         # if moved product
         if at_product:

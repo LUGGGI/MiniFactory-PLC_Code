@@ -64,11 +64,11 @@ class Actuator():
             self.thread.start()
             return
 
-        log.info(actuator + ": Actuator running to sensor: " + stop_sensor)
+        log.info(f"{actuator} :Actuator running to sensor: {stop_sensor}")
 
         # check if stop_sensor is a reverence switch and already pressed
         if stop_sensor.find("REF_SW") != -1 and self.__revpi.io[stop_sensor].value == True:
-            log.info("Detection already at stop position: " + stop_sensor + ", for: " + actuator)
+            log.info(f"{actuator} :Detection already at stop position: {stop_sensor}")
             return
 
         #start actuator
@@ -91,7 +91,7 @@ class Actuator():
         :wait_time_in_s: Time after which the actuator stops
         :check_sensor: If given, checks if detection occurs if not ->panics
         '''
-        log.info(self.name + "_" + direction + ": Actuator running for time: " + wait_time_in_s)
+        log.info(f"{self.name}_{direction} :Actuator running for time: {wait_time_in_s}")
 
         #start actuator
         self.start(direction)
@@ -102,13 +102,13 @@ class Actuator():
             sensor.start_monitor()
 
         time.sleep(wait_time_in_s) # Wait for given time
-        log.info("Run time reached: " + self.name + "_" + direction)
+        log.info(f"{self.name}_{direction} :Run time reached")
 
         #stop actuator
         self.stop(direction)
 
         if check_sensor and sensor.is_detected() == False:
-            raise(Exception("No detection at: " + check_sensor))
+            raise(Exception(f"{check_sensor} :No detection"))
 
 
     def run_to_encoder_value(self, direction: str, encoder: Sensor, trigger_value: int, timeout_in_s=20, as_thread=False):
@@ -126,7 +126,7 @@ class Actuator():
             self.thread.start()
             return
 
-        log.info(self.name + "_" + direction + ": Actuator moving to value: " + str(trigger_value) + ", at: " + encoder.name)
+        log.info(f"{self.name}_{direction} :Actuator moving to value: {trigger_value}, at: {encoder.name}")
 
         #start actuator
         self.start(direction)
@@ -155,7 +155,7 @@ class Actuator():
             self.thread.start()
             return
 
-        log.info(self.name + "_" + direction + ": Actuator moving to encoder start")
+        log.info(f"{self.name}_{direction} :Actuator moving to encoder start")
         try:
             self.run_to_sensor(direction, stop_sensor, timeout_in_s, as_thread=False)
             encoder.reset_encoder()
@@ -185,7 +185,7 @@ class Actuator():
             self.run_to_encoder_start(direction, ref_sw, encoder, timeout_in_s, as_thread)
         # if trigger value is the same as the current value don't move
         elif abs(current_value - trigger_value) < move_threshold:
-            log.info("Axis already at value: " + self.name + self.type)
+            log.info(f"{self.name}_{direction} :Axis already at value")
         # move to value
         else:
             self.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread)
@@ -199,7 +199,7 @@ class Actuator():
         actuator = self.name
         if direction != "":
             actuator += "_" + direction
-        log.info("Started actuator: " + actuator)
+        log.info(f"{actuator} :Started actuator")
         self.__revpi.io[actuator].value = True 
 
 
@@ -211,5 +211,5 @@ class Actuator():
         actuator = self.name
         if direction != "":
             actuator += "_" + direction
-        log.info("Stopped actuator: " + actuator)
+        log.info(f"{actuator} :Stopped actuator")
         self.__revpi.io[actuator].value = False 

@@ -17,6 +17,7 @@ class ExitHandler:
     
     stop_factory: Disables the API for factory and stops all Actuators
     '''
+    was_called = False
     def __init__(self, revpi: RevPiModIO) -> None:
         '''Initializes the ExitHandler
         
@@ -29,7 +30,7 @@ class ExitHandler:
 
     def stop_factory(self, *_):
         '''Disables the API for factory and stops all Actuators'''
-
+        self.was_called = True
         log.info("Program aborted: ")
         self.revpi.cleanup() # stop API access for factory
 

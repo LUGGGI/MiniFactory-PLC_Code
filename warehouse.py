@@ -162,10 +162,10 @@ class Warehouse(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
+            log.info("Product stored at: " + str(f"({horizontal},{vertical})"))
             self.state = self.switch_state(State.END)
             self.ready_for_next = True
             self.stage += 1
-            log.info("Product stored at: " + str(f"({horizontal},{vertical})"))
 
 
     def retrieve_product(self, shelf: ShelfPos, as_thread=False):
@@ -215,10 +215,10 @@ class Warehouse(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
+            log.info("Retrieved product from: " + str(f"({horizontal},{vertical})"))
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
             self.stage += 1
-            log.info("Retrieved product from: " + str(f"({horizontal},{vertical})"))
 
 
     def move_to_position(self, horizontal: int, vertical: int, as_thread=False):
@@ -246,9 +246,9 @@ class Warehouse(Machine):
         # get motor directions
         dir_hor = "TO_RACK"
         dir_ver = "DOWN"
-        if horizontal < current_horizontal:
+        if horizontal <= current_horizontal:
             dir_hor = "TO_CB"
-        if vertical < current_vertical:
+        if vertical <= current_vertical:
             dir_ver = "UP"
 
         

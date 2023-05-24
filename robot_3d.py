@@ -32,13 +32,15 @@ class Robot3D(Machine):
     move_axis(): Moves one axis to the given trigger value.
     '''
 
-    def __init__(self, revpi, name: str):
+    def __init__(self, revpi, name: str, moving_position: Position):
         '''Initializes the 3D Robot
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
-        super().__init__(revpi, name)
+        super().__init__(revpi, name, )
+        self.moving_position = moving_position
+        self.state = None
 
         self.move_threshold_rot = 40
         self.move_threshold_hor = 40
@@ -94,11 +96,11 @@ class Robot3D(Machine):
         dir_rot = "CCW"
         dir_hor = "FWD"
         dir_ver = "DOWN"
-        if position.rotation < current_position.rotation:
+        if position.rotation <= current_position.rotation:
             dir_rot = "CW"
-        if position.horizontal < current_position.horizontal:
+        if position.horizontal <= current_position.horizontal:
             dir_hor = "BWD"
-        if position.vertical < current_position.vertical:
+        if position.vertical <= current_position.vertical:
             dir_ver = "UP"
 
         
@@ -108,12 +110,18 @@ class Robot3D(Machine):
         self.motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.move_threshold_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
 
         # wait for end of each move
-        if self.motor_rot.thread.is_alive():
+        try:
             self.motor_rot.thread.join()
-        if self.motor_hor.thread.is_alive():
+        except:
+            pass
+        try:
             self.motor_hor.thread.join()
-        if self.motor_ver.thread.is_alive():
+        except:
+            pass
+        try:
             self.motor_ver.thread.join()
+        except:
+            pass
 
         log.info("Move complete to: " + str(position))
   
