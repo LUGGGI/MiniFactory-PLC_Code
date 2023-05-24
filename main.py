@@ -33,12 +33,27 @@ from warehouse import Warehouse, ShelfPos
 
 class State(Enum):
     INIT = 0
-    CB1 = 1
-    CB2 = 2
-    PM = 3
-    GR1 = 4
+
+    CB1 = 11
+    CB2 = 12
+    CB3 = 12
+    CB4 = 12
+    CB5 = 12
+
+    GR1 = 21
+    GR2 = 22
+    GR3 = 23
+
+    VG = 30
+    VG1 = 31
+    VG2 = 32
+
+    INDX = 4
     MPS = 5
-    WH = 6
+    PM = 6
+    SL = 7
+    WH = 8
+
     END = 100
     ERROR = 999
     TEST = 1000
@@ -56,15 +71,23 @@ class MainLoop:
         self.exit_handler = ExitHandler(self.revpi)
 
         self.machine = Machine(self.revpi, "Main")
-        self.state = self.machine.switch_state(State.WH)
+        self.state = self.machine.switch_state(State.GR2)
 
         while(not self.machine.error_exception_in_machine and not self.machine.ready_for_transport):
             self.mainloop()
-                
             sleep(1)
 
       
     def mainloop(self):
+        if self.state == State.ERROR:
+            log.error("Error in Mainloop")
+            self.exit_handler.stop_factory()
+            self.machine.error_exception_in_machine = True
+        elif self.state == State.END:
+            self.machine.ready_for_transport = True
+            log.info("End of program")
+            self.revpi.cleanup()
+
         if self.state == State.TEST:
             
             motor = Actuator(self.revpi, "GR1")
@@ -81,34 +104,42 @@ class MainLoop:
             
             self.state = self.machine.switch_state(State.END)
 
-            
-        if self.state == State.GR1:
-             self.state_gr1()
-
-        if self.state == State.PM:
-             self.state_pm()
-
-        if self.state == State.CB1:
+        elif self.state == State.CB1:
             self.state_cb1()
-
-        if self.state == State.CB2:
+        elif self.state == State.CB2:
             self.state_cb2()
+        elif self.state == State.CB3:
+            self.state_cb3()
+        elif self.state == State.CB4:
+            self.state_cb4()
+        elif self.state == State.CB5:
+            self.state_cb5()
 
-        if self.state == State.MPS:
+        elif self.state == State.GR1:
+             self.state_gr1()
+        elif self.state == State.GR2:
+             self.state_gr2()
+        elif self.state == State.GR3:
+             self.state_gr3()
+
+        elif self.state == State.VG:
+             self.state_vg()
+        elif self.state == State.VG1:
+             self.state_vg1()
+        elif self.state == State.VG2:
+             self.state_vg2()
+        
+
+        elif self.state == State.INDX:
+             self.state_indx()
+        elif self.state == State.MPS:
             self.state_mps()
-
-        if self.state == State.WH:
-            self.state_wh()
-
-        if self.state == State.ERROR:
-            log.error("Error in Mainloop")
-            self.exit_handler.stop_factory()
-            self.machine.error_exception_in_machine = True
-        elif self.state == State.END:
-            self.machine.ready_for_transport = True
-            log.info("End of program")
-            self.revpi.cleanup()
-
+        elif self.state == State.PM:
+             self.state_pm()
+        elif self.state == State.SL:
+             self.state_sl()
+        elif self.state == State.WH:
+            self.state_wh() 
 
     ####################################################################################################
     # Methods that control the different states for the
@@ -129,15 +160,54 @@ class MainLoop:
         elif not self.gr1.thread.is_alive() and self.gr1.stage == 0:
             # get product from cb1
             self.gr1.move_to_position(Position(225, 60, 2050), at_product=False, as_thread=True)
-            self.gr1.stage = 1
         elif not self.gr1.thread.is_alive() and self.gr1.stage == 1:
             # move product to cb3
             self.gr1.move_to_position(Position(2380, 0, 2050), at_product=True, as_thread=True)
-            self.gr1.stage = 2
         elif not self.gr1.thread.is_alive() and self.gr1.stage == 2:
             # move product to cb2
             self.gr1.move_to_position(Position(3832, 0, 2050), at_product=True, as_thread=True)
-            self.gr1.stage = 2
+
+    def state_gr2(self):
+        if self.machine.state_is_init == False:
+            self.gr2 = GripRobot(self.revpi, "GR2")
+            self.gr2.init(as_thread=True)
+            self.machine.state_is_init = True
+
+        if self.gr2.error_exception_in_machine:
+            self.state = self.machine.switch_state(State.ERROR)
+            return
+        elif self.gr2.ready_for_transport:
+            del self.gr2
+            self.state = self.machine.switch_state(State.END)
+            return
+
+        elif not self.gr2.thread.is_alive() and self.gr2.stage == 0:
+            # get product from cb1
+            self.gr2.move_to_position(Position(225, 60, 2050), at_product=False, as_thread=True)
+        elif not self.gr2.thread.is_alive() and self.gr2.stage == 1:
+            # move product to cb3
+            self.gr2.move_to_position(Position(2380, 0, 2050), at_product=True, as_thread=True)
+
+    def state_gr3(self):
+        if self.machine.state_is_init == False:
+            self.gr3 = GripRobot(self.revpi, "GR3")
+            self.gr3.init(as_thread=True)
+            self.machine.state_is_init = True
+
+        if self.gr3.error_exception_in_machine:
+            self.state = self.machine.switch_state(State.ERROR)
+            return
+        elif self.gr3.ready_for_transport:
+            del self.gr3
+            self.state = self.machine.switch_state(State.END)
+            return
+
+        elif not self.gr3.thread.is_alive() and self.gr3.stage == 0:
+            # get product from cb1
+            self.gr3.move_to_position(Position(225, 60, 2050), at_product=False, as_thread=True)
+        elif not self.gr3.thread.is_alive() and self.gr3.stage == 1:
+            # move product to cb3
+            self.gr3.move_to_position(Position(2380, 0, 2050), at_product=True, as_thread=True)
 
     def state_cb1(self):
         if self.machine.state_is_init == False:
@@ -213,8 +283,8 @@ class MainLoop:
             return
 
         if not self.wh.thread.is_alive() and self.wh.stage == 0:
-            self.wh.test(as_thread=True)
-            # self.wh.store_product(ShelfPos.SHELF_1_1, as_thread=True)
+            # self.wh.test(as_thread=True)
+            self.wh.store_product(ShelfPos.SHELF_1_1, as_thread=True)
         if not self.wh.thread.is_alive() and self.wh.stage == 1:
             self.wh.retrieve_product(ShelfPos.SHELF_1_1, as_thread=True)
             # self.wh.ready_for_transport
