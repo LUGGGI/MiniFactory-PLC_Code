@@ -73,7 +73,7 @@ class MainLoop:
         self.machine = Machine(self.revpi, "Main")
         self.state = self.machine.switch_state(State.GR2)
 
-        while(not self.machine.error_exception_in_machine and not self.machine.ready_for_transport):
+        while(not self.machine.error_exception_in_machine and not self.machine.ready_for_transport and not self.exit_handler.was_called):
             self.mainloop()
             sleep(1)
 
@@ -169,8 +169,8 @@ class MainLoop:
 
     def state_gr2(self):
         if self.machine.state_is_init == False:
-            self.gr2 = GripRobot(self.revpi, "GR2")
-            self.gr2.init(as_thread=True)
+            self.gr2 = GripRobot(self.revpi, "GR2", moving_position=Position(-1, 0, 1100))
+            self.gr2.init(over_moving_position=True, as_thread=True)
             self.machine.state_is_init = True
 
         if self.gr2.error_exception_in_machine:
@@ -182,11 +182,15 @@ class MainLoop:
             return
 
         elif not self.gr2.thread.is_alive() and self.gr2.stage == 0:
-            # get product from cb1
-            self.gr2.move_to_position(Position(225, 60, 2050), at_product=False, as_thread=True)
+            # get product from plate
+            self.gr2.move_to_position(Position(2275, 66, 3250), at_product=False, as_thread=True)
         elif not self.gr2.thread.is_alive() and self.gr2.stage == 1:
-            # move product to cb3
-            self.gr2.move_to_position(Position(2380, 0, 2050), at_product=True, as_thread=True)
+            # move product to mps
+            self.gr2.move_to_position(Position(1340, 36, 1500), at_product=True, as_thread=True)
+        elif not self.gr2.thread.is_alive() and self.gr2.stage == 2:
+            # move back to init
+            self.gr2.init(over_moving_position=True, as_thread=True)
+            self.gr2.ready_for_transport = True
 
     def state_gr3(self):
         if self.machine.state_is_init == False:
@@ -202,10 +206,10 @@ class MainLoop:
             self.state = self.machine.switch_state(State.END)
             return
 
-        elif not self.gr3.thread.is_alive() and self.gr3.stage == 0:
+        elif not self.gr3.thread.is_alive() and self.gr3.stage == 0 and False:
             # get product from cb1
             self.gr3.move_to_position(Position(225, 60, 2050), at_product=False, as_thread=True)
-        elif not self.gr3.thread.is_alive() and self.gr3.stage == 1:
+        elif not self.gr3.thread.is_alive() and self.gr3.stage == 1 and False:
             # move product to cb3
             self.gr3.move_to_position(Position(2380, 0, 2050), at_product=True, as_thread=True)
 

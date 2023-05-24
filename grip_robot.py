@@ -31,11 +31,16 @@ class GripRobot(Robot3D):
     init(): Move to init position.
     move_to_position(): Moves to given position.
     '''
-    GRIPPER_CLOSED = 15
-    GRIPPER_OPENED = 9
-    def __init__(self, revpi, name: str):
-        super().__init__(revpi, name)
-        self.state = None
+    GRIPPER_CLOSED = 12
+    GRIPPER_OPENED = 8
+    def __init__(self, revpi, name: str, moving_position=Position(-1, -1, 1400)):
+        '''Initializes the Gripper Robot.
+        
+        :revpi: RevPiModIO Object to control the motors and sensors
+        :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :moving_position: Positions that the axes should be to allow save moving
+        '''
+        super().__init__(revpi, name, moving_position)
 
         # get encoder and motor for claw
         self.encoder_claw = Sensor(self.revpi, self.name + "_CLAW_COUNTER")
@@ -47,25 +52,28 @@ class GripRobot(Robot3D):
         log.debug("Destroyed Vacuum Robot: " + self.name)
 
 
-    def init(self, as_thread=False):
+    def init(self, over_moving_position=True, as_thread=False):
         '''Move to init position.
         
         :as_thread: Runs the function as a thread
+        :over_moving_position: Moves first to moving position bevor moving to init position
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(), name=self.name + "_init")
+            self.thread = threading.Thread(target=self.init, args=(over_moving_position,), name=self.name + "_INIT")
             self.thread.start()
             return
         
         self.state = self.switch_state(State.INIT)
         try:
             # move to init position
-            self.move_all_axes(Position(-1,-1,1400), as_thread=False)
+            if over_moving_position:
+                self.move_all_axes(self.moving_position, as_thread=False)
             self.move_all_axes(Position(0,0,0), as_thread=True)
             # move claw to init position
             self.motor_claw.run_to_encoder_start("OPEN", self.name + "_REF_SW_CLAW", self.encoder_claw)
             self.motor_claw.run_to_encoder_value("CLOSE", self.encoder_claw, self.GRIPPER_OPENED)
+
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
@@ -95,7 +103,7 @@ class GripRobot(Robot3D):
 
         # grip product
         if at_product:
-            self.state = self.switch_state(State.GRIPPING)
+            self.state = self.switch_state(State.GRIPPING, True)
             try:
                 self.motor_claw.run_to_encoder_value("CLOSE", self.encoder_claw, self.GRIPPER_CLOSED)
             except Exception as error:
@@ -104,27 +112,29 @@ class GripRobot(Robot3D):
                 log.exception(error)
                 return
         try:
-            # move to vertical moving position
-            self.state = self.switch_state(State.TO_MOVING)
-            self.move_all_axes(Position(-1, -1, 1400))
+            # move to moving position
+            self.state = self.switch_state(State.TO_MOVING, True)
+            self.move_all_axes(self.moving_position)
             # move rotation and horizontal axes
-            self.state = self.switch_state(State.MOVING)
-            self.move_all_axes(Position(position.rotation, position.horizontal, -1))
+            self.state = self.switch_state(State.MOVING, True)
+            # only move axis if there was no moving position for axis
+            rotation = position.rotation if self.moving_position.rotation == -1 else -1
+            horizontal = position.horizontal if self.moving_position.horizontal == -1 else -1
+            vertical = position.vertical if self.moving_position.vertical == -1 else -1
+            self.move_all_axes(Position(rotation, horizontal, vertical))
             # move down to destination
-            self.state = self.switch_state(State.TO_DESTINATION)
-            self.move_all_axes(Position(-1, -1, position.vertical))
+            self.state = self.switch_state(State.TO_DESTINATION, True)
+            self.move_all_axes(position)
 
             # release product
-            self.state = self.switch_state(State.RELEASE)
+            self.state = self.switch_state(State.RELEASE, True)
             self.motor_claw.run_to_encoder_value("OPEN", self.encoder_claw, self.GRIPPER_OPENED)
+
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            self.state = self.switch_state(State.END)
             log.info("Position reached: " + str(position))
-
-        # if moved product
-        if at_product:
-            self.ready_for_transport = True
+            self.state = self.switch_state(State.END)
+            self.stage += 1
