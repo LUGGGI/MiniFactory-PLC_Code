@@ -131,26 +131,26 @@ class Warehouse(Machine):
         log.info("Store product at: " + str(f"({horizontal},{vertical})"))
         try:
             # move crane to cb
-            self.state = self.switch_state(State.MOVING_TO_CB, True)
+            self.state = self.switch_state(State.MOVING_TO_CB)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
             self.move_to_position(self.POS_CB_HORIZONTAL, self.POS_CB_VERTICAL)
             self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
 
             # move product to inside
-            self.state = self.switch_state(State.CB_FWD, True)
+            self.state = self.switch_state(State.CB_FWD)
             self.cb.run_to_stop_sensor("FWD", self.name + "_SENS_IN")
 
             # get product from cb
-            self.state = self.switch_state(State.GETTING_PRODUCT, True)
+            self.state = self.switch_state(State.GETTING_PRODUCT)
             self.move_to_position(-1, self.POS_CB_VERTICAL - 100)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
 
             # move crane to given rack
-            self.state = self.switch_state(State.MOVING_TO_RACK, True)
+            self.state = self.switch_state(State.MOVING_TO_RACK)
             self.move_to_position(horizontal, vertical - 100)
 
             # store product in rack
-            self.state = self.switch_state(State.SETTING_PRODUCT, True)
+            self.state = self.switch_state(State.SETTING_PRODUCT)
             self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
             self.move_to_position(-1, vertical)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK, as_thread=True)
@@ -186,28 +186,28 @@ class Warehouse(Machine):
         log.info("Retrieve product from: " + str(f"({horizontal},{vertical})"))
         try:
             # move to given rack
-            self.state = self.switch_state(State.MOVING_TO_RACK, True)
+            self.state = self.switch_state(State.MOVING_TO_RACK)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
             self.move_to_position(horizontal, vertical)
 
             # get product from rack
-            self.state = self.switch_state(State.GETTING_PRODUCT, True)
+            self.state = self.switch_state(State.GETTING_PRODUCT)
             self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
             self.move_to_position(-1, vertical - 100)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
 
             # move to cb
-            self.state = self.switch_state(State.MOVING_TO_CB, True)
+            self.state = self.switch_state(State.MOVING_TO_CB)
             self.move_to_position(self.POS_CB_HORIZONTAL, self.POS_CB_VERTICAL - 100)
 
             # put product on cb
-            self.state = self.switch_state(State.SETTING_PRODUCT, True)
+            self.state = self.switch_state(State.SETTING_PRODUCT)
             self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
             self.move_to_position(-1, self.POS_CB_VERTICAL)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK, as_thread=True)
 
             # move product to outside
-            self.state = self.switch_state(State.CB_BWD, True)
+            self.state = self.switch_state(State.CB_BWD)
             self.cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT")
 
         except Exception as error:
