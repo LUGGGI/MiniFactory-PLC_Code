@@ -23,7 +23,7 @@ class Position:
         self.vertical = vertical
 
     def __str__(self) -> str:
-        return f"({self.rotation}, {self.horizontal},  {self.vertical})"  
+        return f"(r:{self.rotation}, h:{self.horizontal}, v:{self.vertical})"  
 
 class Robot3D(Machine):
     '''Controls the 3D Robot.
@@ -38,7 +38,7 @@ class Robot3D(Machine):
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
-        super().__init__(revpi, name, )
+        super().__init__(revpi, name)
         self.moving_position = moving_position
         self.state = None
 
@@ -84,7 +84,7 @@ class Robot3D(Machine):
             self.thread.start()
             return
         
-        log.info("Moving axes to position: " + str(position))
+        log.info(f"3D-{self.name} :Moving axes to: {position}")
         # get current position
         current_position = Position(
             self.encoder_rot.get_encoder_value(),
@@ -123,5 +123,7 @@ class Robot3D(Machine):
         except:
             pass
 
-        log.info("Move complete to: " + str(position))
+        log.info(f"3D-{self.name} :Moving completed to: {position}")
+
+    # TODO: Move Moving position
   

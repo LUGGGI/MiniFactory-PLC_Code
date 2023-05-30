@@ -30,20 +30,18 @@ class VacRobot(Robot3D):
     init(): Move to init position
     move_to_position(): Moves to given position
     '''
-    COMPRESSOR = "COMPRESSOR"
-    VALVE = "VALVE_VACUUM"
-
 
     def __init__(self, revpi, name: str, moving_position=Position(-1, -1, 1400)):
         '''Initializes the Vacuum Robot.
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :moving_position: Positions that the axes should be to allow save moving
         '''
         super().__init__(revpi, name, moving_position)
 
-        self.compressor = Actuator(self.revpi, self.name, "compressor")
-        self.valve = Actuator(self.revpi, self.name, "valve")
+        self.compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
+        self.valve = Actuator(self.revpi, self.name + "_VALVE_VACUUM")
 
         log.debug("Created Vacuum Robot: " + self.name)
 
@@ -59,24 +57,26 @@ class VacRobot(Robot3D):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(), name=self.name + "_init")
+            self.thread = threading.Thread(target=self.init, args=(), name=self.name + "_INIT")
             self.thread.start()
             return
         
         self.state = self.switch_state(State.INIT)
+        log.info(f"Initializing {self.name}, moving to init position")
         try:
             # move to init position
-            self.move_all_axes(Position(-1,-1,1400), as_thread=False)
+            self.move_all_axes(Position(-1,0,0), as_thread=False)
             self.move_all_axes(Position(0,0,0), as_thread=True)
+
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.info("Moved to init position: " + self.name)
+            self.stage += 1
             
 
-    def move_to_position(self, position: Position, at_product=False, over_init_position=False, as_thread=False):
+    def move_to_position(self, position: Position, grip_bevor_moving=False, over_init_position=False, ignore_moving_pos=False, as_thread=False):
         '''Moves to the given position.
 
         :position: (rotation, horizontal, vertical): int
@@ -86,49 +86,55 @@ class VacRobot(Robot3D):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.move_to_position, args=(position, at_product, over_init_position), name=self.name)
+            self.thread = threading.Thread(target=self.move_to_position, args=(position, grip_bevor_moving, over_init_position, ignore_moving_pos), name=self.name)
             self.thread.start()
             return
         
+        log.info(f"{self.name} :Moving to Position: {position}")
         if over_init_position:
             self.init()
             if self.error_exception_in_machine: # exception happened in init
                 return
 
         # grip product
-        if at_product:
+        if grip_bevor_moving:
             self.state = self.switch_state(State.GRIPPING)
             try:
-                self.compressor.start(self.COMPRESSOR)
-                self.valve.start(self.VALVE)
+                self.compressor.start()
+                self.valve.start()
             except Exception as error:
                 self.state = self.switch_state(State.ERROR)
                 self.error_exception_in_machine = True
                 log.exception(error)
                 return
         try:
-            # move to vertical moving position
-            self.state = self.switch_state(State.TO_MOVING)
-            self.move_all_axes(Position(-1, -1, 1400))
-            # move rotation and horizontal axes
-            self.state = self.switch_state(State.MOVING)
-            self.move_all_axes(Position(position.rotation, position.horizontal, -1))
+            if not ignore_moving_pos:
+                # move to moving position
+                self.state = self.switch_state(State.TO_MOVING)
+                self.move_all_axes(self.moving_position)
+
+                # move non moving position axes
+                self.state = self.switch_state(State.MOVING)
+                # only move axis if there was no moving position for axis
+                rotation = position.rotation if self.moving_position.rotation == -1 else -1
+                horizontal = position.horizontal if self.moving_position.horizontal == -1 else -1
+                vertical = position.vertical if self.moving_position.vertical == -1 else -1
+                self.move_all_axes(Position(rotation, horizontal, vertical))
+
             # move down to destination
             self.state = self.switch_state(State.TO_DESTINATION)
-            self.move_all_axes(Position(-1, -1, position.vertical))
+            self.move_all_axes(position)
 
             # release product
             self.state = self.switch_state(State.RELEASE)
-            self.compressor.stop(self.COMPRESSOR)
-            self.valve.stop(self.VALVE)
+            self.compressor.stop()
+            self.valve.stop()
+
         except Exception as error:
+            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.info("Position reached: " + str(position))
+            log.info(f"{self.name} :Position reached: {position}")
             self.state = self.switch_state(State.END)
             self.stage += 1
-
-        # if moved product
-        if at_product:
-            self.ready_for_transport = True

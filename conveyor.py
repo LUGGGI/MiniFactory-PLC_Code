@@ -17,6 +17,7 @@ from actuator import Actuator
 
 
 class State(Enum):
+    WAIT = 0
     RUN = 1     
     END = 100
     ERROR = 999
@@ -37,6 +38,7 @@ class Conveyor(Machine):
         '''
         super().__init__(revpi, name)
         self.state = None
+        self.stage = 1
         log.debug("Created Conveyor: " + self.name)
 
 
@@ -60,9 +62,12 @@ class Conveyor(Machine):
             self.thread.start()
             return
         
+
+        
         if start_sensor != None:
             # wait for start sensor to detect product
-            Sensor(self.revpi, start_sensor).wait_for_detect(timeout_in_s=timeout_in_s)
+            self.state = self.switch_state(State.WAIT)
+            Sensor(self.revpi, start_sensor).wait_for_detect(timeout_in_s=(timeout_in_s//2))
         
         self.state = self.switch_state(State.RUN)
         try:
@@ -78,6 +83,7 @@ class Conveyor(Machine):
         else:
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
+            self.stage += 1
 
 
     def run_to_counter_value(self, direction: str, counter: str, trigger_value: int, timeout_in_s=10, as_thread=False):
@@ -110,4 +116,5 @@ class Conveyor(Machine):
         else:
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
+            self.stage += 1
         

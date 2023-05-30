@@ -126,7 +126,7 @@ class Actuator():
             self.thread.start()
             return
 
-        log.info(f"{self.name}_{direction} :Actuator moving to value: {trigger_value}, at: {encoder.name}")
+        log.info(f"{self.name}_{direction} :Actuator running to value: {trigger_value}, at: {encoder.name}")
 
         #start actuator
         self.start(direction)
@@ -155,9 +155,9 @@ class Actuator():
             self.thread.start()
             return
 
-        log.info(f"{self.name}_{direction} :Actuator moving to encoder start")
+        log.info(f"{self.name}_{direction} :Actuator running to encoder start")
         try:
-            self.run_to_sensor(direction, stop_sensor, timeout_in_s, as_thread=False)
+            self.run_to_sensor(direction, stop_sensor, timeout_in_s)
             encoder.reset_encoder()
         except:
             raise

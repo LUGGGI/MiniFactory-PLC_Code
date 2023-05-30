@@ -7,6 +7,7 @@ __copyright__ = "Lukas Beck"
 __license__ = "GPL"
 __version__ = "2023.05.23"
 
+import threading
 from datetime import datetime
 
 from revpimodio2 import RevPiModIO
@@ -18,9 +19,12 @@ class Machine:
     get_run_time(): Get run time of machine
     get_state_time(): Get run time of state
     switch_state(): Switch to given state
+    is_stage(): Returns True if no thread is running and given stage is current stage.
     '''
-    thread = None
+    thread: threading.Thread = None
 
+    start_next_machine = False
+    end_machine = False
     ready_for_next = False
     ready_for_transport = False
     error_exception_in_machine = False
@@ -68,3 +72,20 @@ class Machine:
         self.state_is_init = False
         log.warning(self.name + ": Switching state to: " + str(state.name))
         return state
+    
+    def is_stage(self, stage: int) -> bool:
+        '''Returns True if no thread is running and given stage is current stage.
+        
+        :stage: stage at which it should return True
+        '''
+        try:
+            # False, if current thread is active
+            if self.thread.is_alive():
+                return False
+        except AttributeError:
+            pass
+        # False, if given stage is not current stage
+        if stage != self.stage:
+            return False
+
+        return True

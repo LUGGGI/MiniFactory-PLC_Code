@@ -140,7 +140,7 @@ class Sensor():
                 break
             # check if timeout time is reached 
             elif time.time() >= start + timeout_in_s:
-                raise(Exception(f"{self.name} :No detection"))
+                raise(Exception(f"{self.name} :Count not reached in time"))
             
             # wait for next cycle
             time.sleep(self.CYCLE_TIME)
@@ -164,6 +164,7 @@ class Sensor():
             time.sleep(0.06)
             if self.__revpi.io[self.name].value == 0:
                 log.info("Reset encoder: " + self.name)
+                self.counter_offset = 0
                 return
         raise(Exception(f"{self.name} :ERROR while reset"))
 
