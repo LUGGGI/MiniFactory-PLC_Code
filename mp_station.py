@@ -45,7 +45,7 @@ class MPStation(Machine):
         '''
         super().__init__(revpi, name)
         self.state = None
-        
+        self.stage = 1
         log.debug("Created Multi Purpose Station: " + self.name)
 
     def __del__(self):

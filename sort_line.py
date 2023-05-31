@@ -23,12 +23,12 @@ class State(Enum):
     END = 100
     ERROR = 999
 
-class IndexLine(Machine):
+class SortLine(Machine):
     '''Controls the Sorting Line
 
     run(): Runs the Sorting Line routine.
     '''
-
+    color = "WHITE"
 
     def __init__(self, revpi, name: str):
         '''Initializes the Sorting Line
@@ -37,7 +37,8 @@ class IndexLine(Machine):
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
         super().__init__(revpi, name)
-        
+        self.state = None
+        self.stage = 1
         log.debug("Created Sorting Line: " + self.name)
     
 
@@ -56,50 +57,52 @@ class IndexLine(Machine):
             return
         
         try:
-            compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
-            cb = Conveyor(self.revpi, self.name + "_CB_FWD")
 
             # Color Sensing
             self.state = self.switch_state(State.COLOR_SENSING)
+            cb = Conveyor(self.revpi, f"{self.name}_CB_FWD")
 
             # TODO: Handle color sensing
-            color_sensor = Sensor(self.revpi, self.name + "_COLOR_SENSOR")
-
+            color_sensor = Sensor(self.revpi, f"{self.name}_COLOR_SENSOR")
 
             # move product through color sensor
-            cb.run_to_stop_sensor("", self.name + "_CB_SENS_PISTON")
+            cb.run_to_stop_sensor("", f"{self.name}_CB_SENS_PISTON")
 
-            log.info(self.name + ": Color detected: " + color)
-            color = "WHITE"
+            log.info(f"{self.name} :Color detected: {self.color}")
+            
 
             # SORTING
             self.state = self.switch_state(State.SORTING)
+            compressor = Actuator(self.revpi, f"{self.name}_COMPRESSOR")
+
+            self.start_next_machine = True
             # determine sorting position
             position = 0
-            if color == "WHITE":
-                position = 10
-            elif color == "RED":
-                position = 20
-            elif color == "BLUE":
-                position = 30
+            if self.color == "WHITE":
+                position = 3
+            elif self.color == "RED":
+                position = 11
+            elif self.color == "BLUE":
+                position = 19
             
-            compressor.start("")
             # run to desired bay
-            cb.run_to_counter_value("", self.name + "_CB_COUNTER", position)
+            cb.run_to_counter_value("", f"{self.name}_CB_COUNTER", position)
             # push into bay
-            Actuator(self.revpi, self.name + "_VALVE_PISTON_" + color).run_for_time("", 1)
-            compressor.stop("")
+            compressor.start()
+            sleep(0.5)
+            Actuator(self.revpi, f"{self.name}_VALVE_PISTON_{self.color}").run_for_time("", 2)
+            compressor.stop()
             # check if in bay
-            if Sensor(self.revpi, self.name + "_SENS_" + color).detect() == False:
-                # If False that means there is a product
-                log.info(self.name + ": Product sorted into: " + color)
-            else:
-                raise(Exception("Product not in right bay"))
+            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}").detect():
+                # no detection at sensor
+                raise(Exception(f"{self.name} :Product not in right bay"))
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
+            log.info(f"{self.name} :Product sorted into: {self.color}")
             self.state = self.switch_state(State.END)
-            self.ready_for_transport = True    
+            self.ready_for_transport = True
+            self.stage += 1

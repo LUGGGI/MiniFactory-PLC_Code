@@ -85,19 +85,32 @@ class Warehouse(Machine):
         log.debug("Destroyed Warehouse: " + self.name)
 
 
-    def init(self, as_thread=False):
+    def init(self, to_end=False, as_thread=False):
         '''Move to init position.
         
+        :to_end: set end_machine to True after completion of init
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(), name=self.name)
+            self.thread = threading.Thread(target=self.init, args=(to_end,), name=self.name)
             self.thread.start()
             return
         self.state = self.switch_state(State.INIT)
-        self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
-        self.move_to_position(0, 0)
+        log.info(f"Initializing {self.name}, moving to init position")
+        try:
+            self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
+            self.move_to_position(0, 0)
+
+        except Exception as error:
+            self.state = self.switch_state(State.ERROR)
+            self.error_exception_in_machine = True
+            log.exception(error)
+        else:
+            self.stage += 1
+            if to_end:
+                self.end_machine = True
+
 
     def test(self, as_thread=False):
         # call this function again as a thread
@@ -154,8 +167,6 @@ class Warehouse(Machine):
             self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
             self.move_to_position(-1, vertical)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK, as_thread=True)
-
-            self.init(as_thread=True) # return to start
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -218,7 +229,7 @@ class Warehouse(Machine):
             log.info("Retrieved product from: " + str(f"({horizontal},{vertical})"))
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
-            self.stage += 1
+            self.init(to_end=True, as_thread=True)
 
 
     def move_to_position(self, horizontal: int, vertical: int, as_thread=False):
@@ -253,7 +264,7 @@ class Warehouse(Machine):
 
         
         # move to position
-        self.motor_hor.move_axis(dir_hor, horizontal, current_horizontal, self.move_threshold_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
+        self.motor_hor.move_axis(dir_hor, horizontal, current_horizontal, self.move_threshold_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", timeout_in_s=20, as_thread=True)
         self.motor_ver.move_axis(dir_ver, vertical, current_vertical, self.move_threshold_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
 
         # wait for end of each move

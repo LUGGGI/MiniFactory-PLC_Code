@@ -52,14 +52,15 @@ class GripRobot(Robot3D):
         log.debug("Destroyed Gripper Robot: " + self.name)
 
 
-    def init(self, as_thread=False):
+    def init(self, to_end=False, as_thread=False):
         '''Move to init position.
         
+        :to_end: set end_machine to True after completion of init
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(), name=self.name + "_INIT")
+            self.thread = threading.Thread(target=self.init, args=(to_end,), name=self.name + "_INIT")
             self.thread.start()
             return
         
@@ -79,6 +80,8 @@ class GripRobot(Robot3D):
             log.exception(error)
         else:
             self.stage += 1
+            if to_end:
+                self.end_machine = True
 
 
     def move_to_position(self, position: Position, grip_bevor_moving=False, over_init_position=False, ignore_moving_pos=False, as_thread=False):
@@ -129,9 +132,10 @@ class GripRobot(Robot3D):
             self.state = self.switch_state(State.TO_DESTINATION)
             self.move_all_axes(position)
 
-            # release product
-            self.state = self.switch_state(State.RELEASE)
-            self.motor_claw.run_to_encoder_value("OPEN", self.encoder_claw, self.GRIPPER_OPENED)
+            if grip_bevor_moving:
+                # release product
+                self.state = self.switch_state(State.RELEASE)
+                self.motor_claw.run_to_encoder_value("OPEN", self.encoder_claw, self.GRIPPER_OPENED)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)

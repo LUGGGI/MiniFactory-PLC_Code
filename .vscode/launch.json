@@ -9,7 +9,8 @@
             "type": "python",
             "request": "launch",
             "module": "main",
-            "justMyCode": true
+            "justMyCode": true,
+            "env": {"PYDEVD_WARN_EVALUATION_TIMEOUT": "20"}
         }
     ]
 }

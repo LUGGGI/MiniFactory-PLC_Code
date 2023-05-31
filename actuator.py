@@ -57,7 +57,7 @@ class Actuator():
         :timeout_in_s: Time after which an exception is raised
         :as_thread: Runs the function as a thread
         '''
-        actuator = self.name + "_" + direction
+        actuator = self.name + ( "_" + direction if direction != "" else "")
         # call this function again as a thread
         if as_thread == True:
             self.thread = threading.Thread(target=self.run_to_sensor, args=(direction, stop_sensor, stop_delay_in_ms, timeout_in_s), name=actuator)
@@ -84,14 +84,22 @@ class Actuator():
             self.stop(direction)
 
     
-    def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None):
+    def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None, as_thread=False):
         '''Run Actuator for certain amount of time.
         
         :direction: Actuator direction, (last part of whole name)
         :wait_time_in_s: Time after which the actuator stops
         :check_sensor: If given, checks if detection occurs if not ->panics
+        :as_thread: Runs the function as a thread
         '''
-        log.info(f"{self.name}_{direction} :Actuator running for time: {wait_time_in_s}")
+        actuator = self.name + ( "_" + direction if direction != "" else "")
+        # call this function again as a thread
+        if as_thread == True:
+            self.thread = threading.Thread(target=self.run_for_time, args=(direction, wait_time_in_s, check_sensor, False), name=actuator)
+            self.thread.start()
+            return
+
+        log.info(f"{actuator} :Actuator running for time: {wait_time_in_s}")
 
         #start actuator
         self.start(direction)
@@ -102,7 +110,7 @@ class Actuator():
             sensor.start_monitor()
 
         time.sleep(wait_time_in_s) # Wait for given time
-        log.info(f"{self.name}_{direction} :Run time reached")
+        log.info(f"{actuator} :Run time reached")
 
         #stop actuator
         self.stop(direction)
@@ -120,13 +128,14 @@ class Actuator():
         :timeout_in_s: Time after which an exception is raised
         :as_thread: Runs the function as a thread
         '''
+        actuator = self.name + ( "_" + direction if direction != "" else "")
         # call this function again as a thread
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run_to_encoder_value, args=(direction, encoder, trigger_value, timeout_in_s, False), name=self.name + "_" + direction)
+            self.thread = threading.Thread(target=self.run_to_encoder_value, args=(direction, encoder, trigger_value, timeout_in_s, False), name=actuator)
             self.thread.start()
             return
 
-        log.info(f"{self.name}_{direction} :Actuator running to value: {trigger_value}, at: {encoder.name}")
+        log.info(f"{actuator} :Actuator running to value: {trigger_value}, at: {encoder.name}")
 
         #start actuator
         self.start(direction)
@@ -149,13 +158,14 @@ class Actuator():
         :timeout_in_s: Time after which an exception is raised
         :as_thread: Runs the function as a thread
         '''
+        actuator = self.name + ( "_" + direction if direction != "" else "")
         # call this function again as a thread
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run_to_encoder_start, args=(direction, stop_sensor, encoder, timeout_in_s, False), name=self.name + "_" + direction)
+            self.thread = threading.Thread(target=self.run_to_encoder_start, args=(direction, stop_sensor, encoder, timeout_in_s, False), name=actuator)
             self.thread.start()
             return
 
-        log.info(f"{self.name}_{direction} :Actuator running to encoder start")
+        log.info(f"{actuator} :Actuator running to encoder start")
         try:
             self.run_to_sensor(direction, stop_sensor, timeout_in_s)
             encoder.reset_encoder()
@@ -196,9 +206,7 @@ class Actuator():
         
         :direction: Motor direction, (last part of whole name)
         '''
-        actuator = self.name
-        if direction != "":
-            actuator += "_" + direction
+        actuator = self.name + ( "_" + direction if direction != "" else "")
         log.info(f"{actuator} :Started actuator")
         self.__revpi.io[actuator].value = True 
 
@@ -208,8 +216,6 @@ class Actuator():
         
         :direction: Motor direction, (last part of whole name)
         '''
-        actuator = self.name
-        if direction != "":
-            actuator += "_" + direction
+        actuator = self.name + ( "_" + direction if direction != "" else "")
         log.info(f"{actuator} :Stopped actuator")
         self.__revpi.io[actuator].value = False 

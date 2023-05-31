@@ -7,6 +7,7 @@ __copyright__ = "Lukas Beck"
 __license__ = "GPL"
 __version__ = "2023.05.23"
 
+from time import sleep
 from revpimodio2 import RevPiModIO
 import signal
 
@@ -55,6 +56,17 @@ class ExitHandler:
                 
                 if is_out:
                     exit_revpi.io[str(io)].value = False
-
+        
+        sleep(0.5)
+        for io in list:
+            if io.type == 301:
+                is_out = True
+                for word in not_used_words:
+                    if str(io).find(word) != -1:
+                        is_out = False
+                
+                if is_out:
+                    exit_revpi.io[str(io)].value = False
+                    
         exit_revpi.exit()
     
