@@ -7,28 +7,17 @@ __copyright__ = "Lukas Beck"
 __license__ = "GPL"
 __version__ = "2023.05.23"
 
-import threading
-from enum import Enum
-
 from logger import log
 from actuator import Actuator
-from robot_3d import Robot3D, Position
+from robot_3d import Robot3D, Position, State
 
-class State(Enum):
-    INIT = 0
-    TO_MOVING = 1
-    MOVING = 2
-    TO_DESTINATION = 3
-    GRIPPING = 4
-    RELEASE = 5
-    END = 100
-    ERROR = 999
 
 class VacRobot(Robot3D):
     '''Controls the Vacuum Robot
     
     init(): Move to init position
-    move_to_position(): Moves to given position
+    grip(): Grip Product
+    release(): Release product.
     '''
 
     def __init__(self, revpi, name: str, moving_position=Position(-1, -1, 1400)):
@@ -48,97 +37,14 @@ class VacRobot(Robot3D):
 
     def __del__(self):
         log.debug("Destroyed Vacuum Robot: " + self.name)
-
-
-    def init(self, to_end=False, as_thread=False):
-        '''Move to init position.
-        
-        :to_end: set end_machine to True after completion of init
-        :as_thread: Runs the function as a thread
-        '''
-        # call this function again as a thread
-        if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(to_end, ), name=self.name + "_INIT")
-            self.thread.start()
-            return
-        
-        self.state = self.switch_state(State.INIT)
-        log.info(f"Initializing {self.name}, moving to init position")
-        try:
-            # move to init position
-            self.move_all_axes(Position(-1,0,0), as_thread=False)
-            self.move_all_axes(Position(0,0,0), as_thread=True)
-
-        except Exception as error:
-            self.state = self.switch_state(State.ERROR)
-            self.error_exception_in_machine = True
-            log.exception(error)
-        else:
-            self.stage += 1
-            if to_end:
-                self.end_machine = True
             
 
-    def move_to_position(self, position: Position, grip_bevor_moving=False, over_init_position=False, ignore_moving_pos=False, as_thread=False):
-        '''Moves to the given position.
+    def grip(self):
+        '''Grip Product.'''
+        self.compressor.run_for_time("", 1, as_thread=True)
+        self.valve.start()
 
-        :position: (rotation, horizontal, vertical): int
-        :at_product: Robot will grip a product bevor moving
-        :over_init_position: Robot will move to init position bevor moving to given position
-        :as_thread: Runs the function as a thread
-        '''
-        # call this function again as a thread
-        if as_thread:
-            self.thread = threading.Thread(target=self.move_to_position, args=(position, grip_bevor_moving, over_init_position, ignore_moving_pos), name=self.name)
-            self.thread.start()
-            return
-        
-        log.info(f"{self.name} :Moving to Position: {position}")
-        if over_init_position:
-            self.init()
-            if self.error_exception_in_machine: # exception happened in init
-                return
 
-        # grip product
-        if grip_bevor_moving:
-            self.state = self.switch_state(State.GRIPPING)
-            try:
-                self.compressor.start()
-                self.valve.start()
-                self.compressor.stop()
-            except Exception as error:
-                self.state = self.switch_state(State.ERROR)
-                self.error_exception_in_machine = True
-                log.exception(error)
-                return
-        try:
-            if not ignore_moving_pos:
-                # move to moving position
-                self.state = self.switch_state(State.TO_MOVING)
-                self.move_all_axes(self.moving_position)
-
-                # move non moving position axes
-                self.state = self.switch_state(State.MOVING)
-                # only move axis if there was no moving position for axis
-                rotation = position.rotation if self.moving_position.rotation == -1 else -1
-                horizontal = position.horizontal if self.moving_position.horizontal == -1 else -1
-                vertical = position.vertical if self.moving_position.vertical == -1 else -1
-                self.move_all_axes(Position(rotation, horizontal, vertical))
-
-            # move down to destination
-            self.state = self.switch_state(State.TO_DESTINATION)
-            self.move_all_axes(position)
-
-            # release product
-            self.state = self.switch_state(State.RELEASE)
-            self.compressor.stop()
-            self.valve.stop()
-
-        except Exception as error:
-            self.state = self.switch_state(State.ERROR)
-            self.error_exception_in_machine = True
-            log.exception(error)
-        else:
-            log.info(f"{self.name} :Position reached: {position}")
-            self.state = self.switch_state(State.END)
-            self.stage += 1
+    def release(self):
+        '''Release product.'''
+        self.valve.stop()
