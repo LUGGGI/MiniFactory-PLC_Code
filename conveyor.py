@@ -62,8 +62,6 @@ class Conveyor(Machine):
             self.thread.start()
             return
         
-
-        
         if start_sensor != None:
             # wait for start sensor to detect product
             self.state = self.switch_state(State.WAIT)
