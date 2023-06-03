@@ -27,7 +27,7 @@ class Sensor():
     reset_encoder(): Resets the encoder or counter to 0.
     get_encoder_value(): Returns the current value of the encoder.
     '''
-    CYCLE_TIME = 0.02 # s
+    CYCLE_TIME = 0.005 # s
     counter_offset = 0
     encoder_pre_stop = 30
 
