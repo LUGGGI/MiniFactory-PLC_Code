@@ -102,26 +102,22 @@ class Robot3D(Machine):
             if to_end:
                 self.end_machine = True
 
-    def move_to_position(self, position: Position, grip_bevor_moving=False, ignore_moving_pos=False, as_thread=False):
+    def move_to_position(self, position: Position, ignore_moving_pos=False, as_thread=False):
         '''Moves to the given position.
 
         :position: (rotation, horizontal, vertical): int
         :at_product: Robot will grip a product bevor moving
-        :grip_bevor_moving: Gripper will grip product bevor moving
         :ignore_moving_pos: Robot won't move to moving Position
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.move_to_position, args=(position, grip_bevor_moving, ignore_moving_pos), name=self.name)
+            self.thread = threading.Thread(target=self.move_to_position, args=(position, ignore_moving_pos), name=self.name)
             self.thread.start()
             return
         
         log.info(f"{self.name} :Moving to Position: {position}")
         try:
-            if grip_bevor_moving:
-                self.grip() # from subclass
-
             if not ignore_moving_pos:
                 # move to moving position
                 self.state = self.switch_state(State.TO_MOVING)
@@ -138,9 +134,6 @@ class Robot3D(Machine):
             # move to destination
             self.state = self.switch_state(State.TO_DESTINATION)
             self.move_all_axes(position)
-
-            if grip_bevor_moving:
-                self.release() # from subclass
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)

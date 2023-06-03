@@ -47,14 +47,44 @@ class GripRobot(Robot3D):
         log.debug("Destroyed Gripper Robot: " + self.name)
 
 
-    def grip(self):
-        '''Grip Product.'''
-        self.motor_claw.run_to_encoder_value("CLOSE", self.encoder_claw, self.GRIPPER_CLOSED)
+    def grip(self, as_thread=False):
+        '''Grip Product.
+        
+        :as_thread: Runs the function as a thread
+        '''
+        if as_thread:
+            self.thread = threading.Thread(target=self.grip, args=(), name=self.name)
+            self.thread.start()
+            return
+            
+        try:
+            self.motor_claw.run_to_encoder_value("CLOSE", self.encoder_claw, self.GRIPPER_CLOSED)
+        except Exception as error:
+            self.state = self.switch_state(State.ERROR)
+            self.error_exception_in_machine = True
+            log.exception(error)
+        else:
+            self.stage += 1
 
 
-    def release(self):
-        '''Release product.'''
-        self.motor_claw.run_to_encoder_value("OPEN", self.encoder_claw, self.GRIPPER_OPENED)
+    def release(self, as_thread=False):
+        '''Release product.
+        
+        :as_thread: Runs the function as a thread
+        '''
+        if as_thread:
+            self.thread = threading.Thread(target=self.release, args=(), name=self.name)
+            self.thread.start()
+            return
+        
+        try:
+            self.motor_claw.run_to_encoder_value("OPEN", self.encoder_claw, self.GRIPPER_OPENED)
+        except Exception as error:
+            self.state = self.switch_state(State.ERROR)
+            self.error_exception_in_machine = True
+            log.exception(error)
+        else:
+            self.stage += 1
 
 
     def reset_claw(self, as_thread=False):

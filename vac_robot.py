@@ -7,6 +7,8 @@ __copyright__ = "Lukas Beck"
 __license__ = "GPL"
 __version__ = "2023.05.23"
 
+import threading
+
 from logger import log
 from actuator import Actuator
 from robot_3d import Robot3D, Position, State
@@ -38,13 +40,41 @@ class VacRobot(Robot3D):
     def __del__(self):
         log.debug("Destroyed Vacuum Robot: " + self.name)
             
+    def grip(self, as_thread=False):
+        '''Grip Product.
+        
+        :as_thread: Runs the function as a thread
+        '''
+        if as_thread:
+            self.thread = threading.Thread(target=self.grip, args=(), name=self.name)
+            self.thread.start()
+            return
+            
+        try:
+            self.compressor.run_for_time("", 1, as_thread=True)
+            self.valve.start()
+        except Exception as error:
+            self.state = self.switch_state(State.ERROR)
+            self.error_exception_in_machine = True
+            log.exception(error)
+        else:
+            self.stage += 1
 
-    def grip(self):
-        '''Grip Product.'''
-        self.compressor.run_for_time("", 1, as_thread=True)
-        self.valve.start()
-
-
-    def release(self):
-        '''Release product.'''
-        self.valve.stop()
+    def release(self, as_thread=False):
+        '''Release product.
+        
+        :as_thread: Runs the function as a thread
+        '''
+        if as_thread:
+            self.thread = threading.Thread(target=self.release, args=(), name=self.name)
+            self.thread.start()
+            return
+        
+        try:
+            self.valve.stop()
+        except Exception as error:
+            self.state = self.switch_state(State.ERROR)
+            self.error_exception_in_machine = True
+            log.exception(error)
+        else:
+            self.stage += 1
