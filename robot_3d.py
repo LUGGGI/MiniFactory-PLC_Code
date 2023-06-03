@@ -117,7 +117,11 @@ class Robot3D(Machine):
             self.thread.start()
             return
         
-        log.info(f"{self.name} :Moving to Position: {position}")        
+        log.info(f"{self.name} :Moving to Position: {position}")
+
+        # ignore moving position if rotation and one other axis doesn't move
+        if position.rotation == -1 and (position.horizontal == -1 or position.vertical == -1):
+            ignore_moving_pos = True
         try:
             if not ignore_moving_pos:
                 # move to moving position
@@ -139,10 +143,10 @@ class Robot3D(Machine):
                 # move non moving position axes
                 self.state = self.switch_state(State.MOVING)
                 # only move axis if there was no moving position for axis
-                position.rotation = position.rotation if self.moving_position.rotation == -1 or position.rotation < self.moving_position.rotation else -1
-                position.horizontal = position.horizontal if self.moving_position.horizontal == -1 or position.horizontal < self.moving_position.horizontal else -1
-                position.vertical = position.vertical if self.moving_position.vertical == -1 or position.vertical < self.moving_position.vertical else -1
-                self.move_all_axes(position)
+                rotation = position.rotation if self.moving_position.rotation == -1 or position.rotation < self.moving_position.rotation else -1
+                horizontal = position.horizontal if self.moving_position.horizontal == -1 or position.horizontal < self.moving_position.horizontal else -1
+                vertical = position.vertical if self.moving_position.vertical == -1 or position.vertical < self.moving_position.vertical else -1
+                self.move_all_axes(Position(rotation, horizontal, vertical))
 
             # move to destination
             self.state = self.switch_state(State.TO_DESTINATION)

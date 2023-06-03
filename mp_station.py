@@ -52,40 +52,42 @@ class MPStation(Machine):
         log.debug("Destroyed Multi Purpose Station: " + self.name)
 
 
-    def run(self, as_thread=False):
+    def run(self, with_oven=True, as_thread=False):
         '''Runs the Punching Maschine routine.
         
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run, args=(), name=self.name)
+            self.thread = threading.Thread(target=self.run, args=(with_oven,), name=self.name)
             self.thread.start()
             return
 
         try:
 
-            # Move oven tray into oven and close door
-            self.state = self.switch_state(State.OVEN)
-            vg_motor = Actuator(self.revpi, self.name + "_VG")
             compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
-            tray = Actuator(self.revpi, self.name + "_OVEN_TRAY")
-            oven_door_valve = Actuator(self.revpi, self.name + "_VALVE_OVEN_DOOR")
-
+            vg_motor = Actuator(self.revpi, self.name + "_VG")
             vg_motor.run_to_sensor("TO_OVEN", self.name + "_REF_SW_VG_OVEN", as_thread=True) # move vg to oven
-            compressor.start()
-            oven_door_valve.start() # open door
-            sleep(0.2)
-            tray.run_to_sensor("IN", self.name + "_REF_SW_OVEN_TRAY_IN") # move tray in
-            oven_door_valve.stop() # close door
-            Actuator(self.revpi, self.name + "_LIGHT_OVEN").run_for_time("", self.__TIME_OVEN) # turn light on for time
-            oven_door_valve.start() # open door
-            # sleep(0.5)
-            tray.run_to_sensor("OUT", self.name + "_REF_SW_OVEN_TRAY_OUT") # move tray out
-            oven_door_valve.stop() # close door
+            
+            if with_oven:
+                # Move oven tray into oven and close door
+                self.state = self.switch_state(State.OVEN)
+                tray = Actuator(self.revpi, self.name + "_OVEN_TRAY")
+                oven_door_valve = Actuator(self.revpi, self.name + "_VALVE_OVEN_DOOR")
 
-            del tray
-            del oven_door_valve
+                compressor.run_for_time("", 0.5, as_thread=True)
+                oven_door_valve.start() # open door
+                sleep(0.2)
+                tray.run_to_sensor("IN", self.name + "_REF_SW_OVEN_TRAY_IN") # move tray in
+                oven_door_valve.stop() # close door
+                Actuator(self.revpi, self.name + "_LIGHT_OVEN").run_for_time("", self.__TIME_OVEN) # turn light on for time
+                compressor.run_for_time("", 0.5, as_thread=True)
+                oven_door_valve.start() # open door
+                tray.run_to_sensor("OUT", self.name + "_REF_SW_OVEN_TRAY_OUT") # move tray out
+                oven_door_valve.stop() # close door
+
+                del tray
+                del oven_door_valve
 
 
             # move product to table with vacuum gripper
@@ -97,6 +99,7 @@ class MPStation(Machine):
             table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
             
             vg_motor.thread.join() # wait for the vg to be at oven
+            compressor.run_for_time("", 2, as_thread=True)
             vg_lower_valve.run_for_time("", 1) # lower gripper
             vg_valve.start() # create vacuum at gripper
             sleep(1) # wait for gripper to be at top
@@ -105,7 +108,6 @@ class MPStation(Machine):
             sleep(0.5)
             vg_valve.stop() # stop vacuum at gripper
             sleep(0.5)
-            compressor.stop()
             vg_lower_valve.stop()
 
             del vg_valve
@@ -126,9 +128,8 @@ class MPStation(Machine):
             # move product to cb
             self.state = self.switch_state(State.TO_CB)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_CB") # rotate table to cb
-            compressor.start()
-            Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON").run_for_time("", 1)
-            compressor.stop()
+            compressor.run_for_time("", 0.5, as_thread=True)
+            Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON").run_for_time("", 0.5)
             table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table back to vg
 
             del table
