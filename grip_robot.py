@@ -23,7 +23,7 @@ class GripRobot(Robot3D):
     '''
     GRIPPER_CLOSED = 12
     GRIPPER_OPENED = 8
-    def __init__(self, revpi, name: str, moving_position=Position(-1, -1, 1400)):
+    def __init__(self, revpi, name: str, moving_position: Position):
         '''Initializes the Gripper Robot.
         
         :revpi: RevPiModIO Object to control the motors and sensors

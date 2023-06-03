@@ -17,7 +17,7 @@ from actuator import Actuator
 
 class State(Enum):
     INIT = 0
-    TO_MOVING = 1
+    TO_MOVING_POS = 1
     MOVING = 2
     TO_DESTINATION = 3
     GRIPPING = 4
@@ -102,6 +102,7 @@ class Robot3D(Machine):
             if to_end:
                 self.end_machine = True
 
+
     def move_to_position(self, position: Position, ignore_moving_pos=False, as_thread=False):
         '''Moves to the given position.
 
@@ -116,20 +117,32 @@ class Robot3D(Machine):
             self.thread.start()
             return
         
-        log.info(f"{self.name} :Moving to Position: {position}")
+        log.info(f"{self.name} :Moving to Position: {position}")        
         try:
             if not ignore_moving_pos:
                 # move to moving position
-                self.state = self.switch_state(State.TO_MOVING)
+                self.state = self.switch_state(State.TO_MOVING_POS)
+                # get current position
+                current_position = Position(
+                    self.encoder_rot.get_encoder_value(),
+                    self.encoder_hor.get_encoder_value(),
+                    self.encoder_ver.get_encoder_value()
+                )
+                moving_position = self.moving_position
+                # only move axis to moving position if current axis value is lower than moving position
+                moving_position.rotation = self.moving_position.rotation if current_position.rotation <= self.moving_position.rotation else -1
+                moving_position.horizontal = self.moving_position.horizontal if current_position.horizontal <= self.moving_position.horizontal else -1
+                moving_position.vertical = self.moving_position.vertical if current_position.vertical <= self.moving_position.vertical else -1
                 self.move_all_axes(self.moving_position)
 
+                
                 # move non moving position axes
                 self.state = self.switch_state(State.MOVING)
                 # only move axis if there was no moving position for axis
-                rotation = position.rotation if self.moving_position.rotation == -1 else -1
-                horizontal = position.horizontal if self.moving_position.horizontal == -1 else -1
-                vertical = position.vertical if self.moving_position.vertical == -1 else -1
-                self.move_all_axes(Position(rotation, horizontal, vertical))
+                position.rotation = position.rotation if self.moving_position.rotation == -1 or position.rotation < self.moving_position.rotation else -1
+                position.horizontal = position.horizontal if self.moving_position.horizontal == -1 or position.horizontal < self.moving_position.horizontal else -1
+                position.vertical = position.vertical if self.moving_position.vertical == -1 or position.vertical < self.moving_position.vertical else -1
+                self.move_all_axes(position)
 
             # move to destination
             self.state = self.switch_state(State.TO_DESTINATION)

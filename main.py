@@ -274,7 +274,7 @@ class MainLoop:
     def run_gr1(self) -> False:
         machine: GripRobot = self.machines.get("GR1")
         if machine == None:
-            machine = GripRobot(self.revpi, "GR1")
+            machine = GripRobot(self.revpi, "GR1", Position(-1, -1, 1400))
             self.machines[machine.name] =  machine
             machine.init(as_thread=True)
 
@@ -347,7 +347,7 @@ class MainLoop:
             return True
 
     def run_gr3(self) -> False:
-        machine: GripRobot = self.machines.get("GR3")
+        machine: GripRobot = self.machines.get("GR3", Position(-1, -1, 1400))
         if machine == None:
             machine = GripRobot(self.revpi, "GR3")
             self.machines[machine.name] =  machine
