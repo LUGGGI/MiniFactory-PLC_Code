@@ -103,17 +103,53 @@ class Robot3D(Machine):
                 self.end_machine = True
 
 
-    def move_to_position(self, position: Position, ignore_moving_pos=False, as_thread=False):
-        '''Moves to the given position.
+    def move_product_to(self, position: Position, sensor: str=None, as_thread=False):
+        '''Moves product from current postion to given position.
 
         :position: (rotation, horizontal, vertical): int
-        :at_product: Robot will grip a product bevor moving
+        :sensor: Sensor that will be checked for detection while moving to moving position
+        :as_thread: Runs the function as a thread
+        '''
+        # call this function again as a thread
+        if as_thread:
+            self.thread = threading.Thread(target=self.move_product_to, args=(position, sensor, False), name=self.name)
+            self.thread.start()
+            return
+        
+        current_stage = self.stage
+        # get current position
+        current_position = Position(
+            self.encoder_rot.get_encoder_value(),
+            self.encoder_hor.get_encoder_value(),
+            self.encoder_ver.get_encoder_value()
+        )
+        self.grip()
+
+        if not self.move_to_position(position, sensor, as_thread=False):
+            # move back and try again
+            self.release()
+            self.move_to_position(current_position, as_thread=False)
+            self.grip()
+            if not self.move_to_position(position, sensor, as_thread=False):
+                self.state = self.switch_state(State.ERROR)
+                self.error_exception_in_machine = True
+                return
+            
+        self.release()
+        self.stage = current_stage + 1
+
+
+    def move_to_position(self, position: Position, sensor: str=None, ignore_moving_pos=False, as_thread=False) -> True:
+        '''Moves to Robot given position.
+
+        :position: (rotation, horizontal, vertical): int
+        :sensor: Sensor that will be checked for detection while moving to moving position
         :ignore_moving_pos: Robot won't move to moving Position
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.move_to_position, args=(position, ignore_moving_pos), name=self.name)
+            self.thread = threading.Thread(target=self.move_to_position, args=(position, sensor, ignore_moving_pos, False), name=self.name)
             self.thread.start()
             return
         
@@ -126,6 +162,12 @@ class Robot3D(Machine):
             if not ignore_moving_pos:
                 # move to moving position
                 self.state = self.switch_state(State.TO_MOVING_POS)
+
+                # check if there is a detection when moving to first position
+                if det_sensor:
+                    det_sensor = Sensor(self.revpi, sensor)
+                    det_sensor.start_monitor()
+
                 # get current position
                 current_position = Position(
                     self.encoder_rot.get_encoder_value(),
@@ -139,6 +181,9 @@ class Robot3D(Machine):
                 moving_position.vertical = self.moving_position.vertical if current_position.vertical <= self.moving_position.vertical else -1
                 self.move_all_axes(self.moving_position)
 
+                if det_sensor and not det_sensor.is_detected():
+                    log.error(f"{self.name} :Product lost")
+                    return False
                 
                 # move non moving position axes
                 self.state = self.switch_state(State.MOVING)
@@ -172,7 +217,7 @@ class Robot3D(Machine):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.move_all_axes, args=(position,), name=self.name)
+            self.thread = threading.Thread(target=self.move_all_axes, args=(position, False), name=self.name)
             self.thread.start()
             return
         
