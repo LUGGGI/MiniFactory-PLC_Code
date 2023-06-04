@@ -40,7 +40,7 @@ class ExitHandler:
         except:
             # load simulation if not connected to factory
             exit_revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi\RevPi82247.img")
-        
+
         log.info("Setting all outputs to false: ")
 
         list = exit_revpi.io
@@ -53,10 +53,10 @@ class ExitHandler:
                 for word in not_used_words:
                     if str(io).find(word) != -1:
                         is_out = False
-                
+
                 if is_out:
                     exit_revpi.io[str(io)].value = False
-        
+
         sleep(0.5)
         for io in list:
             if io.type == 301:
@@ -64,9 +64,8 @@ class ExitHandler:
                 for word in not_used_words:
                     if str(io).find(word) != -1:
                         is_out = False
-                
+
                 if is_out:
                     exit_revpi.io[str(io)].value = False
-                    
+
         exit_revpi.exit()
-    

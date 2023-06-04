@@ -83,7 +83,7 @@ class Actuator():
             #stop actuator
             self.stop(direction)
 
-    
+
     def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None, as_thread=False):
         '''Run Actuator for certain amount of time.
         
@@ -147,7 +147,7 @@ class Actuator():
         finally:
             #stop actuator
             self.stop(direction)
-            
+
 
     def run_to_encoder_start(self, direction: str, stop_sensor: str, encoder: Sensor, timeout_in_s=10, as_thread=False):
         '''Run Actuator to the encoder reverence switch and resets the encoder to 0.
@@ -181,7 +181,7 @@ class Actuator():
         :current_value: Current Encoder-Value to determine if move is necessary
         :move_threshold: Value that has at min to be traveled to start the motor
         :encoder: Sensor object
-        :ref_sw: Reference Switch at which the motor stops if it runs to the encoder start 
+        :ref_sw: Reference Switch at which the motor stops if it runs to the encoder start
         :timeout_in_s: Time after which an exception is raised
         :as_thread: Runs the function as a thread
 

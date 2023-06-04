@@ -51,7 +51,7 @@ class Machine:
         log.info("Runtime: " + str(run_time))
         run_time = round(run_time)
         return run_time
-    
+
 
     def get_state_time(self) -> int:
         '''Get run time of state in seconds since switch.'''
@@ -59,7 +59,7 @@ class Machine:
         log.info(str(self.state) + " time: " + str(state_time))
         state_time = round(state_time)
         return state_time
-    
+
 
     def switch_state(self, state, wait=False):
         '''Switch to given state and save state start time.
@@ -72,6 +72,7 @@ class Machine:
         self.state_is_init = False
         log.warning(self.name + ": Switching state to: " + str(state.name))
         return state
+
     
     def is_stage(self, stage: int) -> bool:
         '''Returns True if no thread is running and given stage is current stage.

@@ -56,7 +56,7 @@ class GripRobot(Robot3D):
             self.thread = threading.Thread(target=self.grip, args=(), name=self.name)
             self.thread.start()
             return
-            
+
         try:
             self.motor_claw.run_to_encoder_value("CLOSE", self.encoder_claw, self.GRIPPER_CLOSED)
         except Exception as error:
@@ -76,7 +76,7 @@ class GripRobot(Robot3D):
             self.thread = threading.Thread(target=self.release, args=(), name=self.name)
             self.thread.start()
             return
-        
+
         try:
             self.motor_claw.run_to_encoder_value("OPEN", self.encoder_claw, self.GRIPPER_OPENED)
         except Exception as error:
@@ -96,7 +96,7 @@ class GripRobot(Robot3D):
             self.thread = threading.Thread(target=self.reset_claw, args=(), name=self.name)
             self.thread.start()
             return
-        
+
         try:
             self.motor_claw.run_to_encoder_start("OPEN", self.name + "_REF_SW_CLAW", self.encoder_claw)
             self.motor_claw.run_to_encoder_value("CLOSE", self.encoder_claw, self.GRIPPER_OPENED)

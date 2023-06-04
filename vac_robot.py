@@ -49,7 +49,7 @@ class VacRobot(Robot3D):
             self.thread = threading.Thread(target=self.grip, args=(), name=self.name)
             self.thread.start()
             return
-            
+
         try:
             self.compressor.run_for_time("", 1, as_thread=True)
             self.valve.start()
@@ -69,7 +69,7 @@ class VacRobot(Robot3D):
             self.thread = threading.Thread(target=self.release, args=(), name=self.name)
             self.thread.start()
             return
-        
+
         try:
             self.valve.stop()
         except Exception as error:

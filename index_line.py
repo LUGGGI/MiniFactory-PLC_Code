@@ -42,7 +42,7 @@ class IndexLine(Machine):
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
         super().__init__(revpi, name)
-        
+
         log.debug("Created Index Line: " + self.name)
     
 
@@ -59,7 +59,7 @@ class IndexLine(Machine):
             self.thread = threading.Thread(target=self.run, args=(), name=self.name)
             self.thread.start()
             return
-        
+
         try:
             cb_mill = Conveyor(self.revpi, self.name + "_CB_MIll")
 

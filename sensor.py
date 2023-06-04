@@ -47,7 +47,7 @@ class Sensor():
     def __del__(self):
         log.debug("Destroyed Sensor: " + self.name)
 
-    
+
     def detect(self) -> bool:
         '''Returns value of Sensor'''
         return self.__revpi.io[self.name].value     
@@ -82,8 +82,8 @@ class Sensor():
             return True
         else:
             return False
-        
-        
+
+
     def wait_for_detect(self, edge=BOTH, timeout_in_s=10):
         '''Pauses thread until a detection occurs, panics if timeout is reached.
         
@@ -97,8 +97,8 @@ class Sensor():
             log.info(f"{self.name} :Detection") 
         else:
             raise(Exception(f"{self.name} :No detection"))
-           
-   
+
+
     def wait_for_encoder(self, trigger_value: int, timeout_in_s=10):
         '''Pauses thread until the encoder/counter reached the trigger_value.
         
@@ -110,14 +110,14 @@ class Sensor():
         counter = self.__revpi.io[self.name].value
         if counter > 10000:
             raise(Exception(f"{self.name} :Counter negativ"))
-        
+
         start = time.time()
         higher = True
         # check running direction
         if trigger_value < counter - self.counter_offset :
             higher = False
             self.counter_start = counter
-        
+
         # stop actuator a bit bevor to account for overrun
         if self.name.find("ENCODER") != -1:
             if higher:
@@ -141,7 +141,7 @@ class Sensor():
             # check if timeout time is reached 
             elif time.time() >= start + timeout_in_s:
                 raise(Exception(f"{self.name} :Count not reached in time"))
-            
+
             # wait for next cycle
             time.sleep(self.CYCLE_TIME)
 
@@ -154,7 +154,7 @@ class Sensor():
         '''Converts the upwards counting value to a from counter_start downwards counting value.'''
         counter = self.__revpi.io[self.name].value
         return counter - 2 * (counter - self.counter_start)
-    
+
 
     def reset_encoder(self):
         '''Resets the encoder or counter to 0.'''
@@ -172,8 +172,8 @@ class Sensor():
     def get_encoder_value(self):
         '''Returns the current value of the encoder.'''
         return self.__revpi.io[self.name].value - self.counter_offset
-        
-        
+
+
 def event_det_at_sensor(io_name, __):
     '''Set detection to True'''
     log.info(f"{io_name} :Detection")

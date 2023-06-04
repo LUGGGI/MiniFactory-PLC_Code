@@ -18,7 +18,7 @@ from actuator import Actuator
 
 class State(Enum):
     WAIT = 0
-    RUN = 1     
+    RUN = 1
     END = 100
     ERROR = 999
 
@@ -115,4 +115,3 @@ class Conveyor(Machine):
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
             self.stage += 1
-        

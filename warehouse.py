@@ -15,7 +15,7 @@ from machine import Machine
 from sensor import Sensor
 from actuator import Actuator
 from conveyor import Conveyor
- 
+
 class State(Enum):
     INIT = 0
     MOVING_TO_CB = 1
@@ -138,7 +138,7 @@ class Warehouse(Machine):
             self.thread = threading.Thread(target=self.store_product, args=(shelf,), name=self.name)
             self.thread.start()
             return
-        
+
         horizontal = shelf.value[0]
         vertical = shelf.value[1]
         log.info("Store product at: " + str(f"({horizontal},{vertical})"))
@@ -191,7 +191,7 @@ class Warehouse(Machine):
             self.thread = threading.Thread(target=self.retrieve_product, args=(shelf,), name=self.name)
             self.thread.start()
             return
-        
+
         horizontal = shelf.value[0]
         vertical = shelf.value[1]
         log.info("Retrieve product from: " + str(f"({horizontal},{vertical})"))
@@ -246,13 +246,13 @@ class Warehouse(Machine):
             self.thread = threading.Thread(target=self.move_to_position, args=(horizontal, vertical), name=self.name)
             self.thread.start()
             return
-        
+
         log.info("Moving Crane to position: " + str(f"({horizontal},{vertical})"))
 
         # get current position
         current_horizontal = self.encoder_hor.get_encoder_value()
         current_vertical = self.encoder_ver.get_encoder_value()
-        
+
 
         # get motor directions
         dir_hor = "TO_RACK"
@@ -262,7 +262,7 @@ class Warehouse(Machine):
         if vertical <= current_vertical:
             dir_ver = "UP"
 
-        
+
         # move to position
         self.motor_hor.move_axis(dir_hor, horizontal, current_horizontal, self.move_threshold_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", timeout_in_s=20, as_thread=True)
         self.motor_ver.move_axis(dir_ver, vertical, current_vertical, self.move_threshold_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
@@ -274,4 +274,3 @@ class Warehouse(Machine):
             self.motor_ver.thread.join()
 
         log.info("Moved crane to: " + str(f"({horizontal},{vertical})"))
-

@@ -32,7 +32,6 @@ class MPStation(Machine):
 
     run(): Runs the Multi Purpose Station routine.
     '''
-    
     __TIME_OVEN = 2
     __TIME_SAW = 2
 
@@ -68,7 +67,7 @@ class MPStation(Machine):
             compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
             vg_motor = Actuator(self.revpi, self.name + "_VG")
             vg_motor.run_to_sensor("TO_OVEN", self.name + "_REF_SW_VG_OVEN", as_thread=True) # move vg to oven
-            
+
             if with_oven:
                 # Move oven tray into oven and close door
                 self.state = self.switch_state(State.OVEN)
@@ -97,7 +96,7 @@ class MPStation(Machine):
             table = Actuator(self.revpi, self.name + "_TABLE")
 
             table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
-            
+
             vg_motor.thread.join() # wait for the vg to be at oven
             compressor.run_for_time("", 2, as_thread=True)
             vg_lower_valve.run_for_time("", 1) # lower gripper
@@ -119,7 +118,7 @@ class MPStation(Machine):
             self.state = self.switch_state(State.TO_SAW)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_SAW")
 
-            
+
             # sawing
             self.state = self.switch_state(State.SAWING)
             Actuator(self.revpi, self.name + "_SAW").run_for_time("", self.__TIME_SAW)

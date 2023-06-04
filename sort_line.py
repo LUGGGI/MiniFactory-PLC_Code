@@ -40,7 +40,7 @@ class SortLine(Machine):
         self.state = None
         self.stage = 1
         log.debug("Created Sorting Line: " + self.name)
-    
+
 
     def __del__(self):
         log.debug("Destroyed Sorting Line: " + self.name)
@@ -55,9 +55,8 @@ class SortLine(Machine):
             self.thread = threading.Thread(target=self.run, args=(), name=self.name)
             self.thread.start()
             return
-        
-        try:
 
+        try:
             # Color Sensing
             self.state = self.switch_state(State.COLOR_SENSING)
             cb = Conveyor(self.revpi, f"{self.name}_CB_FWD")
@@ -69,7 +68,6 @@ class SortLine(Machine):
             cb.run_to_stop_sensor("", f"{self.name}_CB_SENS_PISTON")
 
             log.info(f"{self.name} :Color detected: {self.color}")
-            
 
             # SORTING
             self.state = self.switch_state(State.SORTING)
@@ -84,7 +82,7 @@ class SortLine(Machine):
                 position = 11
             elif self.color == "BLUE":
                 position = 19
-            
+
             # run to desired bay
             cb.run_to_counter_value("", f"{self.name}_CB_COUNTER", position)
             # push into bay

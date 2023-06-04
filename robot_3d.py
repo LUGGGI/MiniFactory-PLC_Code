@@ -73,7 +73,7 @@ class Robot3D(Machine):
     def __del__(self):
         log.debug("Destroyed 3D Robot: " + self.name)
 
-    
+
     def init(self, to_end=False, as_thread=False):
         '''Move to init position.
         
@@ -85,7 +85,7 @@ class Robot3D(Machine):
             self.thread = threading.Thread(target=self.init, args=(to_end, ), name=self.name + "_INIT")
             self.thread.start()
             return
-        
+
         self.state = self.switch_state(State.INIT)
         log.info(f"Initializing {self.name}, moving to init position")
         try:
@@ -115,7 +115,7 @@ class Robot3D(Machine):
             self.thread = threading.Thread(target=self.move_product_to, args=(position, sensor, False), name=self.name)
             self.thread.start()
             return
-        
+
         current_stage = self.stage
         # get current position
         current_position = Position(
@@ -134,7 +134,7 @@ class Robot3D(Machine):
                 self.state = self.switch_state(State.ERROR)
                 self.error_exception_in_machine = True
                 return
-            
+
         self.release()
         self.stage = current_stage + 1
 
@@ -152,7 +152,7 @@ class Robot3D(Machine):
             self.thread = threading.Thread(target=self.move_to_position, args=(position, sensor, ignore_moving_pos, False), name=self.name)
             self.thread.start()
             return
-        
+
         log.info(f"{self.name} :Moving to Position: {position}")
 
         # ignore moving position if rotation and one other axis doesn't move
@@ -184,7 +184,7 @@ class Robot3D(Machine):
                 if det_sensor and not det_sensor.is_detected():
                     log.error(f"{self.name} :Product lost")
                     return False
-                
+
                 # move non moving position axes
                 self.state = self.switch_state(State.MOVING)
                 # only move axis if there was no moving position for axis
@@ -220,7 +220,7 @@ class Robot3D(Machine):
             self.thread = threading.Thread(target=self.move_all_axes, args=(position, False), name=self.name)
             self.thread.start()
             return
-        
+
         log.info(f"{self.name} :Moving axes to: {position}")
         # get current position
         current_position = Position(
@@ -240,7 +240,6 @@ class Robot3D(Machine):
         if position.vertical <= current_position.vertical:
             dir_ver = "UP"
 
-        
         # move to position
         self.motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.move_threshold_rot, self.encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
         self.motor_hor.move_axis(dir_hor, position.horizontal, current_position.horizontal, self.move_threshold_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
@@ -261,4 +260,3 @@ class Robot3D(Machine):
             pass
 
         log.info(f"{self.name} :Axes moved to: {position}")
-  
