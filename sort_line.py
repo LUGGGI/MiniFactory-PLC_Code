@@ -46,13 +46,13 @@ class SortLine(Machine):
         log.debug("Destroyed Sorting Line: " + self.name)
 
 
-    def run(self, as_thread=False):
+    def run(self, as_thread=True):
         '''Runs the Sorting Line routine.
         
         :as_thread: Runs the function as a thread
         '''      
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run, args=(), name=self.name)
+            self.thread = threading.Thread(target=self.run, args=(False,), name=self.name)
             self.thread.start()
             return
 
@@ -65,7 +65,7 @@ class SortLine(Machine):
             color_sensor = Sensor(self.revpi, f"{self.name}_COLOR_SENSOR")
 
             # move product through color sensor
-            cb.run_to_stop_sensor("", f"{self.name}_CB_SENS_PISTON")
+            cb.run_to_stop_sensor("", f"{self.name}_CB_SENS_PISTON", as_thread=False)
 
             log.info(f"{self.name} :Color detected: {self.color}")
 
@@ -84,7 +84,7 @@ class SortLine(Machine):
                 position = 19
 
             # run to desired bay
-            cb.run_to_counter_value("", f"{self.name}_CB_COUNTER", position)
+            cb.run_to_counter_value("", f"{self.name}_CB_COUNTER", position, as_thread=False)
             # push into bay
             compressor.start()
             sleep(0.5)

@@ -50,13 +50,13 @@ class IndexLine(Machine):
         log.debug("Destroyed Index Line: " + self.name)
 
 
-    def run(self, as_thread=False):
+    def run(self, as_thread=True):
         '''Runs the Index Line routine.
         
         :as_thread: Runs the function as a thread
         '''      
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run, args=(), name=self.name)
+            self.thread = threading.Thread(target=self.run, args=(False,), name=self.name)
             self.thread.start()
             return
 
@@ -78,7 +78,7 @@ class IndexLine(Machine):
             # push product to cb_mill
             pusher_in.thread.join()
             pusher_in.run_to_sensor("FWD", self.name + "_REF_SW_PUSH1_FRONT", as_thread=True) 
-            cb_mill.run_to_stop_sensor("", self.name + "_SENS_MILL")
+            cb_mill.run_to_stop_sensor("", self.name + "_SENS_MILL", as_thread=False)
             # move pusher back to back
             pusher_in.run_to_sensor("BWD", self.name + "_REF_SW_PUSH1_BACK", as_thread=True)
 
@@ -94,8 +94,8 @@ class IndexLine(Machine):
 
             # Move product to Drill
             self.state = self.switch_state(State.TO_DRILL)
-            cb_mill.run_to_stop_sensor("", self.name + "_SENS_DRILL")
-            cb_drill.run_to_stop_sensor("", self.name + "_SENS_DRILL")
+            cb_mill.run_to_stop_sensor("", self.name + "_SENS_DRILL", as_thread=False)
+            cb_drill.run_to_stop_sensor("", self.name + "_SENS_DRILL", as_thread=False)
 
             del cb_mill
 
@@ -118,7 +118,7 @@ class IndexLine(Machine):
             # push product to out
             pusher_out.thread.join()
             pusher_out.run_to_sensor("FWD", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True) 
-            cb_end.run_to_stop_sensor("", self.name + "_SENS_END", stop_delay_in_ms=1000)
+            cb_end.run_to_stop_sensor("", self.name + "_SENS_END", stop_delay_in_ms=1000, as_thread=False)
             # move pusher back to back
             pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", as_thread=True) 
 

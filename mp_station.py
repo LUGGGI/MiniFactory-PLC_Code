@@ -51,19 +51,18 @@ class MPStation(Machine):
         log.debug("Destroyed Multi Purpose Station: " + self.name)
 
 
-    def run(self, with_oven=True, as_thread=False):
+    def run(self, with_oven=True, as_thread=True):
         '''Runs the Punching Maschine routine.
         
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run, args=(with_oven,), name=self.name)
+            self.thread = threading.Thread(target=self.run, args=(with_oven, True), name=self.name)
             self.thread.start()
             return
 
         try:
-
             compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
             vg_motor = Actuator(self.revpi, self.name + "_VG")
             vg_motor.run_to_sensor("TO_OVEN", self.name + "_REF_SW_VG_OVEN", as_thread=True) # move vg to oven
@@ -137,7 +136,7 @@ class MPStation(Machine):
             self.start_next_machine = True
             # run cb
             self.state = self.switch_state(State.CB)
-            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "CB1_SENS_START")
+            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "CB1_SENS_START", as_thread=False)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)

@@ -74,7 +74,7 @@ class Robot3D(Machine):
         log.debug("Destroyed 3D Robot: " + self.name)
 
 
-    def init(self, to_end=False, as_thread=False):
+    def init(self, to_end=False, as_thread=True):
         '''Move to init position.
         
         :to_end: set end_machine to True after completion of init
@@ -82,7 +82,7 @@ class Robot3D(Machine):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(to_end, ), name=self.name + "_INIT")
+            self.thread = threading.Thread(target=self.init, args=(to_end, False), name=self.name + "_INIT")
             self.thread.start()
             return
 
@@ -103,7 +103,7 @@ class Robot3D(Machine):
                 self.end_machine = True
 
 
-    def move_product_to(self, position: Position, sensor: str=None, as_thread=False):
+    def move_product_to(self, position: Position, sensor: str=None, as_thread=True):
         '''Moves product from current postion to given position.
 
         :position: (rotation, horizontal, vertical): int
@@ -139,7 +139,7 @@ class Robot3D(Machine):
         self.stage = current_stage + 1
 
 
-    def move_to_position(self, position: Position, sensor: str=None, ignore_moving_pos=False, as_thread=False) -> True:
+    def move_to_position(self, position: Position, sensor: str=None, ignore_moving_pos=False, as_thread=True) -> True:
         '''Moves to Robot given position.
 
         :position: (rotation, horizontal, vertical): int
@@ -207,7 +207,7 @@ class Robot3D(Machine):
             self.stage += 1
 
 
-    def move_all_axes(self, position: Position, as_thread=False):
+    def move_all_axes(self, position: Position, as_thread=True):
         '''Makes linear move to given position, set a axis to -1 to not move that axis.
 
         :position: (rotation, horizontal, vertical): int

@@ -85,7 +85,7 @@ class Warehouse(Machine):
         log.debug("Destroyed Warehouse: " + self.name)
 
 
-    def init(self, to_end=False, as_thread=False):
+    def init(self, to_end=False, as_thread=True):
         '''Move to init position.
         
         :to_end: set end_machine to True after completion of init
@@ -93,7 +93,7 @@ class Warehouse(Machine):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(to_end,), name=self.name)
+            self.thread = threading.Thread(target=self.init, args=(to_end, True), name=self.name)
             self.thread.start()
             return
         self.state = self.switch_state(State.INIT)
@@ -112,22 +112,7 @@ class Warehouse(Machine):
                 self.end_machine = True
 
 
-    def test(self, as_thread=False):
-        # call this function again as a thread
-        if as_thread:
-            self.thread = threading.Thread(target=self.test, args=(), name=self.name)
-            self.thread.start()
-            return
-
-        for pos in ShelfPos:
-            self.state = self.switch_state(State.MOVING_TO_RACK, True)
-            self.move_to_position(pos.value[0], pos.value[1])
-
-        self.ready_for_transport = True
-
-
-
-    def store_product(self, shelf: ShelfPos, as_thread=False):
+    def store_product(self, shelf: ShelfPos, as_thread=True):
         '''Stores a product at given position.
 
         :shelf: a position of a shelf defined in ShelfPos
@@ -135,7 +120,7 @@ class Warehouse(Machine):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.store_product, args=(shelf,), name=self.name)
+            self.thread = threading.Thread(target=self.store_product, args=(shelf, False), name=self.name)
             self.thread.start()
             return
 
@@ -151,7 +136,7 @@ class Warehouse(Machine):
 
             # move product to inside
             self.state = self.switch_state(State.CB_FWD)
-            self.cb.run_to_stop_sensor("FWD", self.name + "_SENS_IN")
+            self.cb.run_to_stop_sensor("FWD", self.name + "_SENS_IN", as_thread=False)
 
             # get product from cb
             self.state = self.switch_state(State.GETTING_PRODUCT)
@@ -179,7 +164,7 @@ class Warehouse(Machine):
             self.stage += 1
 
 
-    def retrieve_product(self, shelf: ShelfPos, as_thread=False):
+    def retrieve_product(self, shelf: ShelfPos, as_thread=True):
         '''Retrieves a product from given position.
 
         :horizontal: horizontal coordinate
@@ -188,13 +173,14 @@ class Warehouse(Machine):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.retrieve_product, args=(shelf,), name=self.name)
+            self.thread = threading.Thread(target=self.retrieve_product, args=(shelf, False), name=self.name)
             self.thread.start()
             return
 
         horizontal = shelf.value[0]
         vertical = shelf.value[1]
         log.info("Retrieve product from: " + str(f"({horizontal},{vertical})"))
+
         try:
             # move to given rack
             self.state = self.switch_state(State.MOVING_TO_RACK)
@@ -219,7 +205,7 @@ class Warehouse(Machine):
 
             # move product to outside
             self.state = self.switch_state(State.CB_BWD)
-            self.cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT")
+            self.cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT", as_thread=False)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -243,7 +229,7 @@ class Warehouse(Machine):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.move_to_position, args=(horizontal, vertical), name=self.name)
+            self.thread = threading.Thread(target=self.move_to_position, args=(horizontal, vertical, False), name=self.name)
             self.thread.start()
             return
 

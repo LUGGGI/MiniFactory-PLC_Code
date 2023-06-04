@@ -40,13 +40,13 @@ class VacRobot(Robot3D):
     def __del__(self):
         log.debug("Destroyed Vacuum Robot: " + self.name)
             
-    def grip(self, as_thread=False):
+    def grip(self, as_thread=True):
         '''Grip Product.
         
         :as_thread: Runs the function as a thread
         '''
         if as_thread:
-            self.thread = threading.Thread(target=self.grip, args=(), name=self.name)
+            self.thread = threading.Thread(target=self.grip, args=(False,), name=self.name)
             self.thread.start()
             return
 
@@ -60,13 +60,13 @@ class VacRobot(Robot3D):
         else:
             self.stage += 1
 
-    def release(self, as_thread=False):
+    def release(self, as_thread=True):
         '''Release product.
         
         :as_thread: Runs the function as a thread
         '''
         if as_thread:
-            self.thread = threading.Thread(target=self.release, args=(), name=self.name)
+            self.thread = threading.Thread(target=self.release, args=(False,), name=self.name)
             self.thread.start()
             return
 
