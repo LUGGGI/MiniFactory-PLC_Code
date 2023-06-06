@@ -45,7 +45,7 @@ class ExitHandler:
 
         list = exit_revpi.io
 
-        not_used_words = ["PWM", "O_", "RevPiLED", "RS485ErrorLimit"]
+        not_used_words = ["PWM", "RevPiLED", "RS485ErrorLimit"]
 
         for io in list:
             if io.type == 301:
@@ -69,3 +69,8 @@ class ExitHandler:
                     exit_revpi.io[str(io)].value = False
 
         exit_revpi.exit()
+
+
+# Start stop factory if called as script
+if __name__ == "__main__":
+    ExitHandler.stop_factory(ExitHandler(RevPiModIO()))

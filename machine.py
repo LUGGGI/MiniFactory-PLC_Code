@@ -66,7 +66,7 @@ class Machine:
         
         :state: state Enum to switch to
         '''
-        if wait:
+        if wait and False:
             input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
         self.__state_time_start = datetime.now()
         self.state_is_init = False

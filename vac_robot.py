@@ -8,6 +8,7 @@ __license__ = "GPL"
 __version__ = "2023.05.23"
 
 import threading
+from time import sleep
 
 from logger import log
 from actuator import Actuator
@@ -51,8 +52,11 @@ class VacRobot(Robot3D):
             return
 
         try:
+            log.info(f"{self.name} :Gripping")
             self.compressor.run_for_time("", 1, as_thread=True)
+            sleep(0.3)
             self.valve.start()
+            sleep(0.3)
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
@@ -71,6 +75,7 @@ class VacRobot(Robot3D):
             return
 
         try:
+            log.info(f"{self.name} :Releasing")
             self.valve.stop()
         except Exception as error:
             self.state = self.switch_state(State.ERROR)

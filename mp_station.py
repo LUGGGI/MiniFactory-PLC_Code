@@ -58,7 +58,7 @@ class MPStation(Machine):
         '''
         # call this function again as a thread
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run, args=(with_oven, True), name=self.name)
+            self.thread = threading.Thread(target=self.run, args=(with_oven, False), name=self.name)
             self.thread.start()
             return
 
@@ -75,7 +75,7 @@ class MPStation(Machine):
 
                 compressor.run_for_time("", 0.5, as_thread=True)
                 oven_door_valve.start() # open door
-                sleep(0.2)
+                # sleep(0.2)
                 tray.run_to_sensor("IN", self.name + "_REF_SW_OVEN_TRAY_IN") # move tray in
                 oven_door_valve.stop() # close door
                 Actuator(self.revpi, self.name + "_LIGHT_OVEN").run_for_time("", self.__TIME_OVEN) # turn light on for time
@@ -86,6 +86,7 @@ class MPStation(Machine):
 
                 del tray
                 del oven_door_valve
+            vg_motor.thread.join()
 
 
             # move product to table with vacuum gripper
@@ -97,16 +98,18 @@ class MPStation(Machine):
             table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
 
             vg_motor.thread.join() # wait for the vg to be at oven
-            compressor.run_for_time("", 2, as_thread=True)
-            vg_lower_valve.run_for_time("", 1) # lower gripper
+            compressor.run_for_time("", 1, as_thread=True)
+            vg_lower_valve.run_for_time("", 0.7, as_thread=True) # lower gripper
+            sleep(0.5)
             vg_valve.start() # create vacuum at gripper
-            sleep(1) # wait for gripper to be at top
+            sleep(0.5) # wait for gripper to be at top
             vg_motor.run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE") # move vg to table
-            vg_lower_valve.start() # lower gripper
+
+            compressor.run_for_time("", 1, as_thread=True)
+            vg_lower_valve.run_for_time("", 0.7, as_thread=True) # lower gripper
             sleep(0.5)
             vg_valve.stop() # stop vacuum at gripper
             sleep(0.5)
-            vg_lower_valve.stop()
 
             del vg_valve
             del vg_lower_valve

@@ -93,9 +93,10 @@ class Warehouse(Machine):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(to_end, True), name=self.name)
+            self.thread = threading.Thread(target=self.init, args=(to_end, False), name=self.name)
             self.thread.start()
             return
+        
         self.state = self.switch_state(State.INIT)
         log.info(f"Initializing {self.name}, moving to init position")
         try:

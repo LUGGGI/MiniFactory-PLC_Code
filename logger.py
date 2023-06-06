@@ -9,11 +9,12 @@ __version__ = "2023.05.23"
 
 import logging
 import argparse
+from os import listdir
 
 STD_LEVEL_CONSOLE = "INFO"
-
 LEVEL_FILE = logging.DEBUG
-log_file_path = "plc.log"
+
+log_file_path = f"log/plc{listdir('log').__len__()+1}.log"
 
 log_formatter_file = logging.Formatter("%(asctime)s, %(levelname)-8s, %(threadName)-20s, %(module)-10s, %(funcName)-25s(%(lineno)3d), %(message)s")
 log_formatter_console = logging.Formatter("%(levelname)-8s %(threadName)-20s %(module)-10s %(funcName)-25s(%(lineno)3d): %(message)s")

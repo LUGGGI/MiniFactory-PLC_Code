@@ -60,8 +60,8 @@ class Sensor():
         '''
         try:
             self.__revpi.io[self.name].reg_event(event_det_at_sensor, edge=edge)
-        except RuntimeError as error:
-            log.debug(error)
+        except RuntimeError:
+            log.debug(f"{self.name} :Already monitoring")
 
 
     def remove_monitor(self, edge=BOTH):

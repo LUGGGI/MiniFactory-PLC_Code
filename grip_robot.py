@@ -58,6 +58,7 @@ class GripRobot(Robot3D):
             return
 
         try:
+            log.info(f"{self.name} :Gripping")
             self.motor_claw.run_to_encoder_value("CLOSE", self.encoder_claw, self.GRIPPER_CLOSED)
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -78,6 +79,7 @@ class GripRobot(Robot3D):
             return
 
         try:
+            log.info(f"{self.name} :Releasing")
             self.motor_claw.run_to_encoder_value("OPEN", self.encoder_claw, self.GRIPPER_OPENED)
         except Exception as error:
             self.state = self.switch_state(State.ERROR)

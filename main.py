@@ -28,7 +28,7 @@ from actuator import Actuator
 from conveyor import Conveyor
 from punch_mach import PunchMach
 from mp_station import MPStation
-from grip_robot import GripRobot, Position
+from grip_robot import GripRobot, Position, State as State_3D
 from vac_robot import VacRobot
 from sort_line import SortLine
 from warehouse import Warehouse, ShelfPos
@@ -117,43 +117,44 @@ class MainLoop:
 
         elif self.state == State.GR2:
             if self.run_gr2():
-                self.state = self.main.switch_state(State.MPS)
+                self.state = self.main.switch_state(State.MPS, True)
+                pass
 
         elif self.state == State.MPS:
             if self.run_mps():
-                self.state = self.main.switch_state(State.CB1)
+                self.state = self.main.switch_state(State.CB1, True)
 
         elif self.state == State.CB1:
             if self.run_cb1():
-                self.state = self.main.switch_state(State.GR1_1)
+                self.state = self.main.switch_state(State.GR1_1, True)
         
         elif self.state == State.GR1_1:
             if self.run_gr1():
-                self.state = self.main.switch_state(State.PM)
+                self.state = self.main.switch_state(State.PM, True)
 
         elif self.state == State.PM:
             if self.run_pm():
-                self.state = self.main.switch_state(State.GR1_2)
+                self.state = self.main.switch_state(State.GR1_2, True)
 
         elif self.state == State.GR1_2:
             if self.run_gr1():
-                self.state = self.main.switch_state(State.CB3_1)
+                self.state = self.main.switch_state(State.CB3_1, True)
 
         elif self.state == State.CB3_1:
             if self.run_cb3():
-                self.state = self.main.switch_state(State.VG1_1)
+                self.state = self.main.switch_state(State.VG1_1, True)
         
         elif self.state == State.VG1_1:
             if self.run_vg1():
-                self.state = self.main.switch_state(State.WH)
+                self.state = self.main.switch_state(State.WH, True)
         
         elif self.state == State.WH:
             if self.run_wh():
-                self.state = self.main.switch_state(State.VG1_2)
+                self.state = self.main.switch_state(State.VG1_2, True)
         
         elif self.state == State.VG1_2:
             if self.run_vg1():
-                self.state = self.main.switch_state(State.CB3_2)
+                self.state = self.main.switch_state(State.CB3_2, True)
         
         elif self.state == State.CB3_2:
             if self.run_cb3():
@@ -161,19 +162,19 @@ class MainLoop:
 
         elif self.state == State.CB4:
             if self.run_cb4():
-                self.state = self.main.switch_state(State.GR3)
+                self.state = self.main.switch_state(State.GR3, True)
 
         elif self.state == State.GR3:
             if self.run_gr3():
-                self.state = self.main.switch_state(State.CB5)
+                self.state = self.main.switch_state(State.CB5, True)
 
         elif self.state == State.CB5:
             if self.run_cb5():
-                self.state = self.main.switch_state(State.SL)
+                self.state = self.main.switch_state(State.SL, True)
 
         elif self.state == State.SL:
             if self.run_sl():
-                self.state = self.main.switch_state(State.VG2)
+                self.state = self.main.switch_state(State.VG2, True)
 
         elif self.state == State.VG2:
             if self.run_vg2():
@@ -250,7 +251,7 @@ class MainLoop:
             return True
         
     def run_cb4(self) -> False:
-        machine: Conveyor = self.machines["CB4"]
+        machine: Conveyor = self.machines.get("CB4")
         if machine == None:
             machine = Conveyor(self.revpi, "CB4")
             self.machines[machine.name] = machine            
@@ -283,14 +284,14 @@ class MainLoop:
             if machine.is_stage(1):
                 # move to cb1 (6s)
                 machine.reset_claw(as_thread=True)
-                machine.move_to_position(Position(225, 60, 1600), ignore_moving_pos=True)
+                machine.move_to_position(Position(225, 66, 1600), ignore_moving_pos=True)
             # Wait for cb1 to finish
             elif machine.is_stage(2) and self.is_ready_for_transport("CB1"):
                 # move down
                 machine.move_to_position(Position(-1, -1, 2100))
             elif machine.is_stage(3):
                 # grip product, move to cb2, release product
-                machine.move_product_to(Position(3835, 78, 2050), sensor="CB1_SENS_END")
+                machine.move_product_to(Position(3835, 78, 1950), sensor="CB1_SENS_END")
             elif machine.is_stage(4):
                 # move up and end state
                 machine.move_to_position(Position(-1, -1, 1600))
@@ -299,12 +300,17 @@ class MainLoop:
 
         # move from cb2 to cb3    
         elif self.state == State.GR1_2:
+            if machine.is_stage(1) and machine.state == State_3D.INIT:
+                # move to cb2 if new gr1
+                machine.reset_claw(as_thread=True)
+                machine.move_to_position(Position(3835, 78, 1400), ignore_moving_pos=True)
+                machine.stage = 0
             if machine.is_stage(1):
                 # move down
-                machine.move_to_position(Position(-1, -1, 2050))
+                machine.move_to_position(Position(-1, -1, 2000))
             elif machine.is_stage(2):
                 # grip product, move to cb3, release product
-                machine.move_product_to(Position(2380, 0, 2050))
+                machine.move_product_to(Position(2380, 0, 2050), sensor="CB2_SENS_START")
             elif machine.is_stage(3):
                 # move back to init
                 machine.init(to_end=True)
@@ -337,16 +343,19 @@ class MainLoop:
 
         elif machine.is_stage(1):
             # get product from plate
-            machine.reset_claw(as_thread=True)
-            machine.move_to_position(Position(2225, 53, 3450))
+            machine.GRIPPER_OPENED = 5
+            machine.reset_claw()
+            machine.move_to_position(Position(2225, 54, 3450))
         elif machine.is_stage(2):
                 # grip
+                machine.GRIPPER_CLOSED = 11
                 machine.grip(as_thread=True)
         elif machine.is_stage(3):
             # move product to mps
-            machine.move_product_to(Position(1340, 36, 1500))
+            machine.move_to_position(Position(1370, 24, 1700))
         elif machine.is_stage(4):
                 # release
+                machine.GRIPPER_OPENED = 9
                 machine.release(as_thread=True)
         elif machine.is_stage(5):
             # move back to init
@@ -354,9 +363,9 @@ class MainLoop:
             return True
 
     def run_gr3(self) -> False:
-        machine: GripRobot = self.machines.get("GR3", Position(-1, -1, 1400))
+        machine: GripRobot = self.machines.get("GR3")
         if machine == None:
-            machine = GripRobot(self.revpi, "GR3")
+            machine = GripRobot(self.revpi, "GR3", Position(-1, -1, 1400))
             self.machines[machine.name] = machine
             machine.init(as_thread=True)
 
@@ -401,15 +410,16 @@ class MainLoop:
                 return True
 
         elif self.state == State.VG1_2:
-            if machine.is_stage(1):
-                # move to wh
-                machine.move_to_position(Position(1770, 1075, 500))
+            if machine.is_stage(1) and machine.state == State_3D.INIT:
+                # move to wh if new vg1
+                machine.move_to_position(Position(1770, 1075, 200), ignore_moving_pos=True)
+                machine.stage = 0
             elif machine.is_stage(1):
                 # move down
-                machine.move_to_position(Position(-1, -1, 800))
+                machine.move_to_position(Position(-1, -1, 750))
             elif machine.is_stage(2):
                 # grip product, move to cb3, release product
-                machine.move_product_to(Position(85, 790, 1150), sensor="WH_SENS_OUT")
+                machine.move_product_to(Position(85, 790, 1150))
             elif machine.is_stage(3):
                 # move back to init
                 machine.init(to_end=True)
@@ -423,7 +433,7 @@ class MainLoop:
             machine.init(as_thread=True)
 
             # DEBUG
-            self.machines[machine.name] = SortLine(self.revpi, "SL")
+            self.machines["SL"] = SortLine(self.revpi, "SL")
             self.machines["SL"].color = "WHITE"
 
 
@@ -436,11 +446,11 @@ class MainLoop:
         elif machine.is_stage(1) and self.machines["SL"].color == "BLUE":
             # move to blue
             machine.move_to_position(Position(255, 1750, 1400))
-        elif machine.is_stage(3):
+        elif machine.is_stage(2):
             # grip product, move to out, release product
             machine.move_product_to(Position(1000, 800, 1750), sensor=f"SL_SENS_{self.machines['SL'].color}")
             self.machines["SL"].end_machine = True
-        elif machine.is_stage(5):
+        elif machine.is_stage(3):
             # move back to init
             machine.init(to_end=True)
             return True

@@ -33,7 +33,7 @@ class Position:
         self.vertical = vertical
 
     def __str__(self) -> str:
-        return f"(r:{self.rotation}, h:{self.horizontal}, v:{self.vertical})"  
+        return f"(r:{self.rotation if self.rotation != -1 else '-'}, h:{self.horizontal if self.horizontal != -1 else '-'}, v:{self.vertical if self.vertical != -1 else '-'})"  
 
 class Robot3D(Machine):
     '''Controls the 3D Robot.
@@ -91,7 +91,7 @@ class Robot3D(Machine):
         try:
             # move to init position
             self.move_all_axes(Position(-1,0,0), as_thread=False)
-            self.move_all_axes(Position(0,0,0), as_thread=True)
+            self.move_all_axes(Position(0,0,0), as_thread=False)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -123,19 +123,19 @@ class Robot3D(Machine):
             self.encoder_hor.get_encoder_value(),
             self.encoder_ver.get_encoder_value()
         )
-        self.grip()
+        self.grip(as_thread = False)
 
         if not self.move_to_position(position, sensor, as_thread=False):
             # move back and try again
-            self.release()
+            self.release(as_thread = False)
             self.move_to_position(current_position, as_thread=False)
-            self.grip()
+            self.grip(as_thread = False)
             if not self.move_to_position(position, sensor, as_thread=False):
                 self.state = self.switch_state(State.ERROR)
                 self.error_exception_in_machine = True
                 return
 
-        self.release()
+        self.release(as_thread = False)
         self.stage = current_stage + 1
 
 
@@ -160,30 +160,22 @@ class Robot3D(Machine):
             ignore_moving_pos = True
         try:
             if not ignore_moving_pos:
-                # move to moving position
-                self.state = self.switch_state(State.TO_MOVING_POS)
-
                 # check if there is a detection when moving to first position
-                if det_sensor:
+                if sensor:
                     det_sensor = Sensor(self.revpi, sensor)
                     det_sensor.start_monitor()
 
-                # get current position
-                current_position = Position(
-                    self.encoder_rot.get_encoder_value(),
-                    self.encoder_hor.get_encoder_value(),
-                    self.encoder_ver.get_encoder_value()
-                )
-                moving_position = self.moving_position
-                # only move axis to moving position if current axis value is lower than moving position
-                moving_position.rotation = self.moving_position.rotation if current_position.rotation <= self.moving_position.rotation else -1
-                moving_position.horizontal = self.moving_position.horizontal if current_position.horizontal <= self.moving_position.horizontal else -1
-                moving_position.vertical = self.moving_position.vertical if current_position.vertical <= self.moving_position.vertical else -1
-                self.move_all_axes(self.moving_position)
-
-                if det_sensor and not det_sensor.is_detected():
-                    log.error(f"{self.name} :Product lost")
-                    return False
+                # move to moving position
+                self.state = self.switch_state(State.TO_MOVING_POS)
+                if self.encoder_ver.get_encoder_value() <= self.moving_position.vertical:
+                    # if robot is higher than moving postion rotate directly
+                    self.move_all_axes(Position(position.rotation, self.moving_position.horizontal, self.moving_position.vertical), as_thread=False)
+                else:
+                    self.move_all_axes(self.moving_position, as_thread=False)
+                    
+                if sensor and not det_sensor.is_detected():
+                        log.error(f"{self.name} :Product lost")
+                        return False
 
                 # move non moving position axes
                 self.state = self.switch_state(State.MOVING)
@@ -191,11 +183,11 @@ class Robot3D(Machine):
                 rotation = position.rotation if self.moving_position.rotation == -1 or position.rotation < self.moving_position.rotation else -1
                 horizontal = position.horizontal if self.moving_position.horizontal == -1 or position.horizontal < self.moving_position.horizontal else -1
                 vertical = position.vertical if self.moving_position.vertical == -1 or position.vertical < self.moving_position.vertical else -1
-                self.move_all_axes(Position(rotation, horizontal, vertical))
+                self.move_all_axes(Position(rotation, horizontal, vertical), as_thread=False)
 
             # move to destination
             self.state = self.switch_state(State.TO_DESTINATION)
-            self.move_all_axes(position)
+            self.move_all_axes(position, as_thread=False)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -205,6 +197,8 @@ class Robot3D(Machine):
             log.info(f"{self.name} :Position reached: {position}")
             self.state = self.switch_state(State.END)
             self.stage += 1
+        finally:
+            return True
 
 
     def move_all_axes(self, position: Position, as_thread=True):

@@ -67,7 +67,7 @@ class PunchMach(Machine):
             # raise puncher
             puncher.run_to_sensor("UP", stop_sensor="PM_REF_SW_TOP", as_thread=True)
             # Move product from inner conveyor belt to puncher
-            cb_punch.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_PM", start_sensor="CB2_SENS_END")
+            cb_punch.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_PM", start_sensor="CB2_SENS_END", as_thread=False)
 
             self.state = self.switch_state(State.PUNCHING)
             log.info("Punching product")
@@ -81,7 +81,7 @@ class PunchMach(Machine):
 
             self.state = self.switch_state(State.CB2)
             # Move product to end of connected conveyor belt
-            cb2.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_START", start_sensor="PM_SENS_IN")
+            cb2.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_START", start_sensor="PM_SENS_IN", stop_delay_in_ms=150 ,as_thread=False)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
