@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.09"
 
 from time import sleep
 from revpimodio2 import RevPiModIO
@@ -55,7 +55,7 @@ class ExitHandler:
                         is_out = False
 
                 if is_out:
-                    exit_revpi.io[str(io)].value = False
+                    exit_revpi.io[str(io)].value = 0
 
         sleep(0.5)
         for io in list:
@@ -66,7 +66,7 @@ class ExitHandler:
                         is_out = False
 
                 if is_out:
-                    exit_revpi.io[str(io)].value = False
+                    exit_revpi.io[str(io)].value = 0
 
         exit_revpi.exit()
 

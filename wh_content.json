@@ -1,23 +1,23 @@
 {
     "factory": "right",
     "contents": {
-        "SHELF_1_1": "None",
-        "SHELF_1_2": "BLUE",
-        "SHELF_1_3": "Carrier",
-        "SHELF_2_1": "None",
-        "SHELF_2_2": "None",
-        "SHELF_2_3": "WHITE",
-        "SHELF_3_1": "None",
-        "SHELF_3_2": "BLUE",
-        "SHELF_3_3": "RED"
+        "SHELF_1_1": "Empty",
+        "SHELF_1_2": "Empty",
+        "SHELF_1_3": "BLUE",
+        "SHELF_2_1": "BLUE",
+        "SHELF_2_2": "Empty",
+        "SHELF_2_3": "RED",
+        "SHELF_3_1": "Carrier",
+        "SHELF_3_2": "WHITE",
+        "SHELF_3_3": "Empty"
     },
     "states": [
-        "None",
+        "Empty",
         "Carrier",
         "WHITE",
         "RED",
         "BLUE",
-        "UNKNOWN"
+        "COLOR_UNKNOWN"
     ],
-    "Shelf_pos": "1_1 means Top, Nearest to CB"
+    "Shelf_pos": "1_1 means Top, Nearest to CB, (hor_ver)"
 }

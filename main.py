@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.09"
 
 from time import sleep
 from enum import Enum
@@ -150,8 +150,7 @@ class MainLoop:
         
         elif self.state == State.WH:
             if self.run_wh():
-                return 
-                self.state = self.main.switch_state(State.VG1_2, True)
+                self.state = self.main.switch_state(State.INIT, True)
         
         elif self.state == State.VG1_2:
             if self.run_vg1():
@@ -488,9 +487,9 @@ class MainLoop:
             return True
 
         elif machine.is_stage(1):
-            machine.store_product(ShelfPos.SHELF_1_1)
+            machine.store_product()
         elif machine.is_stage(2):
-            machine.retrieve_product(ShelfPos.SHELF_1_1)
+            machine.retrieve_product(color="COLOR_UNKNOWN")
 
     def end(self) -> False:
         '''waits for any machines left running'''
