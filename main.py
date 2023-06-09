@@ -73,13 +73,13 @@ class MainLoop:
             self.revpi = RevPiModIO(autorefresh=True)
         except:
             # load simulation if not connected to factory
-            self.revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi\RevPi82247.img")
+            self.revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.img")
         self.revpi.mainloop(blocking=False)
 
         self.exit_handler = ExitHandler(self.revpi)
 
         self.main = Machine(self.revpi, "Main")
-        self.state = self.main.switch_state(State.GR2)
+        self.state = self.main.switch_state(State.WH)
         self.machines = {"Main": self.main}
         log.info("Main: Start Mainloop")
 
@@ -150,6 +150,7 @@ class MainLoop:
         
         elif self.state == State.WH:
             if self.run_wh():
+                return 
                 self.state = self.main.switch_state(State.VG1_2, True)
         
         elif self.state == State.VG1_2:
@@ -184,47 +185,34 @@ class MainLoop:
     ####################################################################################################
     # Methods that control the different states for the
     def test(self) -> False:
-        try:
-            self.gr2
-        except:
-            self.gr2 = GripRobot(self.revpi, "GR2", moving_position=Position(-1, 0, 1100))
-            # self.gr2.init(as_thread=True)
+        
+        # motor = Actuator(self.revpi, "GR1")
+        # encoder = Sensor(self.revpi, "GR1_HORIZONTAL_COUNTER")
+        # encoder.encoder_trigger_threshold = 1
+        # encoder.wait_for_encoder(10, 60)
+        # sleep(0.5)
+        # for i in range(1,10):
+            
+        #     sleep(0.2)
+        #     motor.run_to_encoder_value("CCW", encoder, i*100, as_thread=False)
+        #     sleep(0.2)
+        #     value = encoder.get_current_value()
+        #     print(value)
+        #     # if value >= 110:
+        #     #     motor.run_for_time("UP", 0.04)
+        #     #     sleep(0.1)
+        #     #     log.critical(f"  {encoder.get_encoder_value()}")
+        # motor.run_to_encoder_start("CW", "GR1_REF_SW_ROTATION", encoder, as_thread=False)
+        motor = Actuator(self.revpi, "GR3", pwm="GR3_ROTATION_PWM")
+        encoder = Sensor(self.revpi, "GR3_ROTATION_ENCODER")
+        for i in range(10):
+            motor.run_to_encoder_start("CW", "GR3_REF_SW_ROTATION", encoder, as_thread=False)
 
-        if self.gr2.error_exception_in_machine:
-            self.state = self.main.switch_state(State.ERROR)
-            return False
+            motor.run_to_encoder_value('CCW', encoder, 500, as_thread=False)
+            sleep(0.5)
+            log.warning(encoder.get_current_value())
 
-        elif self.gr2.stage == 0:
-            # get product from plate
-            # self.gr2.move_to_position(Position(0, 0, 0), grip_bevor_moving=True, ignore_moving_pos=True)
-            try:
-                self.gr2.motor_claw.run_to_encoder_start("OPEN", self.gr2.name + "_REF_SW_CLAW", self.gr2.encoder_claw)
-                self.gr2.motor_claw.run_to_encoder_value("CLOSE", self.gr2.encoder_claw, self.gr2.GRIPPER_OPENED)
-                log.error("1------------------------")
-                sleep(0.5)
-                self.gr2.motor_claw.run_to_encoder_value("OPEN", self.gr2.encoder_claw, 4)
-                log.error("2------------------------")
-                sleep(2)
-                self.gr2.motor_claw.run_to_encoder_start("OPEN", self.gr2.name + "_REF_SW_CLAW", self.gr2.encoder_claw)
-                sleep(2)
-                self.gr2.motor_claw.run_to_encoder_value("CLOSE", self.gr2.encoder_claw, self.gr2.GRIPPER_OPENED)
-
-                self.state = self.main.switch_state(State.END)
-                return
-            except Exception as error:
-                self.gr2.state = self.gr2.switch_state(State.ERROR)
-                self.gr2.error_exception_in_machine = True
-                log.exception(error)
-                return
-
-            return True
-        # elif not self.gr2.thread.is_alive() and self.gr2.stage == 2:
-        #     # get product from plate
-        #     self.gr2.move_to_position(Position(300, 5, 300), grip_bevor_moving=True, ignore_moving_pos=True)
-        elif not self.gr2.thread.is_alive() and self.gr2.stage == 2:
-            # move back to init
-            self.gr2.init(as_thread=True)
-            return True
+        self.state = self.main.switch_state(State.END)
 
     def run_cb1(self) -> False:
         machine: Conveyor = self.machines.get("CB1")

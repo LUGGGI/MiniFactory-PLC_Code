@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.09"
 
 import threading
 import time
@@ -20,26 +20,30 @@ class Actuator():
     '''Control for Actuators, can also call Sensors
     
     run_to_sensor(): Run Actuator until product is detected.
-    run_to_encoder_value(): Run Actuator until the trigger_value of encoder is reached.
-    run_to_encoder_start(): Run Actuator to the encoder reverence switch and resets the counter to 0.
     run_for_time(): Run Actuator for certain amount of time.
+    run_to_encoder_value(): Run Actuator until the trigger_value of encoder is reached.
+    run_to_encoder_start(): Run Actuator to the encoder reference switch and resets the counter to 0.
+    move_axis(): Moves an axis to the given trigger value.
+    start(): Start actuator.
+    stop(): Stop actuator.
+    set_pwm: Set PWM to percentage.
     '''
     thread = None
+    PWM_TRIGGER_THRESHOLD = 17
 
 
-    def __init__(self, revpi: RevPiModIO, name: str, type=""):
+    def __init__(self, revpi: RevPiModIO, name: str, pwm: str=None, type: str=None):
         '''Initializes the Actuator
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :pwm: Name of PWM-pin, Slows motor down, bevor reaching the value
         :type: specifier for motor name
         '''
         self.name = name
         self.__revpi = revpi
-        if type != "":
-            self.type = "_" + type
-        else:
-            self.type = type
+        self.pwm = pwm
+        self.type = ("_" + type) if type else ""
 
         log.debug("Created Actuator: " + self.name + self.type)
 
@@ -66,12 +70,19 @@ class Actuator():
 
         log.info(f"{actuator} :Actuator running to sensor: {stop_sensor}")
 
-        # check if stop_sensor is a reverence switch and already pressed
-        if stop_sensor.find("REF_SW") != -1 and self.__revpi.io[stop_sensor].value == True:
-            log.info(f"{actuator} :Detection already at stop position: {stop_sensor}")
+        sensor = Sensor(self.__revpi, stop_sensor)
+        # check if already at stop sensor
+        try:
+            sensor.wait_for_detect(0)
+        except:
+            pass
+        else:
             return
 
+
         #start actuator
+        if self.pwm:
+            self.set_pwm(100)
         self.start(direction)
 
         try:
@@ -82,6 +93,8 @@ class Actuator():
         finally:
             #stop actuator
             self.stop(direction)
+            if self.pwm:
+                self.set_pwm(0)
 
 
     def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None, as_thread=False):
@@ -102,6 +115,8 @@ class Actuator():
         log.info(f"{actuator} :Actuator running for time: {wait_time_in_s}")
 
         #start actuator
+        if self.pwm:
+            self.set_pwm(100)
         self.start(direction)
         
         if check_sensor:
@@ -114,6 +129,8 @@ class Actuator():
 
         #stop actuator
         self.stop(direction)
+        if self.pwm:
+            self.set_pwm(0)
 
         if check_sensor and sensor.is_detected() == False:
             raise(Exception(f"{check_sensor} :No detection"))
@@ -138,19 +155,33 @@ class Actuator():
         log.info(f"{actuator} :Actuator running to value: {trigger_value}, at: {encoder.name}")
 
         #start actuator
+        if self.pwm:
+            self.set_pwm(100)
+            encoder.encoder_trigger_threshold = self.PWM_TRIGGER_THRESHOLD
         self.start(direction)
 
         try:
-            encoder.wait_for_encoder(trigger_value, timeout_in_s)
+            if self.pwm:
+                if abs(encoder.get_current_value() - trigger_value) > 100:
+                    # run most of the way at full power
+                    encoder.wait_for_encoder(trigger_value-100, timeout_in_s)
+                # run at 15% speed for last 100 values    
+                self.set_pwm(15)
+
+            # run to trigger_value
+            log.info(f"{actuator} :Stopped at: {encoder.wait_for_encoder(trigger_value, timeout_in_s)}")
+
         except:
             raise
         finally:
             #stop actuator
             self.stop(direction)
+            if self.pwm:
+                self.set_pwm(0)
 
 
     def run_to_encoder_start(self, direction: str, stop_sensor: str, encoder: Sensor, timeout_in_s=10, as_thread=False):
-        '''Run Actuator to the encoder reverence switch and resets the encoder to 0.
+        '''Run Actuator to the encoder reference switch and resets the encoder to 0.
         
         :direction: Actuator direction, (last part of whole name)
         :stop_sensor: Reference switch: stops Actuator if detection occurs at this Sensor
@@ -174,7 +205,7 @@ class Actuator():
 
 
     def move_axis(self, direction: str, trigger_value: int, current_value: int, move_threshold: int, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
-        '''Moves a axis to the given trigger value.
+        '''Moves an axis to the given trigger value.
         
         :direction: Actuator direction, (last part of whole name)
         :trigger_value: Encoder-Value at which the motor stops
@@ -202,20 +233,36 @@ class Actuator():
 
 
     def start(self, direction: str=""):
-        '''Start Actuator
+        '''Start Actuator.
         
         :direction: Motor direction, (last part of whole name)
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         log.info(f"{actuator} :Started actuator")
+        if self.pwm:
+            self.set_pwm(100)
         self.__revpi.io[actuator].value = True 
 
 
     def stop(self, direction: str=""):
-        '''Stop Actuator
+        '''Stop Actuator.
         
         :direction: Motor direction, (last part of whole name)
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         log.info(f"{actuator} :Stopped actuator")
-        self.__revpi.io[actuator].value = False 
+        if self.pwm:
+            self.set_pwm(0)
+        self.__revpi.io[actuator].value = False
+
+    
+    def set_pwm(self, percentage: int):
+        '''Set PWM to percentage.
+        
+        :percentage: speed of motor, (0..100) on is over 15
+        '''
+        if percentage < 0 or percentage > 100:
+            raise(Exception(f"{self.pwm}: {percentage} :Out of range (0-100)"))
+        
+        log.info(f"{self.pwm} :Set to {percentage}%")
+        self.__revpi.io[self.pwm].value = percentage

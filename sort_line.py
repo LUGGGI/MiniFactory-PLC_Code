@@ -91,7 +91,7 @@ class SortLine(Machine):
             Actuator(self.revpi, f"{self.name}_VALVE_PISTON_{self.color}").run_for_time("", 2)
             compressor.stop()
             # check if in bay
-            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}").detect():
+            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}").get_current_value() == True:
                 # no detection at sensor
                 raise(Exception(f"{self.name} :Product not in right bay"))
 

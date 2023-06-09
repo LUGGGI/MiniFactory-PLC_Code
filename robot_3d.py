@@ -64,11 +64,15 @@ class Robot3D(Machine):
         self.encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER")
 
         # get motors
-        self.motor_rot = Actuator(self.revpi, self.name, "rotation")
-        self.motor_hor = Actuator(self.revpi, self.name, "horizontal")
-        self.motor_ver = Actuator(self.revpi, self.name, "vertical")
+        if self.name == "GR3": #TODO
+            self.motor_rot = Actuator(self.revpi, self.name, pwm=self.name + "_ROTATION_PWM", type="rotation")
+        else:
+            self.motor_rot = Actuator(self.revpi, self.name, type="rotation")
+        self.motor_hor = Actuator(self.revpi, self.name, type="horizontal")
+        self.motor_ver = Actuator(self.revpi, self.name, type="vertical")
 
         log.debug("Created 3D Robot: " + self.name)
+
 
     def __del__(self):
         log.debug("Destroyed 3D Robot: " + self.name)
@@ -91,7 +95,7 @@ class Robot3D(Machine):
         try:
             # move to init position
             self.move_all_axes(Position(-1,0,0), as_thread=False)
-            self.move_all_axes(Position(0,0,0), as_thread=False)
+            self.move_all_axes(Position(0,-1,-1), as_thread=False)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -119,9 +123,9 @@ class Robot3D(Machine):
         current_stage = self.stage
         # get current position
         current_position = Position(
-            self.encoder_rot.get_encoder_value(),
-            self.encoder_hor.get_encoder_value(),
-            self.encoder_ver.get_encoder_value()
+            self.encoder_rot.get_current_value(),
+            self.encoder_hor.get_current_value(),
+            self.encoder_ver.get_current_value()
         )
         self.grip(as_thread = False)
 
@@ -143,7 +147,7 @@ class Robot3D(Machine):
         '''Moves to Robot given position.
 
         :position: (rotation, horizontal, vertical): int
-        :sensor: Sensor that will be checked for detection while moving to moving position
+        :sensor: Sensor that will be checked for detection when at moving position
         :ignore_moving_pos: Robot won't move to moving Position
         :as_thread: Runs the function as a thread
         '''
@@ -160,21 +164,17 @@ class Robot3D(Machine):
             ignore_moving_pos = True
         try:
             if not ignore_moving_pos:
-                # check if there is a detection when moving to first position
-                if sensor:
-                    det_sensor = Sensor(self.revpi, sensor)
-                    det_sensor.start_monitor()
-
                 # move to moving position
                 self.state = self.switch_state(State.TO_MOVING_POS)
-                if self.encoder_ver.get_encoder_value() <= self.moving_position.vertical:
+                if self.encoder_ver.get_current_value() <= self.moving_position.vertical:
                     # if robot is higher than moving postion rotate directly
                     self.move_all_axes(Position(position.rotation, self.moving_position.horizontal, self.moving_position.vertical), as_thread=False)
                 else:
                     self.move_all_axes(self.moving_position, as_thread=False)
-                    
-                if sensor and not det_sensor.is_detected():
-                        log.error(f"{self.name} :Product lost")
+
+                # check if Product was picked up
+                if sensor and Sensor(self.revpi, sensor).get_current_value() == True:
+                        log.error(f"{self.name} :Product still at Sensor")
                         return False
 
                 # move non moving position axes
@@ -218,9 +218,9 @@ class Robot3D(Machine):
         log.info(f"{self.name} :Moving axes to: {position}")
         # get current position
         current_position = Position(
-            self.encoder_rot.get_encoder_value(),
-            self.encoder_hor.get_encoder_value(),
-            self.encoder_ver.get_encoder_value()
+            self.encoder_rot.get_current_value(),
+            self.encoder_hor.get_current_value(),
+            self.encoder_ver.get_current_value()
         )
 
         # get motor directions

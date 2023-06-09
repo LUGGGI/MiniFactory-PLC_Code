@@ -39,13 +39,13 @@ class ExitHandler:
             exit_revpi = RevPiModIO(autorefresh=True)
         except:
             # load simulation if not connected to factory
-            exit_revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/RevPi\RevPi82247.img")
+            exit_revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.img")
 
         log.info("Setting all outputs to false: ")
 
         list = exit_revpi.io
 
-        not_used_words = ["PWM", "RevPiLED", "RS485ErrorLimit"]
+        not_used_words = ["PWM_", "RevPiLED", "RS485ErrorLimit"]
 
         for io in list:
             if io.type == 301:

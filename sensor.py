@@ -7,12 +7,20 @@ __copyright__ = "Lukas Beck"
 __license__ = "GPL"
 __version__ = "2023.05.23"
 
+from re import T
 import time
+from enum import Enum
 from revpimodio2 import RevPiModIO, BOTH
 
 from logger import log
 
 detection = False
+
+class SensorType(Enum):
+    LIGHT_BARRIER = 0
+    REF_SWITCH = 1
+    ENCODER = 2
+    COUNTER = 3
 
 class Sensor():
     '''Control for Senors
@@ -29,28 +37,54 @@ class Sensor():
     '''
     CYCLE_TIME = 0.005 # s
     counter_offset = 0
-    encoder_pre_stop = 30
+    encoder_trigger_threshold = 30
 
-    def __init__(self, revpi: RevPiModIO, name: str):
+    def __init__(self, revpi: RevPiModIO, name: str, type: SensorType=None):
         '''Initializes the Sensor
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :type: specifier for motor name
+        :type: Type of the sensor, if empty type is determined from name
         '''
         self.name = name
+        self.type = type
         self.__revpi = revpi
 
-        log.debug("Created Sensor: " + self.name)
+        if type == None:
+            if self.name.find("SENS") != -1:
+                self.type = SensorType.LIGHT_BARRIER
+            if self.name.find("REF_SW") != -1:
+                self.type = SensorType.REF_SWITCH
+            if self.name.find("ENCODER") != -1:
+                self.type = SensorType.ENCODER
+            if self.name.find("COUNTER") != -1:
+                self.type = SensorType.COUNTER
+                self.encoder_trigger_threshold = 1
+
+        log.debug(f"Created Sensor({self.type.name}): {self.name}")
 
 
     def __del__(self):
-        log.debug("Destroyed Sensor: " + self.name)
+        log.debug(f"Destroyed Sensor({self.type.name}): {self.name}")
 
 
-    def detect(self) -> bool:
-        '''Returns value of Sensor'''
-        return self.__revpi.io[self.name].value     
+    def get_current_value(self):
+        '''Returns the current value of the sensor.
+        
+        Returns True if detection at LIGHT_BARRIER or REF_SWITCH
+        '''
+        if self.type == SensorType.ENCODER:
+            return int(self.__revpi.io[self.name].value)
+        
+        elif self.type == SensorType.COUNTER:
+            return int(self.__revpi.io[self.name].value - self.counter_offset)
+        
+        elif self.type == SensorType.LIGHT_BARRIER:
+            return bool(not self.__revpi.io[self.name].value)
+        
+        else:
+            # self.type == SensorType.REF_SWITCH
+            return bool(self.__revpi.io[self.name].value)
 
 
     def start_monitor(self, edge=BOTH):
@@ -70,6 +104,8 @@ class Sensor():
         :edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2)
         '''
         self.__revpi.io[self.name].unreg_event(event_det_at_sensor, edge=edge)
+        global detection
+        detection = False
 
 
     def is_detected(self, edge=BOTH) -> bool:
@@ -85,13 +121,17 @@ class Sensor():
 
 
     def wait_for_detect(self, edge=BOTH, timeout_in_s=10):
-        '''Pauses thread until a detection occurs, panics if timeout is reached.
+        '''Waits for detection at sensor.
         
         :edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2)
         :timeout_in_s: Time after which an exception is raised
 
         -> Panics if timeout is reached (no detection happened)
         '''
+        if self.type == SensorType.LIGHT_BARRIER and self.get_current_value() == True or self.type == SensorType.REF_SWITCH and self.get_current_value() == True:
+            log.info(f"{self.name} :Already detected")
+            return
+
         if self.__revpi.io[self.name].wait(edge=edge, timeout=timeout_in_s*1000) == False:
             # sensor detected product
             log.info(f"{self.name} :Detection") 
@@ -99,61 +139,40 @@ class Sensor():
             raise(Exception(f"{self.name} :No detection"))
 
 
-    def wait_for_encoder(self, trigger_value: int, timeout_in_s=10):
-        '''Pauses thread until the encoder/counter reached the trigger_value.
+    def wait_for_encoder(self, trigger_value: int, timeout_in_s=10) -> int:
+        '''Waits for the encoder/counter to reach the trigger_value.
         
         :trigger_value: The value the motor would end up if it started from reverence switch
         :timeout_in_s: Time after which an exception is raised
-
-        -> Panics if timeout is reached (no detection happened) or encoder negativ
+        
+        -> Returns reached encoder_value
+        -> Panics if timeout is reached (no detection happened) or encoder value negativ
         '''
-        counter = self.__revpi.io[self.name].value
-        if counter > 10000:
-            raise(Exception(f"{self.name} :Counter negativ"))
+        current_value = self.get_current_value()
+        if current_value > 10000:
+            raise(Exception(f"{self.name} :Encoder had overflow"))
+        
+        start_time = time.time()
+        lower = True if trigger_value < current_value else False
 
-        start = time.time()
-        higher = True
-        # check running direction
-        if trigger_value < counter - self.counter_offset :
-            higher = False
-            self.counter_start = counter
+        while (time.time() <= start_time + timeout_in_s):
+            new_value = self.get_current_value()
 
-        # stop actuator a bit bevor to account for overrun
-        if self.name.find("ENCODER") != -1:
-            if higher:
-                trigger_value -= self.encoder_pre_stop 
-            else:
-                trigger_value += self.encoder_pre_stop
+            if self.type == SensorType.COUNTER and lower:
+                if new_value == current_value + 1:
+                    self.counter_offset += 2
+                    new_value = current_value = self.get_current_value()
+                elif new_value > current_value:
+                    raise(Exception(f"{self.name} :Counter jumped values"))
 
-        while(True):
-            # wait for encoder or counter to be higher than the trigger_value
-            if higher and self.__revpi.io[self.name].value - self.counter_offset >= trigger_value:
-                log.info(f"{self.name} :Count reached: " + str(self.__revpi.io[self.name].value - self.counter_offset)) 
-                break
-            # wait for counter to be lower that trigger_value
-            elif not higher and self.name.find("COUNTER") != -1 and self.__positive_to_negativ() - self.counter_offset <= trigger_value:
-                log.info(f"{self.name} :Count reached: " + str(self.__positive_to_negativ() - self.counter_offset)) 
-                break
-            # wait for encoder to be lower that trigger_value
-            elif not higher and self.__revpi.io[self.name].value <= trigger_value:
-                log.info(f"{self.name} :Count reached: " + str(self.__revpi.io[self.name].value)) 
-                break
-            # check if timeout time is reached 
-            elif time.time() >= start + timeout_in_s:
-                raise(Exception(f"{self.name} :Count not reached in time"))
 
+            if abs(self.get_current_value() - trigger_value) <= self.encoder_trigger_threshold:
+                return self.get_current_value() 
+            
             # wait for next cycle
             time.sleep(self.CYCLE_TIME)
-
-        # update the counter_offset
-        if self.name.find("COUNTER") != -1:
-            self.counter_offset = self.__revpi.io[self.name].value - trigger_value
-
-
-    def __positive_to_negativ(self):
-        '''Converts the upwards counting value to a from counter_start downwards counting value.'''
-        counter = self.__revpi.io[self.name].value
-        return counter - 2 * (counter - self.counter_start)
+            
+        raise(Exception(f"{self.name} :Timeout occurred"))
 
 
     def reset_encoder(self):
@@ -167,11 +186,6 @@ class Sensor():
                 self.counter_offset = 0
                 return
         raise(Exception(f"{self.name} :ERROR while reset"))
-
-
-    def get_encoder_value(self):
-        '''Returns the current value of the encoder.'''
-        return self.__revpi.io[self.name].value - self.counter_offset
 
 
 def event_det_at_sensor(io_name, __):

@@ -74,9 +74,9 @@ class Warehouse(Machine):
         self.encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER")
 
         # get motors
-        self.motor_loading = Actuator(self.revpi, self.name + "_ARM", "loading")
-        self.motor_hor = Actuator(self.revpi, self.name + "_CRANE", "horizontal")
-        self.motor_ver = Actuator(self.revpi, self.name + "_ARM", "vertical")
+        self.motor_loading = Actuator(self.revpi, self.name + "_ARM", type="loading")
+        self.motor_hor = Actuator(self.revpi, self.name + "_CRANE", type="horizontal")
+        self.motor_ver = Actuator(self.revpi, self.name + "_ARM", type="vertical")
 
         log.debug("Created Warehouse: " + self.name)
 
@@ -237,8 +237,8 @@ class Warehouse(Machine):
         log.info("Moving Crane to position: " + str(f"({horizontal},{vertical})"))
 
         # get current position
-        current_horizontal = self.encoder_hor.get_encoder_value()
-        current_vertical = self.encoder_ver.get_encoder_value()
+        current_horizontal = self.encoder_hor.get_current_value()
+        current_vertical = self.encoder_ver.get_current_value()
 
 
         # get motor directions

@@ -11,7 +11,7 @@ import logging
 import argparse
 from os import listdir
 
-STD_LEVEL_CONSOLE = "INFO"
+STD_LEVEL_CONSOLE = "WARNING"
 LEVEL_FILE = logging.DEBUG
 
 log_file_path = f"log/plc{listdir('log').__len__()+1}.log"
@@ -25,7 +25,7 @@ parser.add_argument("--log", choices=["DEBUG", "INFO", "WARNING", "ERROR"], defa
 log_level: str = parser.parse_args().log
 
 # Setup File handler, change mode tp 'a' to keep the log after relaunch
-file_handler = logging.FileHandler(log_file_path, mode='w')
+file_handler = logging.FileHandler(log_file_path, mode='a')
 file_handler.setFormatter(log_formatter_file)
 file_handler.setLevel(LEVEL_FILE)
 
