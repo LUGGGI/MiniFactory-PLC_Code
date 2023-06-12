@@ -11,7 +11,7 @@ import logging
 import argparse
 from os import listdir
 
-STD_LEVEL_CONSOLE = "WARNING"
+STD_LEVEL_CONSOLE = "INFO"
 LEVEL_FILE = logging.DEBUG
 
 log_file_path = f"log/plc{listdir('log').__len__()+1}.log"

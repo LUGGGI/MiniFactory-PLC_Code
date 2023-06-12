@@ -167,6 +167,8 @@ class Sensor():
 
 
             if abs(self.get_current_value() - trigger_value) <= self.encoder_trigger_threshold:
+
+                log.info(f"{self.name} :Value reached: {new_value}")
                 return self.get_current_value() 
             
             # wait for next cycle

@@ -63,13 +63,15 @@ class Robot3D(Machine):
         self.encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER")
         self.encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER")
 
+        # get pwm pins
+        pwm_rot = self.name + "_ROTATION_PWM"
+        pwm_hor = self.name + "_HORIZONTAL_PWM" if self.name.find("VG") != -1 else None
+        pwm_ver = None
+
         # get motors
-        if self.name == "GR3": #TODO
-            self.motor_rot = Actuator(self.revpi, self.name, pwm=self.name + "_ROTATION_PWM", type="rotation")
-        else:
-            self.motor_rot = Actuator(self.revpi, self.name, type="rotation")
-        self.motor_hor = Actuator(self.revpi, self.name, type="horizontal")
-        self.motor_ver = Actuator(self.revpi, self.name, type="vertical")
+        self.motor_rot = Actuator(self.revpi, self.name, pwm=pwm_rot, type="rotation")
+        self.motor_hor = Actuator(self.revpi, self.name, pwm=pwm_hor, type="horizontal")
+        self.motor_ver = Actuator(self.revpi, self.name, pwm=pwm_ver, type="vertical")
 
         log.debug("Created 3D Robot: " + self.name)
 

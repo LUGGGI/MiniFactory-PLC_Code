@@ -50,13 +50,11 @@ class State(Enum):
     GR2 = 22
     GR3 = 23
 
-    VG = 30
     VG1 = 31
     VG1_1 = 311
     VG1_2 = 312
     VG2 = 32
 
-    INDX = 4
     MPS = 5
     PM = 6
     SL = 7
@@ -79,7 +77,7 @@ class MainLoop:
         self.exit_handler = ExitHandler(self.revpi)
 
         self.main = Machine(self.revpi, "Main")
-        self.state = self.main.switch_state(State.WH)
+        self.state = self.main.switch_state(State.GR2)
         self.machines = {"Main": self.main}
         log.info("Main: Start Mainloop")
 
@@ -150,7 +148,7 @@ class MainLoop:
         
         elif self.state == State.WH:
             if self.run_wh():
-                self.state = self.main.switch_state(State.INIT, True)
+                self.state = self.main.switch_state(State.VG1_2, True)
         
         elif self.state == State.VG1_2:
             if self.run_vg1():
@@ -332,14 +330,14 @@ class MainLoop:
             # get product from plate
             machine.GRIPPER_OPENED = 5
             machine.reset_claw()
-            machine.move_to_position(Position(2225, 54, 3450))
+            machine.move_to_position(Position(2245, 54, 3450)) # of by -3
         elif machine.is_stage(2):
                 # grip
-                machine.GRIPPER_CLOSED = 11
+                machine.GRIPPER_CLOSED = 12
                 machine.grip(as_thread=True)
         elif machine.is_stage(3):
             # move product to mps
-            machine.move_to_position(Position(1370, 24, 1700))
+            machine.move_to_position(Position(1365, 24, 1700))
         elif machine.is_stage(4):
                 # release
                 machine.GRIPPER_OPENED = 9

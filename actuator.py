@@ -29,7 +29,7 @@ class Actuator():
     set_pwm: Set PWM to percentage.
     '''
     thread = None
-    PWM_TRIGGER_THRESHOLD = 17
+    PWM_TRIGGER_THRESHOLD = 25
 
 
     def __init__(self, revpi: RevPiModIO, name: str, pwm: str=None, type: str=None):
@@ -156,7 +156,6 @@ class Actuator():
 
         #start actuator
         if self.pwm:
-            self.set_pwm(100)
             encoder.encoder_trigger_threshold = self.PWM_TRIGGER_THRESHOLD
         self.start(direction)
 
@@ -164,7 +163,8 @@ class Actuator():
             if self.pwm:
                 if abs(encoder.get_current_value() - trigger_value) > 100:
                     # run most of the way at full power
-                    encoder.wait_for_encoder(trigger_value-100, timeout_in_s)
+                    offset = -100 if trigger_value > encoder.get_current_value() else 100
+                    encoder.wait_for_encoder(trigger_value+offset, timeout_in_s)
                 # run at 15% speed for last 100 values    
                 self.set_pwm(15)
 
