@@ -45,21 +45,17 @@ class State(Enum):
     CB5 = 15
 
     GR1 = 21
-    GR1_1 = 211
-    GR1_2 = 212
     GR2 = 22
+    GR2_1 = 221
+    GR2_2 = 222
     GR3 = 23
 
-    VG = 30
-    VG1 = 31
-    VG1_1 = 311
-    VG1_2 = 312
-    VG2 = 32
+    VG_1 = 301
+    VG_2 = 302
 
     INDX = 4
     MPS = 5
     PM = 6
-    SL = 7
     WH = 8
 
     END = 100
@@ -79,7 +75,7 @@ class MainLoop:
         self.exit_handler = ExitHandler(self.revpi)
 
         self.main = Machine(self.revpi, "Main")
-        self.state = self.main.switch_state(State.WH)
+        self.state = self.main.switch_state(State.GR1)
         self.machines = {"Main": self.main}
         log.info("Main: Start Mainloop")
 
@@ -115,8 +111,8 @@ class MainLoop:
             if self.test():
                 self.state = self.main.switch_state(State.INIT)
 
-        elif self.state == State.GR2:
-            if self.run_gr2():
+        elif self.state == State.GR1:
+            if self.run_gr1():
                 self.state = self.main.switch_state(State.MPS, True)
                 pass
 
@@ -126,34 +122,34 @@ class MainLoop:
 
         elif self.state == State.CB1:
             if self.run_cb1():
-                self.state = self.main.switch_state(State.GR1_1, True)
+                self.state = self.main.switch_state(State.GR2_1, True)
         
-        elif self.state == State.GR1_1:
-            if self.run_gr1():
+        elif self.state == State.GR2_1:
+            if self.run_gr2():
                 self.state = self.main.switch_state(State.PM, True)
 
         elif self.state == State.PM:
             if self.run_pm():
-                self.state = self.main.switch_state(State.GR1_2, True)
+                self.state = self.main.switch_state(State.GR2_2, True)
 
-        elif self.state == State.GR1_2:
-            if self.run_gr1():
+        elif self.state == State.GR2_2:
+            if self.run_gr2():
                 self.state = self.main.switch_state(State.CB3_1, True)
 
         elif self.state == State.CB3_1:
             if self.run_cb3():
-                self.state = self.main.switch_state(State.VG1_1, True)
+                self.state = self.main.switch_state(State.VG_1, True)
         
-        elif self.state == State.VG1_1:
-            if self.run_vg1():
+        elif self.state == State.VG_1:
+            if self.run_vg():
                 self.state = self.main.switch_state(State.WH, True)
         
         elif self.state == State.WH:
             if self.run_wh():
-                self.state = self.main.switch_state(State.INIT, True)
+                self.state = self.main.switch_state(State.VG_2, True)
         
-        elif self.state == State.VG1_2:
-            if self.run_vg1():
+        elif self.state == State.VG_2:
+            if self.run_vg():
                 self.state = self.main.switch_state(State.CB3_2, True)
         
         elif self.state == State.CB3_2:
@@ -164,21 +160,17 @@ class MainLoop:
             if self.run_cb4():
                 self.state = self.main.switch_state(State.GR3, True)
 
+        elif self.state == State.CB5:
+            if self.run_cb5():
+                self.state = self.main.switch_state(State.INDX, True)
+
+        elif self.state == State.INDX:
+            if self.run_indx():
+                self.state = self.main.switch_state(State.GR3, True)
+
         elif self.state == State.GR3:
             if self.run_gr3():
                 self.state = self.main.switch_state(State.CB5, True)
-
-        elif self.state == State.CB5:
-            if self.run_cb5():
-                self.state = self.main.switch_state(State.SL, True)
-
-        elif self.state == State.SL:
-            if self.run_sl():
-                self.state = self.main.switch_state(State.VG2, True)
-
-        elif self.state == State.VG2:
-            if self.run_vg2():
-                self.state = self.main.switch_state(State.END)
 
 
     ####################################################################################################
@@ -258,16 +250,44 @@ class MainLoop:
         elif machine.is_stage(2):
             machine.run_to_stop_sensor("FWD", stop_sensor="SL_CB_SENS_START")
             return True
-
+        
     def run_gr1(self) -> False:
         machine: GripRobot = self.machines.get("GR1")
         if machine == None:
-            machine = GripRobot(self.revpi, "GR1", Position(-1, -1, 1400))
+            machine = GripRobot(self.revpi, "GR1", moving_position=Position(-1, 0, 1100))
+            self.machines[machine.name] = machine
+            machine.init(as_thread=True)
+
+        elif machine.is_stage(1):
+            # get product from plate
+            machine.GRIPPER_OPENED = 5
+            machine.reset_claw()
+            machine.move_to_position(Position(2225, 54, 3450))
+        elif machine.is_stage(2):
+                # grip
+                machine.GRIPPER_CLOSED = 11
+                machine.grip(as_thread=True)
+        elif machine.is_stage(3):
+            # move product to mps
+            machine.move_to_position(Position(1370, 24, 1700))
+        elif machine.is_stage(4):
+                # release
+                machine.GRIPPER_OPENED = 9
+                machine.release(as_thread=True)
+        elif machine.is_stage(5):
+            # move back to init
+            machine.init(to_end=True)
+            return True
+
+    def run_gr2(self) -> False:
+        machine: GripRobot = self.machines.get("GR2")
+        if machine == None:
+            machine = GripRobot(self.revpi, "GR2", Position(-1, -1, 1400))
             self.machines[machine.name] = machine
             machine.init(as_thread=True)
 
         # move from cb1 to cb2
-        elif self.state == State.GR1_1:
+        elif self.state == State.GR2_1:
             if machine.is_stage(1):
                 # move to cb1 (6s)
                 machine.reset_claw(as_thread=True)
@@ -286,7 +306,7 @@ class MainLoop:
                 return True
 
         # move from cb2 to cb3    
-        elif self.state == State.GR1_2:
+        elif self.state == State.GR2_2:
             if machine.is_stage(1) and machine.state == State_3D.INIT:
                 # move to cb2 if new gr1
                 machine.reset_claw(as_thread=True)
@@ -320,34 +340,6 @@ class MainLoop:
                 # move back to init
                 machine.init(to_end=True)
                 return True
-
-    def run_gr2(self) -> False:
-        machine: GripRobot = self.machines.get("GR2")
-        if machine == None:
-            machine = GripRobot(self.revpi, "GR2", moving_position=Position(-1, 0, 1100))
-            self.machines[machine.name] = machine
-            machine.init(as_thread=True)
-
-        elif machine.is_stage(1):
-            # get product from plate
-            machine.GRIPPER_OPENED = 5
-            machine.reset_claw()
-            machine.move_to_position(Position(2225, 54, 3450))
-        elif machine.is_stage(2):
-                # grip
-                machine.GRIPPER_CLOSED = 11
-                machine.grip(as_thread=True)
-        elif machine.is_stage(3):
-            # move product to mps
-            machine.move_to_position(Position(1370, 24, 1700))
-        elif machine.is_stage(4):
-                # release
-                machine.GRIPPER_OPENED = 9
-                machine.release(as_thread=True)
-        elif machine.is_stage(5):
-            # move back to init
-            machine.init(to_end=True)
-            return True
 
     def run_gr3(self) -> False:
         machine: GripRobot = self.machines.get("GR3")
