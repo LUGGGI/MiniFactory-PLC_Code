@@ -81,8 +81,6 @@ class Actuator():
 
 
         #start actuator
-        if self.pwm:
-            self.set_pwm(100)
         self.start(direction)
 
         try:
@@ -93,8 +91,6 @@ class Actuator():
         finally:
             #stop actuator
             self.stop(direction)
-            if self.pwm:
-                self.set_pwm(0)
 
 
     def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None, as_thread=False):
@@ -114,9 +110,6 @@ class Actuator():
 
         log.info(f"{actuator} :Actuator running for time: {wait_time_in_s}")
 
-        #start actuator
-        if self.pwm:
-            self.set_pwm(100)
         self.start(direction)
         
         if check_sensor:
@@ -129,8 +122,6 @@ class Actuator():
 
         #stop actuator
         self.stop(direction)
-        if self.pwm:
-            self.set_pwm(0)
 
         if check_sensor and sensor.is_detected() == False:
             raise(Exception(f"{check_sensor} :No detection"))
@@ -176,8 +167,6 @@ class Actuator():
         finally:
             #stop actuator
             self.stop(direction)
-            if self.pwm:
-                self.set_pwm(0)
 
 
     def run_to_encoder_start(self, direction: str, stop_sensor: str, encoder: Sensor, timeout_in_s=10, as_thread=False):
