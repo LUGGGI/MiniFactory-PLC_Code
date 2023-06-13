@@ -78,46 +78,53 @@ class MPStation(Machine):
                 # sleep(0.2)
                 tray.run_to_sensor("IN", self.name + "_REF_SW_OVEN_TRAY_IN") # move tray in
                 oven_door_valve.stop() # close door
+                compressor.join()
                 Actuator(self.revpi, self.name + "_LIGHT_OVEN").run_for_time("", self.__TIME_OVEN) # turn light on for time
                 compressor.run_for_time("", 0.5, as_thread=True)
                 oven_door_valve.start() # open door
                 tray.run_to_sensor("OUT", self.name + "_REF_SW_OVEN_TRAY_OUT") # move tray out
-                oven_door_valve.stop() # close door
-
                 del tray
+                oven_door_valve.stop() # close door
                 del oven_door_valve
-            vg_motor.thread.join()
+                compressor.join()
+
+            vg_motor.join()
 
 
             # move product to table with vacuum gripper
             self.state = self.switch_state(State.TO_TABLE)
             vg_valve = Actuator(self.revpi, self.name + "_VALVE_VG_VACUUM")
             vg_lower_valve = Actuator(self.revpi, self.name + "_VALVE_VG_LOWER")
-            table = Actuator(self.revpi, self.name + "_TABLE")
+            table = Actuator(self.revpi, self.name + "_TABLE", self.name + "_TABLE_PWM")
 
             table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
 
             vg_motor.thread.join() # wait for the vg to be at oven
-            compressor.run_for_time("", 1, as_thread=True)
-            vg_lower_valve.run_for_time("", 0.7, as_thread=True) # lower gripper
-            sleep(0.5)
+            compressor.run_for_time("", 1.5, as_thread=True)
+            vg_lower_valve.run_for_time("", 1, as_thread=True) # lower gripper
+            sleep(0.7)
             vg_valve.start() # create vacuum at gripper
             sleep(0.5) # wait for gripper to be at top
+            compressor.join()
+            vg_lower_valve.join()
             vg_motor.run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE") # move vg to table
+            del vg_motor
 
             compressor.run_for_time("", 1, as_thread=True)
             vg_lower_valve.run_for_time("", 0.7, as_thread=True) # lower gripper
             sleep(0.5)
             vg_valve.stop() # stop vacuum at gripper
-            sleep(0.5)
-
             del vg_valve
+            sleep(0.5)
+            compressor.join()
+            vg_lower_valve.join()
             del vg_lower_valve
-            del vg_motor
 
 
+            table.join()
             # rotate table to saw
             self.state = self.switch_state(State.TO_SAW)
+            table.set_pwm(75)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_SAW")
 
 
@@ -128,18 +135,21 @@ class MPStation(Machine):
 
             # move product to cb
             self.state = self.switch_state(State.TO_CB)
+            table.set_pwm(75)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_CB") # rotate table to cb
             compressor.run_for_time("", 0.5, as_thread=True)
             Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON").run_for_time("", 0.5)
+            compressor.join()
+            del compressor
             table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table back to vg
 
-            del table
-            del compressor
 
             self.start_next_machine = True
             # run cb
             self.state = self.switch_state(State.CB)
             Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "CB1_SENS_START", as_thread=False)
+            table.join()
+            del table
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)

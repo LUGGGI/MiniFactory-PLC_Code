@@ -29,6 +29,7 @@ class Conveyor(Machine):
     run_to_stop_sensor(): Runs the Conveyor until the product has reached the stop sensor
     run_to_counter_value(): Runs the Conveyor until the trigger_value of encoder is reached
     '''
+    exception = None
 
     def __init__(self, revpi, name: str):
         '''Initializes the Sensor
@@ -75,7 +76,10 @@ class Conveyor(Machine):
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             if self.name.find("_") != -1: # if called from another module
-                raise
+                if self.thread:
+                    self.exception = error
+                else:
+                    raise
             else:
                 log.exception(error)
         else:
@@ -108,10 +112,19 @@ class Conveyor(Machine):
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             if self.name.find("_") != -1: # if called from another module
-                raise
+                if self.thread:
+                    self.exception = error
+                else:
+                    raise
             else:
                 log.exception(error)
         else:
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
             self.stage += 1
+
+    def join(self):
+        '''Joins the current thread and raises Exceptions'''
+        self.thread.join()
+        if self.exception:
+            raise self.exception

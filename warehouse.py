@@ -165,7 +165,7 @@ class Warehouse(Machine):
             self.cb.run_to_stop_sensor("FWD", self.name + "_SENS_IN", as_thread=False)
 
             # get product from cb
-            self.motor_loading.thread.join()
+            self.motor_loading.join()
             self.state = self.switch_state(State.GETTING_PRODUCT)
             self.move_to_position(-1, self.POS_CB_VERTICAL - 100)
             self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
@@ -178,7 +178,7 @@ class Warehouse(Machine):
             self.state = self.switch_state(State.SETTING_PRODUCT)
             self.motor_loading.run_to_sensor("FWD", self.REF_SW_ARM_FRONT)
             self.move_to_position(-1, vertical)
-            self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK, as_thread=True)
+            self.motor_loading.run_to_sensor("BWD", self.REF_SW_ARM_BACK)
             
             # save Product to file
             with open(self.JSON_FILE, "r") as fp:
@@ -253,6 +253,7 @@ class Warehouse(Machine):
             # move product to outside
             self.state = self.switch_state(State.CB_BWD)
             self.cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT", as_thread=False)
+            self.motor_loading.join()
 
             # save empty to file
             with open(self.JSON_FILE, "r") as fp:
@@ -309,9 +310,7 @@ class Warehouse(Machine):
         self.motor_ver.move_axis(dir_ver, vertical, current_vertical, self.move_threshold_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
 
         # wait for end of each move
-        if self.motor_hor.thread.is_alive():
-            self.motor_hor.thread.join()
-        if self.motor_ver.thread.is_alive():
-            self.motor_ver.thread.join()
+        self.motor_hor.join()
+        self.motor_ver.join()
 
         log.info("Moved crane to: " + str(f"({horizontal},{vertical})"))

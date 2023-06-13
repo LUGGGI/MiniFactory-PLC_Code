@@ -76,14 +76,15 @@ class IndexLine(Machine):
             Sensor(self.revpi, self.name + "_SENS_PUSH1").wait_for_detect()
             sleep(1) # wait for product to be in front of pusher
             # push product to cb_mill
-            pusher_in.thread.join()
+            pusher_in.join()
+            cb_start.join()
+            del cb_start
             pusher_in.run_to_sensor("FWD", self.name + "_REF_SW_PUSH1_FRONT", as_thread=True) 
             cb_mill.run_to_stop_sensor("", self.name + "_SENS_MILL", as_thread=False)
             # move pusher back to back
+            pusher_in.join()
             pusher_in.run_to_sensor("BWD", self.name + "_REF_SW_PUSH1_BACK", as_thread=True)
-
-            del pusher_in
-            del cb_start
+            
 
             # Milling
             self.state = self.switch_state(State.MILLING)
@@ -94,9 +95,12 @@ class IndexLine(Machine):
 
             # Move product to Drill
             self.state = self.switch_state(State.TO_DRILL)
-            cb_mill.run_to_stop_sensor("", self.name + "_SENS_DRILL", as_thread=False)
+            cb_mill.run_to_stop_sensor("", self.name + "_SENS_DRILL", as_thread=True)
             cb_drill.run_to_stop_sensor("", self.name + "_SENS_DRILL", as_thread=False)
 
+            cb_mill.join()
+            pusher_in.join()
+            del pusher_in
             del cb_mill
 
 
@@ -113,18 +117,20 @@ class IndexLine(Machine):
             # move pusher to back
             pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", as_thread=True)
             # move product to pusher_out
-            cb_end.run_to_stop_sensor("", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True)
+            cb_drill.run_to_stop_sensor("", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True)
             sleep(1) # wait for product to be in front of pusher
             # push product to out
             pusher_out.thread.join()
             pusher_out.run_to_sensor("FWD", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True) 
             cb_end.run_to_stop_sensor("", self.name + "_SENS_END", stop_delay_in_ms=1000, as_thread=False)
+            del cb_end
             # move pusher back to back
             pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", as_thread=True) 
 
-            del pusher_out
+            cb_drill.join()
+            pusher_out.join()
             del cb_drill
-            del cb_end
+            del pusher_out
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)

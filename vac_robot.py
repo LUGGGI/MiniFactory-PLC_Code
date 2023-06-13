@@ -57,6 +57,7 @@ class VacRobot(Robot3D):
             sleep(0.3)
             self.valve.start()
             sleep(0.3)
+            self.compressor.join()
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True

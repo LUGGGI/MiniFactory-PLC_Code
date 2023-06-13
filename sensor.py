@@ -7,7 +7,6 @@ __copyright__ = "Lukas Beck"
 __license__ = "GPL"
 __version__ = "2023.05.23"
 
-from re import T
 import time
 from enum import Enum
 from revpimodio2 import RevPiModIO, BOTH
@@ -128,7 +127,7 @@ class Sensor():
 
         -> Panics if timeout is reached (no detection happened)
         '''
-        if self.type == SensorType.LIGHT_BARRIER and self.get_current_value() == True or self.type == SensorType.REF_SWITCH and self.get_current_value() == True:
+        if self.get_current_value() == True:
             log.info(f"{self.name} :Already detected")
             return
 

@@ -96,8 +96,8 @@ class Robot3D(Machine):
         log.info(f"Initializing {self.name}, moving to init position")
         try:
             # move to init position
-            self.move_all_axes(Position(-1,0,0), as_thread=False)
-            self.move_all_axes(Position(0,-1,-1), as_thread=False)
+            self.move_all_axes(Position(-1,0,0))
+            self.move_all_axes(Position(0,-1,-1))
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -131,12 +131,12 @@ class Robot3D(Machine):
         )
         self.grip(as_thread = False)
 
-        if not self.move_to_position(position, sensor, as_thread=False):
+        if self.move_to_position(position, sensor, as_thread=False) == False:
             # move back and try again
             self.release(as_thread = False)
             self.move_to_position(current_position, as_thread=False)
             self.grip(as_thread = False)
-            if not self.move_to_position(position, sensor, as_thread=False):
+            if self.move_to_position(position, sensor, as_thread=False) == False:
                 self.state = self.switch_state(State.ERROR)
                 self.error_exception_in_machine = True
                 return
@@ -170,9 +170,9 @@ class Robot3D(Machine):
                 self.state = self.switch_state(State.TO_MOVING_POS)
                 if self.encoder_ver.get_current_value() <= self.moving_position.vertical:
                     # if robot is higher than moving postion rotate directly
-                    self.move_all_axes(Position(position.rotation, self.moving_position.horizontal, self.moving_position.vertical), as_thread=False)
+                    self.move_all_axes(Position(position.rotation, self.moving_position.horizontal, self.moving_position.vertical))
                 else:
-                    self.move_all_axes(self.moving_position, as_thread=False)
+                    self.move_all_axes(self.moving_position)
 
                 # check if Product was picked up
                 if sensor and Sensor(self.revpi, sensor).get_current_value() == True:
@@ -185,11 +185,11 @@ class Robot3D(Machine):
                 rotation = position.rotation if self.moving_position.rotation == -1 or position.rotation < self.moving_position.rotation else -1
                 horizontal = position.horizontal if self.moving_position.horizontal == -1 or position.horizontal < self.moving_position.horizontal else -1
                 vertical = position.vertical if self.moving_position.vertical == -1 or position.vertical < self.moving_position.vertical else -1
-                self.move_all_axes(Position(rotation, horizontal, vertical), as_thread=False)
+                self.move_all_axes(Position(rotation, horizontal, vertical))
 
             # move to destination
             self.state = self.switch_state(State.TO_DESTINATION)
-            self.move_all_axes(position, as_thread=False)
+            self.move_all_axes(position)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -199,25 +199,17 @@ class Robot3D(Machine):
             log.info(f"{self.name} :Position reached: {position}")
             self.state = self.switch_state(State.END)
             self.stage += 1
-        finally:
-            return True
 
 
-    def move_all_axes(self, position: Position, as_thread=True):
+    def move_all_axes(self, position: Position):
         '''Makes linear move to given position, set a axis to -1 to not move that axis.
 
         :position: (rotation, horizontal, vertical): int
-        :as_thread: Runs the function as a thread
 
         -> Panics if axes movements did not complete
         '''
-        # call this function again as a thread
-        if as_thread:
-            self.thread = threading.Thread(target=self.move_all_axes, args=(position, False), name=self.name)
-            self.thread.start()
-            return
-
         log.info(f"{self.name} :Moving axes to: {position}")
+
         # get current position
         current_position = Position(
             self.encoder_rot.get_current_value(),
@@ -242,17 +234,8 @@ class Robot3D(Machine):
         self.motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.move_threshold_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
 
         # wait for end of each move
-        try:
-            self.motor_rot.thread.join()
-        except:
-            pass
-        try:
-            self.motor_hor.thread.join()
-        except:
-            pass
-        try:
-            self.motor_ver.thread.join()
-        except:
-            pass
+        self.motor_rot.join()
+        self.motor_hor.join()
+        self.motor_ver.join()
 
         log.info(f"{self.name} :Axes moved to: {position}")

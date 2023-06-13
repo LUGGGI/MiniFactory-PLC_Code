@@ -18,6 +18,7 @@ __version__ = "2023.06.09"
 
 from time import sleep
 from enum import Enum
+import threading
 from revpimodio2 import RevPiModIO
 
 from exit_handler import ExitHandler
@@ -182,34 +183,20 @@ class MainLoop:
     ####################################################################################################
     # Methods that control the different states for the
     def test(self) -> False:
+        machine: GripRobot = self.machines.get("GR2")
+        if machine == None:
+            machine = GripRobot(self.revpi, "GR2", moving_position=Position(-1, 0, 1100))
+            self.machines[machine.name] = machine
+            try:
+                # machine.move_all_axes(Position(0, -1, -1))
+                machine.motor_rot.move_axis("CW", 0, 100, 50, machine.encoder_rot, machine.name + "_REF_SW_ROTATION", 3, True)
+                log.critical("1")
+                machine.motor_rot.join()
+                log.critical("2")
+            except:
+                log.exception("Det")
+            log.critical("END")
         
-        # motor = Actuator(self.revpi, "GR1")
-        # encoder = Sensor(self.revpi, "GR1_HORIZONTAL_COUNTER")
-        # encoder.encoder_trigger_threshold = 1
-        # encoder.wait_for_encoder(10, 60)
-        # sleep(0.5)
-        # for i in range(1,10):
-            
-        #     sleep(0.2)
-        #     motor.run_to_encoder_value("CCW", encoder, i*100, as_thread=False)
-        #     sleep(0.2)
-        #     value = encoder.get_current_value()
-        #     print(value)
-        #     # if value >= 110:
-        #     #     motor.run_for_time("UP", 0.04)
-        #     #     sleep(0.1)
-        #     #     log.critical(f"  {encoder.get_encoder_value()}")
-        # motor.run_to_encoder_start("CW", "GR1_REF_SW_ROTATION", encoder, as_thread=False)
-        motor = Actuator(self.revpi, "GR3", pwm="GR3_ROTATION_PWM")
-        encoder = Sensor(self.revpi, "GR3_ROTATION_ENCODER")
-        for i in range(10):
-            motor.run_to_encoder_start("CW", "GR3_REF_SW_ROTATION", encoder, as_thread=False)
-
-            motor.run_to_encoder_value('CCW', encoder, 500, as_thread=False)
-            sleep(0.5)
-            log.warning(encoder.get_current_value())
-
-        self.state = self.main.switch_state(State.END)
 
     def run_cb1(self) -> False:
         machine: Conveyor = self.machines.get("CB1")
@@ -269,7 +256,7 @@ class MainLoop:
             if machine.is_stage(1):
                 # move to cb1 (6s)
                 machine.reset_claw(as_thread=True)
-                machine.move_to_position(Position(225, 66, 1600), ignore_moving_pos=True)
+                machine.move_to_position(Position(245, 65, 1600), ignore_moving_pos=True)
             # Wait for cb1 to finish
             elif machine.is_stage(2) and self.is_ready_for_transport("CB1"):
                 # move down
@@ -330,7 +317,7 @@ class MainLoop:
             # get product from plate
             machine.GRIPPER_OPENED = 5
             machine.reset_claw()
-            machine.move_to_position(Position(2245, 54, 3450)) # of by -3
+            machine.move_to_position(Position(2245, 54, 3450))
         elif machine.is_stage(2):
                 # grip
                 machine.GRIPPER_CLOSED = 12
@@ -527,7 +514,37 @@ class MainLoop:
 
         return ready_for_transport
     
+# thread: threading.Thread = None
+# exc = None
+
+# def test(as_thread=False):
+#     if as_thread == True:
+#         global thread
+#         thread = threading.Thread(target=test, args=(), name="TEST")
+#         thread.start()
+#         return
+#     try:
+#         sleep(2)
+#         raise Exception("EXP")
+#     except Exception as e:
+#         global exc
+#         exc = e
+
+# def join():
+#     global thread
+#     thread.join()
+#     if exc:
+#         raise exc 
 
 # Start RevPiApp app
 if __name__ == "__main__":
     MainLoop()
+    # try:
+    #     log.info("START")
+    #     test(True)
+    #     join()
+    #     log.info("END1")
+    # except Exception as e:
+    #     log.critical("Caught")
+    #     log.exception(e)
+    # log.info("END2")
