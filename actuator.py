@@ -5,14 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.09"
+__version__ = "2023.06.14"
 
 import threading
 import time
 from revpimodio2 import RevPiModIO
 
 from logger import log
-from sensor import Sensor
+from sensor import Sensor, SensorType
 
 detection = False
 
@@ -26,13 +26,21 @@ class Actuator():
     move_axis(): Moves an axis to the given trigger value.
     start(): Start actuator.
     stop(): Stop actuator.
-    set_pwm: Set PWM to percentage.
+    set_pwm(): Set PWM to percentage.
     '''
+    ENCODER_TRIGGER_THRESHOLD = 40
+    COUNTER_TRIGGER_THRESHOLD = 0
+    PWM_TRIGGER_THRESHOLD = 15
+    PWM_WINDOW = 300
+
     thread = None
     exception = None
-    PWM_TRIGGER_THRESHOLD = 25
     pwm_value = 100
 
+    __revpi: RevPiModIO = None
+    name: str = None
+    pwm: str = None
+    type: str = None
 
     def __init__(self, revpi: RevPiModIO, name: str, pwm: str=None, type: str=None):
         '''Initializes the Actuator
@@ -42,8 +50,8 @@ class Actuator():
         :pwm: Name of PWM-pin, Slows motor down, bevor reaching the value
         :type: specifier for motor name
         '''
-        self.name = name
         self.__revpi = revpi
+        self.name = name
         self.pwm = pwm
         self.type = ("_" + type) if type else ""
 
@@ -153,22 +161,27 @@ class Actuator():
 
         log.info(f"{actuator} :Actuator running to value: {trigger_value}, at: {encoder.name}")
 
-        #start actuator
-        if self.pwm:
-            encoder.encoder_trigger_threshold = self.PWM_TRIGGER_THRESHOLD
-        self.start(direction)
+        
+        trigger_threshold = self.ENCODER_TRIGGER_THRESHOLD if encoder.type == SensorType.ENCODER else self.COUNTER_TRIGGER_THRESHOLD
+        
 
         try:
+            self.start(direction)
+            
             if self.pwm:
-                if abs(encoder.get_current_value() - trigger_value) > 100:
+                trigger_threshold = self.PWM_TRIGGER_THRESHOLD
+                if abs(encoder.get_current_value() - trigger_value) > self.PWM_WINDOW:
+                    log.critical("TEST")
                     # run most of the way at full power
-                    offset = -100 if trigger_value > encoder.get_current_value() else 100
-                    encoder.wait_for_encoder(trigger_value+offset, timeout_in_s)
-                # run at 15% speed for last 100 values    
-                self.set_pwm(15)
+                    offset = -self.PWM_WINDOW if trigger_value > encoder.get_current_value() else self.PWM_WINDOW
+                    encoder.wait_for_encoder(trigger_value+offset, self.ENCODER_TRIGGER_THRESHOLD, timeout_in_s)
 
+                # run at 15% speed for PWM_WINDOW values    
+                self.set_pwm(15)
+                self.start(direction)                
+            
             # run to trigger_value
-            log.info(f"{actuator} :Stopped at: {encoder.wait_for_encoder(trigger_value, timeout_in_s)}")
+            log.info(f"{actuator} :Stopped at: {encoder.wait_for_encoder(trigger_value, trigger_threshold, timeout_in_s)}")
 
         except Exception as e:
             if self.thread:
@@ -257,9 +270,9 @@ class Actuator():
         :direction: Motor direction, (last part of whole name)
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
-        log.info(f"{actuator} :Started actuator")
         if self.pwm:
-            self.set_pwm(self.pwm_value)
+            self.__revpi.io[self.pwm].value = self.pwm_value
+        log.info(f"{actuator} :Started actuator")
         self.__revpi.io[actuator].value = True 
 
 
@@ -270,13 +283,13 @@ class Actuator():
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         log.info(f"{actuator} :Stopped actuator")
-        if self.pwm:
-            self.set_pwm(0)
         self.__revpi.io[actuator].value = False
+        if self.pwm:
+            self.__revpi.io[self.pwm].value = 0
 
     
     def set_pwm(self, percentage: int):
-        '''Set PWM to percentage.
+        '''Set PWM value to percentage.
         
         :percentage: speed of motor, (0..100) on is over 15
         '''

@@ -135,7 +135,6 @@ class MPStation(Machine):
 
             # move product to cb
             self.state = self.switch_state(State.TO_CB)
-            table.set_pwm(75)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_CB") # rotate table to cb
             compressor.run_for_time("", 0.5, as_thread=True)
             Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON").run_for_time("", 0.5)

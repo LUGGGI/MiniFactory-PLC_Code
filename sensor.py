@@ -35,8 +35,12 @@ class Sensor():
     get_encoder_value(): Returns the current value of the encoder.
     '''
     CYCLE_TIME = 0.005 # s
+
     counter_offset = 0
-    encoder_trigger_threshold = 30
+
+    __revpi: RevPiModIO = None
+    name: str = None
+    type: SensorType = None
 
     def __init__(self, revpi: RevPiModIO, name: str, type: SensorType=None):
         '''Initializes the Sensor
@@ -45,9 +49,9 @@ class Sensor():
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         :type: Type of the sensor, if empty type is determined from name
         '''
+        self.__revpi = revpi
         self.name = name
         self.type = type
-        self.__revpi = revpi
 
         if type == None:
             if self.name.find("SENS") != -1:
@@ -58,7 +62,6 @@ class Sensor():
                 self.type = SensorType.ENCODER
             if self.name.find("COUNTER") != -1:
                 self.type = SensorType.COUNTER
-                self.encoder_trigger_threshold = 1
 
         log.debug(f"Created Sensor({self.type.name}): {self.name}")
 
@@ -138,34 +141,34 @@ class Sensor():
             raise(Exception(f"{self.name} :No detection"))
 
 
-    def wait_for_encoder(self, trigger_value: int, timeout_in_s=10) -> int:
+    def wait_for_encoder(self, trigger_value: int, trigger_threshold: int, timeout_in_s=10) -> int:
         '''Waits for the encoder/counter to reach the trigger_value.
         
         :trigger_value: The value the motor would end up if it started from reverence switch
+        :trigger_threshold:  The value around the trigger_value where a trigger can happen
         :timeout_in_s: Time after which an exception is raised
         
         -> Returns reached encoder_value
         -> Panics if timeout is reached (no detection happened) or encoder value negativ
         '''
-        current_value = self.get_current_value()
-        if current_value > 10000:
+        old_value = self.get_current_value()
+        if old_value > 10000:
             raise(Exception(f"{self.name} :Encoder had overflow"))
         
         start_time = time.time()
-        lower = True if trigger_value < current_value else False
+        lower = True if trigger_value < old_value else False
 
         while (time.time() <= start_time + timeout_in_s):
             new_value = self.get_current_value()
 
             if self.type == SensorType.COUNTER and lower:
-                if new_value == current_value + 1:
+                if new_value == old_value + 1:
                     self.counter_offset += 2
-                    new_value = current_value = self.get_current_value()
-                elif new_value > current_value:
+                    new_value = old_value = self.get_current_value()
+                elif new_value > old_value:
                     raise(Exception(f"{self.name} :Counter jumped values"))
 
-
-            if abs(self.get_current_value() - trigger_value) <= self.encoder_trigger_threshold:
+            if abs(new_value - trigger_value) <= trigger_threshold:
 
                 log.info(f"{self.name} :Value reached: {new_value}")
                 return self.get_current_value() 
