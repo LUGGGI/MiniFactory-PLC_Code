@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.14"
 
 import threading
 from datetime import datetime
@@ -32,6 +32,11 @@ class Machine:
     stage = 0 # can count up the stages of a machine
     state_is_init = False
 
+    revpi: RevPiModIO = None
+    name: str = None
+    state = None
+    __time_start: datetime = None
+    __state_time_start: datetime = None
 
     def __init__(self, revpi: RevPiModIO, name: str):
         '''Initializes the Maschine

@@ -42,6 +42,17 @@ class Robot3D(Machine):
     move_to_position(): Moves to given position.
     move_all_axes(): Makes linear move to give position.
     '''
+    __MOVE_THRESHOLD_ROT = 40
+    __MOVE_THRESHOLD_HOR = 40
+    __MOVE_THRESHOLD_VER = 40
+    
+    __moving_position: Position = None
+    __encoder_rot: Sensor = None
+    __encoder_hor: Sensor = None
+    __encoder_ver: Sensor = None
+    __motor_rot: Actuator = None
+    __motor_hor: Actuator = None
+    __motor_ver: Actuator = None
 
     def __init__(self, revpi, name: str, moving_position: Position):
         '''Initializes the 3D Robot
@@ -50,18 +61,12 @@ class Robot3D(Machine):
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
         super().__init__(revpi, name)
-        self.moving_position = moving_position
-        self.state = None
-
-        # set move thresholds 
-        self.move_threshold_rot = 40
-        self.move_threshold_hor = 40
-        self.move_threshold_ver = 40
+        self.__moving_position = moving_position
 
         # get encoder
-        self.encoder_rot = Sensor(self.revpi, self.name + "_ROTATION_ENCODER")
-        self.encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER")
-        self.encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER")
+        self.__encoder_rot = Sensor(self.revpi, self.name + "_ROTATION_ENCODER")
+        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER")
+        self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER")
 
         # get pwm pins
         pwm_rot = self.name + "_ROTATION_PWM"
@@ -69,9 +74,9 @@ class Robot3D(Machine):
         pwm_ver = None
 
         # get motors
-        self.motor_rot = Actuator(self.revpi, self.name, pwm=pwm_rot, type="rotation")
-        self.motor_hor = Actuator(self.revpi, self.name, pwm=pwm_hor, type="horizontal")
-        self.motor_ver = Actuator(self.revpi, self.name, pwm=pwm_ver, type="vertical")
+        self.__motor_rot = Actuator(self.revpi, self.name, pwm=pwm_rot, type="rotation")
+        self.__motor_hor = Actuator(self.revpi, self.name, pwm=pwm_hor, type="horizontal")
+        self.__motor_ver = Actuator(self.revpi, self.name, pwm=pwm_ver, type="vertical")
 
         log.debug("Created 3D Robot: " + self.name)
 
@@ -125,9 +130,9 @@ class Robot3D(Machine):
         current_stage = self.stage
         # get current position
         current_position = Position(
-            self.encoder_rot.get_current_value(),
-            self.encoder_hor.get_current_value(),
-            self.encoder_ver.get_current_value()
+            self.__encoder_rot.get_current_value(),
+            self.__encoder_hor.get_current_value(),
+            self.__encoder_ver.get_current_value()
         )
         self.grip(as_thread = False)
 
@@ -168,11 +173,11 @@ class Robot3D(Machine):
             if not ignore_moving_pos:
                 # move to moving position
                 self.state = self.switch_state(State.TO_MOVING_POS)
-                if self.encoder_ver.get_current_value() <= self.moving_position.vertical:
+                if self.__encoder_ver.get_current_value() <= self.__moving_position.vertical:
                     # if robot is higher than moving postion rotate directly
-                    self.move_all_axes(Position(position.rotation, self.moving_position.horizontal, self.moving_position.vertical))
+                    self.move_all_axes(Position(position.rotation, self.__moving_position.horizontal, self.__moving_position.vertical))
                 else:
-                    self.move_all_axes(self.moving_position)
+                    self.move_all_axes(self.__moving_position)
 
                 # check if Product was picked up
                 if sensor and Sensor(self.revpi, sensor).get_current_value() == True:
@@ -182,9 +187,9 @@ class Robot3D(Machine):
                 # move non moving position axes
                 self.state = self.switch_state(State.MOVING)
                 # only move axis if there was no moving position for axis
-                rotation = position.rotation if self.moving_position.rotation == -1 or position.rotation < self.moving_position.rotation else -1
-                horizontal = position.horizontal if self.moving_position.horizontal == -1 or position.horizontal < self.moving_position.horizontal else -1
-                vertical = position.vertical if self.moving_position.vertical == -1 or position.vertical < self.moving_position.vertical else -1
+                rotation = position.rotation if self.__moving_position.rotation == -1 or position.rotation < self.__moving_position.rotation else -1
+                horizontal = position.horizontal if self.__moving_position.horizontal == -1 or position.horizontal < self.__moving_position.horizontal else -1
+                vertical = position.vertical if self.__moving_position.vertical == -1 or position.vertical < self.__moving_position.vertical else -1
                 self.move_all_axes(Position(rotation, horizontal, vertical))
 
             # move to destination
@@ -212,9 +217,9 @@ class Robot3D(Machine):
 
         # get current position
         current_position = Position(
-            self.encoder_rot.get_current_value(),
-            self.encoder_hor.get_current_value(),
-            self.encoder_ver.get_current_value()
+            self.__encoder_rot.get_current_value(),
+            self.__encoder_hor.get_current_value(),
+            self.__encoder_ver.get_current_value()
         )
 
         # get motor directions
@@ -229,13 +234,21 @@ class Robot3D(Machine):
             dir_ver = "UP"
 
         # move to position
-        self.motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.move_threshold_rot, self.encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
-        self.motor_hor.move_axis(dir_hor, position.horizontal, current_position.horizontal, self.move_threshold_hor, self.encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
-        self.motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.move_threshold_ver, self.encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
+        self.__motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.__MOVE_THRESHOLD_ROT, self.__encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
+        self.__motor_hor.move_axis(dir_hor, position.horizontal, current_position.horizontal, self.__MOVE_THRESHOLD_HOR, self.__encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
+        self.__motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.__MOVE_THRESHOLD_VER, self.__encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
 
         # wait for end of each move
-        self.motor_rot.join()
-        self.motor_hor.join()
-        self.motor_ver.join()
+        self.__motor_rot.join()
+        self.__motor_hor.join()
+        self.__motor_ver.join()
 
         log.info(f"{self.name} :Axes moved to: {position}")
+
+
+    def grip():
+        '''Abstract function, see subclass'''
+        pass
+    def release():
+        '''Abstract function, see subclass'''
+        pass

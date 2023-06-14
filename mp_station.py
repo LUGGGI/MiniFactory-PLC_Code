@@ -35,7 +35,6 @@ class MPStation(Machine):
     __TIME_OVEN = 2
     __TIME_SAW = 2
 
-
     def __init__(self, revpi, name: str):
         '''Initializes the Multi Purpose Station
         
@@ -43,7 +42,6 @@ class MPStation(Machine):
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
         super().__init__(revpi, name)
-        self.state = None
         self.stage = 1
         log.debug("Created Multi Purpose Station: " + self.name)
 
@@ -99,7 +97,7 @@ class MPStation(Machine):
 
             table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
 
-            vg_motor.thread.join() # wait for the vg to be at oven
+            vg_motor.join() # wait for the vg to be at oven
             compressor.run_for_time("", 1.5, as_thread=True)
             vg_lower_valve.run_for_time("", 1, as_thread=True) # lower gripper
             sleep(0.7)

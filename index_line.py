@@ -34,7 +34,6 @@ class IndexLine(Machine):
     __TIME_MILLING = 1
     __TIME_DRILLING = 1
 
-
     def __init__(self, revpi, name: str):
         '''Initializes the Index Line
         
@@ -120,7 +119,7 @@ class IndexLine(Machine):
             cb_drill.run_to_stop_sensor("", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True)
             sleep(1) # wait for product to be in front of pusher
             # push product to out
-            pusher_out.thread.join()
+            pusher_out.join()
             pusher_out.run_to_sensor("FWD", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True) 
             cb_end.run_to_stop_sensor("", self.name + "_SENS_END", stop_delay_in_ms=1000, as_thread=False)
             del cb_end

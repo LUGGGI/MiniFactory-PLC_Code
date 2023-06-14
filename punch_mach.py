@@ -37,7 +37,6 @@ class PunchMach(Machine):
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
         super().__init__(revpi, name)
-        self.state = None
         
         log.debug("Created Punching Machine: " + self.name)
 

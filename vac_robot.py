@@ -22,6 +22,8 @@ class VacRobot(Robot3D):
     grip(): Grip Product
     release(): Release product.
     '''
+    compressor: Actuator = None
+    valve: Actuator = None
 
     def __init__(self, revpi, name: str, moving_position=Position(-1, -1, 1400)):
         '''Initializes the Vacuum Robot.

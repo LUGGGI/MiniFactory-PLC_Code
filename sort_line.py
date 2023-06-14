@@ -37,7 +37,6 @@ class SortLine(Machine):
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
         super().__init__(revpi, name)
-        self.state = None
         self.stage = 1
         log.debug("Created Sorting Line: " + self.name)
 

@@ -78,7 +78,7 @@ class MainLoop:
         self.exit_handler = ExitHandler(self.revpi)
 
         self.main = Machine(self.revpi, "Main")
-        self.state = self.main.switch_state(State.GR2)
+        self.state = self.main.switch_state(State.GR1_1)
         self.machines = {"Main": self.main}
         log.info("Main: Start Mainloop")
 
@@ -189,9 +189,9 @@ class MainLoop:
             self.machines[machine.name] = machine
             try:
                 # machine.move_all_axes(Position(0, -1, -1))
-                machine.motor_rot.move_axis("CW", 0, 100, 50, machine.encoder_rot, machine.name + "_REF_SW_ROTATION", 3, True)
+                machine.__motor_rot.move_axis("CW", 0, 100, 50, machine.__encoder_rot, machine.name + "_REF_SW_ROTATION", 3, True)
                 log.critical("1")
-                machine.motor_rot.join()
+                machine.__motor_rot.join()
                 log.critical("2")
             except:
                 log.exception("Det")
@@ -320,7 +320,7 @@ class MainLoop:
             machine.move_to_position(Position(2245, 54, 3450))
         elif machine.is_stage(2):
                 # grip
-                machine.GRIPPER_CLOSED = 12
+                machine.GRIPPER_CLOSED = 11
                 machine.grip(as_thread=True)
         elif machine.is_stage(3):
             # move product to mps
