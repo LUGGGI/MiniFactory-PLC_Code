@@ -22,7 +22,7 @@ class GripRobot(Robot3D):
     move_to_position(): Moves to given position.
     '''
     GRIPPER_CLOSED = 12
-    GRIPPER_OPENED = 8
+    GRIPPER_OPENED = 9
 
     __encoder_claw: Sensor = None
     __motor_claw: Actuator = None

@@ -30,7 +30,7 @@ class Actuator():
     '''
     __ENCODER_TRIGGER_THRESHOLD = 40
     __COUNTER_TRIGGER_THRESHOLD = 0
-    __PWM_TRIGGER_THRESHOLD = 15
+    _PWM_TRIGGER_THRESHOLD = 15
     __PWM_WINDOW = 300
 
     __thread = None
@@ -164,14 +164,12 @@ class Actuator():
         
         trigger_threshold = self.__ENCODER_TRIGGER_THRESHOLD if encoder.type == SensorType.ENCODER else self.__COUNTER_TRIGGER_THRESHOLD
         
-
         try:
             self.start(direction)
             
             if self.__pwm:
-                trigger_threshold = self.__PWM_TRIGGER_THRESHOLD
+                trigger_threshold = self._PWM_TRIGGER_THRESHOLD
                 if abs(encoder.get_current_value() - trigger_value) > self.__PWM_WINDOW:
-                    log.critical("TEST")
                     # run most of the way at full power
                     offset = -self.__PWM_WINDOW if trigger_value > encoder.get_current_value() else self.__PWM_WINDOW
                     encoder.wait_for_encoder(trigger_value+offset, self.__ENCODER_TRIGGER_THRESHOLD, timeout_in_s)

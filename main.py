@@ -78,7 +78,7 @@ class MainLoop:
         self.exit_handler = ExitHandler(self.revpi)
 
         self.main = Machine(self.revpi, "Main")
-        self.state = self.main.switch_state(State.GR1_1)
+        self.state = self.main.switch_state(State.VG1_1)
         self.machines = {"Main": self.main}
         log.info("Main: Start Mainloop")
 
@@ -263,7 +263,7 @@ class MainLoop:
                 machine.move_to_position(Position(-1, -1, 2100))
             elif machine.is_stage(3):
                 # grip product, move to cb2, release product
-                machine.move_product_to(Position(3835, 78, 1950), sensor="CB1_SENS_END")
+                machine.move_product_to(Position(3840, 78, 1950), sensor="CB1_SENS_END")
             elif machine.is_stage(4):
                 # move up and end state
                 machine.move_to_position(Position(-1, -1, 1600))
@@ -368,13 +368,13 @@ class MainLoop:
         elif self.state == State.VG1_1:
             if machine.is_stage(1):
                 # move to cb3
-                machine.move_to_position(Position(85, 790, 1150))
+                machine.move_to_position(Position(97, 815, 1150), ignore_moving_pos=True)
             elif machine.is_stage(2) and self.is_ready_for_transport("CB3"):
                 # move down
-                machine.move_to_position(Position(-1, -1, 1300))
+                machine.move_to_position(Position(-1, -1, 1250))
             elif machine.is_stage(3):
                 # grip product, move to wh, release product
-                machine.move_product_to(Position(1770, 1075, 700), sensor="CB3_SENS_END")
+                machine.move_product_to(Position(1785, 1080, 700), sensor="CB3_SENS_END")
             elif machine.is_stage(4):
                 # move up a bit
                 machine.move_to_position(Position(-1, -1, 500))
@@ -384,7 +384,7 @@ class MainLoop:
         elif self.state == State.VG1_2:
             if machine.is_stage(1) and machine.state == State_3D.INIT:
                 # move to wh if new vg1
-                machine.move_to_position(Position(1770, 1075, 200), ignore_moving_pos=True)
+                machine.move_to_position(Position(1785, 1080, 200), ignore_moving_pos=True)
                 machine.stage = 0
             elif machine.is_stage(1):
                 # move down
@@ -514,37 +514,7 @@ class MainLoop:
 
         return ready_for_transport
     
-# thread: threading.Thread = None
-# exc = None
-
-# def test(as_thread=False):
-#     if as_thread == True:
-#         global thread
-#         thread = threading.Thread(target=test, args=(), name="TEST")
-#         thread.start()
-#         return
-#     try:
-#         sleep(2)
-#         raise Exception("EXP")
-#     except Exception as e:
-#         global exc
-#         exc = e
-
-# def join():
-#     global thread
-#     thread.join()
-#     if exc:
-#         raise exc 
 
 # Start RevPiApp app
 if __name__ == "__main__":
     MainLoop()
-    # try:
-    #     log.info("START")
-    #     test(True)
-    #     join()
-    #     log.info("END1")
-    # except Exception as e:
-    #     log.critical("Caught")
-    #     log.exception(e)
-    # log.info("END2")

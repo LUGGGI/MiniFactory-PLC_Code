@@ -55,10 +55,9 @@ class VacRobot(Robot3D):
 
         try:
             log.info(f"{self.name} :Gripping")
-            self.compressor.run_for_time("", 1, as_thread=True)
-            sleep(0.3)
+            self.compressor.run_for_time("", 0.3, as_thread=True)
+            sleep(0.2)
             self.valve.start()
-            sleep(0.3)
             self.compressor.join()
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
