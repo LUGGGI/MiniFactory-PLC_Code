@@ -161,9 +161,10 @@ class Sensor():
         while (time.time() <= start_time + timeout_in_s):
             new_value = self.get_current_value()
 
-            if self.type == SensorType.COUNTER and lower:
+            if self.type == SensorType.COUNTER:
                 if new_value == old_value + 1:
-                    self.counter_offset += 2
+                    if lower:
+                        self.counter_offset += 2
                     new_value = old_value = self.get_current_value()
                 elif new_value > old_value:
                     raise(Exception(f"{self.name} :Counter jumped values"))

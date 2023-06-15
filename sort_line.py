@@ -61,7 +61,7 @@ class SortLine(Machine):
             cb = Conveyor(self.revpi, f"{self.name}_CB_FWD")
 
             # TODO: Handle color sensing
-            color_sensor = Sensor(self.revpi, f"{self.name}_COLOR_SENSOR")
+            # color_sensor = Sensor(self.revpi, f"{self.name}_COLOR_SENSOR")
 
             # move product through color sensor
             cb.run_to_stop_sensor("", f"{self.name}_CB_SENS_PISTON", as_thread=False)
@@ -84,13 +84,15 @@ class SortLine(Machine):
 
             # run to desired bay
             cb.run_to_counter_value("", f"{self.name}_CB_COUNTER", position, as_thread=False)
+            del cb
             # push into bay
             compressor.start()
-            sleep(0.5)
-            Actuator(self.revpi, f"{self.name}_VALVE_PISTON_{self.color}").run_for_time("", 2)
+            sleep(0.2)
+            Actuator(self.revpi, f"{self.name}_VALVE_PISTON_{self.color}").run_for_time("", 0.5)
             compressor.stop()
             # check if in bay
-            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}").get_current_value() == True:
+            sleep(1)
+            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}").get_current_value() == False:
                 # no detection at sensor
                 raise(Exception(f"{self.name} :Product not in right bay"))
 

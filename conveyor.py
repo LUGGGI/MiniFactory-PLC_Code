@@ -107,6 +107,7 @@ class Conveyor(Machine):
             encoder = Sensor(self.revpi, counter)
             encoder.reset_encoder()
             Actuator(self.revpi, self.name).run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s)
+            
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True

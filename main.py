@@ -24,7 +24,7 @@ from revpimodio2 import RevPiModIO
 from exit_handler import ExitHandler
 from logger import log
 from machine import Machine
-from sensor import Sensor
+from sensor import Sensor, SensorType
 from actuator import Actuator
 from conveyor import Conveyor
 from punch_mach import PunchMach
@@ -66,7 +66,22 @@ class State(Enum):
     TEST = 1000
 
 class MainLoop:
+    '''Controls the MiniFactory.
+    
+    mainloop(): calls the different states
+    run_...(): calls the different modules
+    end(): Waits for any machines left running.
+    is_ready_for_transport(): Returns the value of ready_for_transport for given machine.
+    '''
+    revpi: RevPiModIO = None
+    exit_handler: ExitHandler = None
+    main: Machine = None
+    state = None
+    machines = {}
+
+
     def __init__(self):
+        '''Initializes MiniFactory control loop.'''
         # setup RevpiModIO
         try:
             self.revpi = RevPiModIO(autorefresh=True)
@@ -78,7 +93,7 @@ class MainLoop:
         self.exit_handler = ExitHandler(self.revpi)
 
         self.main = Machine(self.revpi, "Main")
-        self.state = self.main.switch_state(State.VG1_1)
+        self.state = self.main.switch_state(State.GR2)
         self.machines = {"Main": self.main}
         log.info("Main: Start Mainloop")
 
@@ -173,7 +188,7 @@ class MainLoop:
 
         elif self.state == State.SL:
             if self.run_sl():
-                self.state = self.main.switch_state(State.VG2, True)
+                self.state = self.main.switch_state(State.INIT, True)
 
         elif self.state == State.VG2:
             if self.run_vg2():
@@ -183,20 +198,15 @@ class MainLoop:
     ####################################################################################################
     # Methods that control the different states for the
     def test(self) -> False:
-        machine: GripRobot = self.machines.get("GR2")
-        if machine == None:
-            machine = GripRobot(self.revpi, "GR2", moving_position=Position(-1, 0, 1100))
-            self.machines[machine.name] = machine
-            try:
-                # machine.move_all_axes(Position(0, -1, -1))
-                machine.__motor_rot.move_axis("CW", 0, 100, 50, machine.__encoder_rot, machine.name + "_REF_SW_ROTATION", 3, True)
-                log.critical("1")
-                machine.__motor_rot.join()
-                log.critical("2")
-            except:
-                log.exception("Det")
-            log.critical("END")
-        
+        cb = Actuator(self.revpi, "SL_CB_FWD")    
+        cb.start() 
+        count = Sensor(self.revpi, "SL_CB_PULSE", SensorType.REF_SWITCH)
+        count2 = Sensor(self.revpi, "SL_CB_COUNTER")
+        count2.reset_encoder()
+        count.counter()
+        count2.wait_for_encoder(100, 2)
+        # cb.stop()
+        # self.state = self.main.switch_state(State.END)
 
     def run_cb1(self) -> False:
         machine: Conveyor = self.machines.get("CB1")
@@ -344,7 +354,7 @@ class MainLoop:
         elif machine.is_stage(1):
             # move to cb4
             machine.reset_claw(as_thread=True)
-            machine.move_to_position(Position(440, 40, 1400), ignore_moving_pos=True)
+            machine.move_to_position(Position(443, 43, 1400), ignore_moving_pos=True)
 
         elif machine.is_stage(2) and self.is_ready_for_transport("CB4"):
             self.is_ready_for_transport("CB3")
@@ -355,7 +365,7 @@ class MainLoop:
             machine.move_product_to(Position(1870, 0, 1800), sensor="CB4_SENS_END")
         elif machine.is_stage(4):
             # move back to init
-            machine.init(to_end=False)
+            machine.init(to_end=True)
             return True
     
     def run_vg1(self) -> False:
@@ -391,7 +401,7 @@ class MainLoop:
                 machine.move_to_position(Position(-1, -1, 750))
             elif machine.is_stage(2):
                 # grip product, move to cb3, release product
-                machine.move_product_to(Position(85, 790, 1150))
+                machine.move_product_to(Position(97, 815, 1150))
             elif machine.is_stage(3):
                 # move back to init
                 machine.init(to_end=True)
@@ -477,7 +487,7 @@ class MainLoop:
             machine.retrieve_product(color="COLOR_UNKNOWN")
 
     def end(self) -> False:
-        '''waits for any machines left running'''
+        '''Waits for any machines left running.'''
         machine_running = False
         while(True):
             # check if there any machines left running
@@ -498,7 +508,7 @@ class MainLoop:
         '''Returns the value of ready_for_transport for given machine.
         and if True set end_machine to True
 
-        :machine_name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :machine_name: Exact name of the machine in PiCtory (everything before first '_')
         '''
         ready_for_transport = False
         try:
