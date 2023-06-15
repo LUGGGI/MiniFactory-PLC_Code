@@ -138,7 +138,10 @@ class Robot3D(Machine):
 
         if self.move_to_position(position, sensor, as_thread=False) == False:
             # move back and try again
-            self.release(as_thread = False)
+            if self.name.find("GR") != -1:
+                self.reset_claw(as_thread=False)
+            else:
+                self.release(as_thread = False)
             self.move_to_position(current_position, as_thread=False)
             self.grip(as_thread = False)
             if self.move_to_position(position, sensor, as_thread=False) == False:

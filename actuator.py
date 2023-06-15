@@ -32,6 +32,7 @@ class Actuator():
     __COUNTER_TRIGGER_THRESHOLD = 0
     _PWM_TRIGGER_THRESHOLD = 15
     __PWM_WINDOW = 300
+    __PWM_DURATION = 100
 
     __thread = None
     exception = None
@@ -171,7 +172,7 @@ class Actuator():
                 trigger_threshold = self._PWM_TRIGGER_THRESHOLD
                 if abs(encoder.get_current_value() - trigger_value) > self.__PWM_WINDOW:
                     # run most of the way at full power
-                    offset = -self.__PWM_WINDOW if trigger_value > encoder.get_current_value() else self.__PWM_WINDOW
+                    offset = -self.__PWM_DURATION if trigger_value > encoder.get_current_value() else self.__PWM_DURATION
                     encoder.wait_for_encoder(trigger_value+offset, self.__ENCODER_TRIGGER_THRESHOLD, timeout_in_s)
 
                 # run at 15% speed for PWM_WINDOW values    

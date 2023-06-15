@@ -61,9 +61,9 @@ class Warehouse(Machine):
     __cb: Conveyor = None
     __encoder_hor: Sensor = None
     __encoder_ver: Sensor = None
-    __motor_loading: Conveyor = None
-    __motor_hor: Conveyor = None
-    __motor_ver: Conveyor = None
+    __motor_loading: Actuator = None
+    __motor_hor: Actuator = None
+    __motor_ver: Actuator = None
 
     def __init__(self, revpi, name: str):
         '''Initializes the Warehouse
@@ -95,15 +95,16 @@ class Warehouse(Machine):
         log.debug("Destroyed Warehouse: " + self.name)
 
 
-    def init(self, to_end=False, as_thread=True):
+    def init(self, to_cb=False, to_end=False, as_thread=True):
         '''Move to init position.
         
+        :to_cb: moves to cb after completion of init
         :to_end: set end_machine to True after completion of init
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(to_end, False), name=self.name)
+            self.thread = threading.Thread(target=self.init, args=(to_cb, to_end, False), name=self.name)
             self.thread.start()
             return
         
@@ -112,6 +113,11 @@ class Warehouse(Machine):
         try:
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
             self.move_to_position(0, 0)
+
+            if to_cb:
+                Actuator(self.revpi, self.name + "_CB_BWD").run_for_time("", 0.5)
+                self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
+                self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -157,20 +163,18 @@ class Warehouse(Machine):
             vertical = shelf.value[1]
             log.info(f"Store product at: {shelf.name}({horizontal},{vertical})")
 
-
-            # move crane to cb
-            self.state = self.switch_state(State.MOVING_TO_CB)
-            self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
-            self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
-            self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front, as_thread=True)
+            if self.state != State.INIT:
+                # move crane to cb
+                self.state = self.switch_state(State.MOVING_TO_CB)
+                self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
+                self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
+                self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front, as_thread=False)
 
             # move product to inside
-            sleep(2)
             self.state = self.switch_state(State.CB_FWD)
             self.__cb.run_to_stop_sensor("FWD", self.name + "_SENS_IN", as_thread=False)
 
             # get product from cb
-            self.__motor_loading.join()
             self.state = self.switch_state(State.GETTING_PRODUCT)
             self.move_to_position(-1, self.__POS_CB_VERTICAL - 100)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
@@ -247,18 +251,17 @@ class Warehouse(Machine):
 
             # move to cb
             self.state = self.switch_state(State.MOVING_TO_CB)
-            self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL - 100)
+            self.move_to_position(0, self.__POS_CB_VERTICAL - 100)
+            self.move_to_position(self.__POS_CB_HORIZONTAL, -1)
 
             # put product on cb
             self.state = self.switch_state(State.SETTING_PRODUCT)
             self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
             self.move_to_position(-1, self.__POS_CB_VERTICAL)
-            self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back, as_thread=True)
 
             # move product to outside
             self.state = self.switch_state(State.CB_BWD)
-            self.__cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT", as_thread=False)
-            self.__motor_loading.join()
+            self.__cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT", stop_delay_in_ms=200, as_thread=False)
 
             # save empty to file
             with open(self.__JSON_FILE, "r") as fp:
@@ -267,33 +270,27 @@ class Warehouse(Machine):
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
+            log.info("Retrieved product from: " + str(f"({horizontal},{vertical})"))
+            self.ready_for_transport = True
+            self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.info("Retrieved product from: " + str(f"({horizontal},{vertical})"))
+            self.init(to_end=True, as_thread=False)
             self.state = self.switch_state(State.END)
-            self.ready_for_transport = True
-            self.init(to_end=True, as_thread=True)
 
 
-    def move_to_position(self, horizontal: int, vertical: int, as_thread=False):
+    def move_to_position(self, horizontal: int, vertical: int):
         '''Moves Crane given coordinates, set a coordinate to -1 to not move that axis.
 
         :horizontal: horizontal coordinate
         :vertical: vertical coordinate
-        :as_thread: Runs the function as a thread
 
         -> Panics if axes movements did not complete
         '''
-        # call this function again as a thread
-        if as_thread:
-            self.thread = threading.Thread(target=self.move_to_position, args=(horizontal, vertical, False), name=self.name)
-            self.thread.start()
-            return
-
         log.info("Moving Crane to position: " + str(f"({horizontal},{vertical})"))
 
         # get current position
