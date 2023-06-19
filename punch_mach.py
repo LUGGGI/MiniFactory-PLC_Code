@@ -16,7 +16,6 @@ from actuator import Actuator
 from conveyor import Conveyor
 
 class State(Enum):
-    CB2 = 0   
     CB_TO_PUNCH = 1
     PUNCHING = 2
     CB_TO_CB2 = 3
@@ -37,7 +36,7 @@ class PunchMach(Machine):
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
         super().__init__(revpi, name)
-        
+        self.stage = 1
         log.debug("Created Punching Machine: " + self.name)
 
     def __del__(self):
@@ -54,13 +53,8 @@ class PunchMach(Machine):
             return
         
         try:
-            cb2 = Conveyor(self.revpi, "CB2")
             puncher = Actuator(self.revpi, self.name)
             cb_punch = Conveyor(self.revpi, "PM_CB")
-
-            self.state = self.switch_state(State.CB2)
-            # Move product from connected conveyor belt to inner conveyor belt
-            cb2.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_IN", as_thread=True)
 
             self.state = self.switch_state(State.CB_TO_PUNCH)
             # raise puncher
@@ -68,7 +62,6 @@ class PunchMach(Machine):
             # Move product from inner conveyor belt to puncher
             cb_punch.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_PM", start_sensor="CB2_SENS_END", as_thread=False)
 
-            cb2.join()
             puncher.join()
             self.state = self.switch_state(State.PUNCHING)
             log.info("Punching product")
@@ -77,16 +70,12 @@ class PunchMach(Machine):
             puncher.run_to_sensor("UP", stop_sensor="PM_REF_SW_TOP", as_thread=True)
 
             self.state = self.switch_state(State.CB_TO_CB2)
+            self.ready_for_transport = True
             #  Move product from puncher to connected conveyor
-            cb_punch.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_END", as_thread=True)
+            cb_punch.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_END", as_thread=False)
 
-            self.state = self.switch_state(State.CB2)
-            # Move product to end of connected conveyor belt
-            cb2.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_START", start_sensor="PM_SENS_IN", stop_delay_in_ms=150 ,as_thread=False)
-            del cb2
             puncher.join()
             del puncher
-            cb_punch.join()
             del cb_punch
 
         except Exception as error:
@@ -95,5 +84,4 @@ class PunchMach(Machine):
             log.exception(error)
         else:
             self.state = self.switch_state(State.END)
-            self.ready_for_transport = True
             self.stage += 1

@@ -50,7 +50,7 @@ class Warehouse(Machine):
     move_axis(): Moves one axis to the given trigger value.
     '''
     __POS_CB_HORIZONTAL = 55
-    __POS_CB_VERTICAL = 1400
+    __POS_CB_VERTICAL = 1450
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
     __JSON_FILE = "wh_content.json"
@@ -95,7 +95,7 @@ class Warehouse(Machine):
         log.debug("Destroyed Warehouse: " + self.name)
 
 
-    def init(self, to_cb=False, to_end=False, as_thread=True):
+    def init(self, for_store=False, for_retrieve=False, to_end=False, as_thread=True):
         '''Move to init position.
         
         :to_cb: moves to cb after completion of init
@@ -104,42 +104,63 @@ class Warehouse(Machine):
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.init, args=(to_cb, to_end, False), name=self.name)
+            self.thread = threading.Thread(target=self.init, args=(for_store, for_retrieve, to_end, False), name=self.name)
             self.thread.start()
             return
         
         self.state = self.switch_state(State.INIT)
         log.info(f"Initializing {self.name}, moving to init position")
+        current_stage = self.stage
         try:
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
             self.move_to_position(0, 0)
 
-            if to_cb:
+            if for_store:
+                # get empty carrier if non is available
+                if Sensor(self.revpi, self.name + "_SENS_OUT").get_current_value() == False:
+                    self.retrieve_product(color="Carrier", as_thread=False)
+                self.ready_for_next = True
+                # move arm to cb
+                self.state = self.switch_state(State.MOVING_TO_CB)
                 Actuator(self.revpi, self.name + "_CB_BWD").run_for_time("", 0.5)
                 self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
                 self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
+            elif for_retrieve:
+                # if carrier at cb, move it into storage
+                if Sensor(self.revpi, self.name + "_SENS_OUT").get_current_value() == True:
+                    # move arm to cb
+                    self.state = self.switch_state(State.MOVING_TO_CB)
+                    Actuator(self.revpi, self.name + "_CB_BWD").run_for_time("", 0.5)
+                    self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
+                    self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
+                    self.store_product(color="Carrier", as_thread=False)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            self.stage += 1
+            log.info(f"Initialized {self.name}")
             if to_end:
                 self.end_machine = True
+            else:
+                self.stage = current_stage + 1
 
 
-    def store_product(self, shelf: ShelfPos=None, as_thread=True):
+    def store_product(self, shelf: ShelfPos=None, color: str=None, as_thread=True):
         '''Stores a product at given position.
 
         :shelf: a position of a shelf defined in ShelfPos
+        :color: Color of the wanted Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier)
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.store_product, args=(shelf, False), name=self.name)
+            self.thread = threading.Thread(target=self.store_product, args=(shelf, color, False), name=self.name)
             self.thread.start()
             return
+
+        color = color if color != None else self.color
 
         try:
             if Sensor(self.revpi, self.name + "_SENS_OUT").get_current_value() == False:
@@ -163,12 +184,12 @@ class Warehouse(Machine):
             vertical = shelf.value[1]
             log.info(f"Store product at: {shelf.name}({horizontal},{vertical})")
 
-            if self.state != State.INIT:
-                # move crane to cb
-                self.state = self.switch_state(State.MOVING_TO_CB)
-                self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
-                self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
-                self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front, as_thread=False)
+            # if self.state != State.INIT:
+            #     # move crane to cb
+            #     self.state = self.switch_state(State.MOVING_TO_CB)
+            #     self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
+            #     self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
+            #     self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front, as_thread=False)
 
             # move product to inside
             self.state = self.switch_state(State.CB_FWD)
@@ -176,7 +197,7 @@ class Warehouse(Machine):
 
             # get product from cb
             self.state = self.switch_state(State.GETTING_PRODUCT)
-            self.move_to_position(-1, self.__POS_CB_VERTICAL - 100)
+            self.move_to_position(-1, self.__POS_CB_VERTICAL - 150)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
 
             # move crane to given rack
@@ -192,19 +213,20 @@ class Warehouse(Machine):
             # save Product to file
             with open(self.__JSON_FILE, "r") as fp:
                 json_obj = json.load(fp)
-            json_obj["contents"][shelf.name] = self.color
+            json_obj["contents"][shelf.name] = color
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
+
+            self.ready_for_transport = True
+            log.info("Product stored at: " + str(f"({horizontal},{vertical})"))
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.info("Product stored at: " + str(f"({horizontal},{vertical})"))
-            self.state = self.switch_state(State.END)
-            self.ready_for_next = True
             self.stage += 1
+            self.state = self.switch_state(State.END)
 
 
     def retrieve_product(self, shelf: ShelfPos=None, color: str=None, as_thread=True):
@@ -271,15 +293,13 @@ class Warehouse(Machine):
                 json.dump(json_obj, fp, indent=4)
 
             log.info("Retrieved product from: " + str(f"({horizontal},{vertical})"))
-            self.ready_for_transport = True
-            self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            self.init(to_end=True, as_thread=False)
+            self.stage += 1
             self.state = self.switch_state(State.END)
 
 
