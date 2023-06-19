@@ -32,7 +32,7 @@ class ExitHandler:
     def stop_factory(self, *_):
         '''Disables the API for factory and stops all Actuators'''
         self.was_called = True
-        log.info("Program aborted: ")
+        log.critical("Program aborted: ")
         self.revpi.cleanup() # stop API access for factory
 
         try:
@@ -41,7 +41,7 @@ class ExitHandler:
             # load simulation if not connected to factory
             exit_revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.img")
 
-        log.info("Setting all outputs to false: ")
+        log.critical("Setting all outputs to false: ")
 
         list = exit_revpi.io
 

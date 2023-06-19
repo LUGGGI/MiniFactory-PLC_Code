@@ -144,7 +144,7 @@ class MPStation(Machine):
             self.start_next_machine = True
             # run cb
             self.state = self.switch_state(State.CB)
-            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "CB1_SENS_START", as_thread=False)
+            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "CB1_SENS_START", timeout_in_s=30, as_thread=False)
             table.join()
             del table
 

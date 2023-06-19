@@ -184,8 +184,10 @@ class Robot3D(Machine):
 
                 # check if Product was picked up
                 if sensor and Sensor(self.revpi, sensor).get_current_value() == True:
-                        log.error(f"{self.name} :Product still at Sensor")
-                        return False
+                    log.error(f"{self.name} :Product still at Sensor")
+                    return False
+                else:
+                    self.ready_for_next = True
 
                 # move non moving position axes
                 self.state = self.switch_state(State.MOVING)

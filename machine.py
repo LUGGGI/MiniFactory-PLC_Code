@@ -70,8 +70,9 @@ class Machine:
         '''Switch to given state and save state start time.
         
         :state: state Enum to switch to
+        :wait: waits for input bevor switching
         '''
-        if wait and False:
+        if wait:
             input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
         self.__state_time_start = datetime.now()
         self.state_is_init = False

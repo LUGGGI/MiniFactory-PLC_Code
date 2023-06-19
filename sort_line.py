@@ -76,7 +76,7 @@ class SortLine(Machine):
             # determine sorting position
             position = 0
             if self.color == "WHITE":
-                position = 3
+                position = 2
             elif self.color == "RED":
                 position = 11
             elif self.color == "BLUE":

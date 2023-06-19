@@ -1,0 +1,25 @@
+{
+    "factory": "right",
+    "lines": [
+        {
+            "1_Main" : {
+                "start_when": "start",
+                "start_at": "IN",
+                "end_at": "WH",
+                "with_oven": "True",
+                "with_PM": "True",
+                "color": "RED"
+            }
+        },
+        {
+            "2_Main" : {
+                "start_when": "1_Main",
+                "start_at": "WH",
+                "end_at": "OUT",
+                "with_oven": "False",
+                "with_PM": "False",
+                "color": "RED"
+            }
+        }
+    ]
+}

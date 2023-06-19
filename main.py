@@ -34,178 +34,203 @@ from vac_robot import VacRobot
 from sort_line import SortLine
 from warehouse import Warehouse, ShelfPos
 
+class Status(Enum):
+    NONE = 0
+    FREE = 1
+    RUNNING = 2
+    BLOCKED = 3
+
 class State(Enum):
-    INIT = 0
+    INIT = [0, Status.FREE]
 
-    CB1 = 11
-    CB2 = 12
-    CB3 = 13
-    CB3_1 = 131
-    CB3_2 = 132
-    CB4 = 14
-    CB5 = 15
+    CB1 = [11, Status.FREE]
+    CB2 = [12, Status.FREE]
+    CB3 = [13, Status.FREE]
+    CB3_1 = [131, Status.FREE]
+    CB3_2 = [132, Status.FREE]
+    CB4 = [14, Status.FREE]
+    CB5 = [15, Status.FREE]
 
-    GR1 = 21
-    GR1_1 = 211
-    GR1_2 = 212
-    GR2 = 22
-    GR3 = 23
+    GR1 = [21, Status.FREE]
+    GR1_1 = [211, Status.FREE]
+    GR1_2 = [212, Status.FREE]
+    GR2 = [22, Status.FREE]
+    GR3 = [23, Status.FREE]
 
-    VG1 = 31
-    VG1_1 = 311
-    VG1_2 = 312
-    VG2 = 32
+    VG1 = [31, Status.FREE]
+    VG1_1 = [311, Status.FREE]
+    VG1_2 = [312, Status.FREE]
+    VG2 = [32, Status.FREE]
 
-    MPS = 5
-    PM = 6
-    SL = 7
-    WH = 8
+    MPS = [5, Status.FREE]
+    PM = [6, Status.FREE]
+    SL = [7, Status.FREE]
+    WH = [8, Status.FREE]
 
-    END = 100
-    ERROR = 999
-    TEST = 1000
+    WAITING = [99, Status.FREE]
+    END = [100, Status.FREE]
+    ERROR = [999, Status.FREE]
+    TEST = [1000, Status.FREE]
 
-class MainLoop:
+class MainLoop(Machine):
     '''Controls the MiniFactory.
     
     mainloop(): calls the different states
+    switch_state(): switches state to given state if not BLOCKED or RUNNING
     run_...(): calls the different modules
     end(): Waits for any machines left running.
     is_ready_for_transport(): Returns the value of ready_for_transport for given machine.
     '''
     revpi: RevPiModIO = None
     exit_handler: ExitHandler = None
-    main: Machine = None
-    state = None
+    state: State = State.INIT
+    next_state: State = None
+    previous_state: State = None
     machines = {}
 
 
-    def __init__(self):
+    def __init__(self, revpi, name: str, start_at: State, exit_handler: ExitHandler):
         '''Initializes MiniFactory control loop.'''
-        # setup RevpiModIO
-        try:
-            self.revpi = RevPiModIO(autorefresh=True)
-        except:
-            # load simulation if not connected to factory
-            self.revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.img")
-        self.revpi.mainloop(blocking=False)
+        super().__init__(revpi, name)
 
-        self.exit_handler = ExitHandler(self.revpi)
+        self.exit_handler = exit_handler
 
-        self.main = Machine(self.revpi, "Main")
-        self.state = self.main.switch_state(State.GR2)
-        self.machines = {"Main": self.main}
-        log.info("Main: Start Mainloop")
+        self.switch_state(start_at)
+        log.info(f"{self.name}: Start Mainloop")
 
-        while(not self.main.error_exception_in_machine and not self.main.end_machine and not self.exit_handler.was_called):
+        while(not self.error_exception_in_machine and not self.end_machine and not self.exit_handler.was_called):
             self.mainloop()
             sleep(0.02)
 
+        self.machines.clear()
+        log.critical(f"END of Mainloop: {self.name}")
+
       
     def mainloop(self):
+        machine: Machine
+        # look for errors in the machines
         for machine in self.machines.values():
             if machine.error_exception_in_machine:
-                self.state = self.main.switch_state(State.ERROR)
+                self.switch_state(State.ERROR)
                 log.error("Error in Mainloop")
                 self.exit_handler.stop_factory()
-                self.main.error_exception_in_machine = True
+                self.error_exception_in_machine = True
                 return
-            
+
+        # end machines    
         for machine in self.machines.values():
             if machine.end_machine:
                 self.machines.pop(machine.name)
+                for state in State:
+                    if state.name.find(machine.name) != -1:
+                        state.value[1] = Status.FREE
                 break
+        
+        # wait for running or blocked machines
+        if self.state == State.WAITING:
+            if self.next_state.value[1] == Status.FREE:
+                self.previous_state.value[1] = Status.FREE
+                log.critical(f"{self.name}: Continuing to: {self.next_state}")
+                self.switch_state(self.next_state)
 
         if self.state == State.END:
-            self.main.ready_for_transport = True
+            self.ready_for_transport = True
             if not self.end():
                 return
-            log.info("End of program")
-            self.main.end_machine = True
-            self.revpi.exit()
+            self.end_machine = True
             return
 
         if self.state == State.TEST:
             if self.test():
-                self.state = self.main.switch_state(State.INIT)
+                self.switch_state(State.INIT)
 
         elif self.state == State.GR2:
             if self.run_gr2():
-                self.state = self.main.switch_state(State.MPS, True)
+                self.switch_state(State.MPS, True)
 
         elif self.state == State.MPS:
             if self.run_mps():
-                self.state = self.main.switch_state(State.CB1, True)
+                self.switch_state(State.CB1, True)
 
         elif self.state == State.CB1:
             if self.run_cb1():
-                self.state = self.main.switch_state(State.GR1_1, True)
+                self.switch_state(State.GR1_1, True)
         
         elif self.state == State.GR1_1:
             if self.run_gr1():
-                self.state = self.main.switch_state(State.PM, True)
+                self.switch_state(State.PM, True)
+                State.GR1_1.value[1] = Status.BLOCKED
 
         elif self.state == State.PM:
             if self.run_pm():
-                self.state = self.main.switch_state(State.GR1_2, True)
+                self.switch_state(State.GR1_2, True)
 
         elif self.state == State.GR1_2:
             if self.run_gr1():
-                self.state = self.main.switch_state(State.CB3_1, True)
+                self.switch_state(State.CB3_1, True)
 
         elif self.state == State.CB3_1:
             if self.run_cb3():
-                self.state = self.main.switch_state(State.VG1_1, True)
+                self.switch_state(State.VG1_1, True)
+                State.CB3_1.value[1] = Status.BLOCKED
         
         elif self.state == State.VG1_1:
             if self.run_vg1():
-                self.state = self.main.switch_state(State.WH, True)
+                self.switch_state(State.WH, True)
         
         elif self.state == State.WH:
             if self.run_wh():
-                self.state = self.main.switch_state(State.VG1_2, True)
+                self.switch_state(State.VG1_2, True)
         
         elif self.state == State.VG1_2:
             if self.run_vg1():
-                self.state = self.main.switch_state(State.CB3_2, True)
+                self.switch_state(State.CB3_2, True)
         
         elif self.state == State.CB3_2:
             if self.run_cb3():
-                self.state = self.main.switch_state(State.CB4)
+                self.switch_state(State.CB4)
 
         elif self.state == State.CB4:
             if self.run_cb4():
-                self.state = self.main.switch_state(State.GR3, True)
+                self.switch_state(State.GR3, True)
 
         elif self.state == State.GR3:
             if self.run_gr3():
-                self.state = self.main.switch_state(State.CB5, True)
+                self.switch_state(State.CB5, True)
 
         elif self.state == State.CB5:
             if self.run_cb5():
-                self.state = self.main.switch_state(State.SL, True)
+                self.switch_state(State.SL, True)
 
         elif self.state == State.SL:
             if self.run_sl():
-                self.state = self.main.switch_state(State.VG2, True)
+                self.switch_state(State.VG2, True)
 
         elif self.state == State.VG2:
             if self.run_vg2():
-                self.state = self.main.switch_state(State.END)
+                self.switch_state(State.END)
 
+    def switch_state(self, state: State, wait=False):
+        '''Switch to given state and save state start time.
+        
+        :state: state Enum to switch to
+        :wait: waits for input bevor switching
+        '''
+        if state.value[1] == Status.FREE:
+            self.state = super().switch_state(state, wait=False)
+            self.state.value[1] = Status.RUNNING
+        else:
+            log.critical(f"{self.name}: Waiting for: {state}")
+            self.state.value[1] = Status.BLOCKED
+            self.previous_state = self.state
+            self.next_state = state
+            self.state = super().switch_state(State.WAITING, wait=False)
 
+    
     ####################################################################################################
     # Methods that control the different states for the
     def test(self) -> False:
-        cb = Actuator(self.revpi, "SL_CB_FWD")    
-        cb.start() 
-        count = Sensor(self.revpi, "SL_CB_PULSE", SensorType.REF_SWITCH)
-        count2 = Sensor(self.revpi, "SL_CB_COUNTER")
-        count2.reset_encoder()
-        count.counter()
-        count2.wait_for_encoder(100, 2)
-        # cb.stop()
-        # self.state = self.main.switch_state(State.END)
+        pass
 
     def run_cb1(self) -> False:
         machine: Conveyor = self.machines.get("CB1")
@@ -225,6 +250,7 @@ class MainLoop:
         
         elif self.state == State.CB3_1 and machine.is_stage(1):
             machine.run_to_stop_sensor("FWD", stop_sensor=f"{machine.name}_SENS_END")
+            machine.stage = 0
             return True
         
         elif self.state == State.CB3_2 and machine.is_stage(1):
@@ -259,6 +285,9 @@ class MainLoop:
             machine = GripRobot(self.revpi, "GR1", Position(-1, -1, 1400))
             self.machines[machine.name] = machine
             machine.init(as_thread=True)
+        elif machine.ready_for_next:
+            machine.ready_for_next = False
+            self.is_ready_for_transport("CB1", end_machine=True)
 
         # move from cb1 to cb2
         elif self.state == State.GR1_1:
@@ -267,12 +296,12 @@ class MainLoop:
                 machine.reset_claw(as_thread=True)
                 machine.move_to_position(Position(245, 65, 1600), ignore_moving_pos=True)
             # Wait for cb1 to finish
-            elif machine.is_stage(2) and self.is_ready_for_transport("CB1"):
+            elif machine.is_stage(2) and self.is_ready_for_transport("CB1", end_machine=False):
                 # move down
                 machine.move_to_position(Position(-1, -1, 2100))
             elif machine.is_stage(3):
                 # grip product, move to cb2, release product
-                machine.move_product_to(Position(3840, 78, 1950), sensor="CB1_SENS_END")
+                machine.move_product_to(Position(3845, 78, 1950), sensor="CB1_SENS_END")
             elif machine.is_stage(4):
                 # move up and end state
                 machine.move_to_position(Position(-1, -1, 1600))
@@ -349,14 +378,17 @@ class MainLoop:
             machine = GripRobot(self.revpi, "GR3", Position(-1, -1, 1400))
             self.machines[machine.name] = machine
             machine.init(as_thread=True)
+        elif machine.ready_for_next:
+            machine.ready_for_next = False
+            self.is_ready_for_transport("CB4", end_machine=True)
 
         elif machine.is_stage(1):
             # move to cb4
             machine.reset_claw(as_thread=True)
-            machine.move_to_position(Position(443, 43, 1400), ignore_moving_pos=True)
+            machine.move_to_position(Position(437, 43, 1400), ignore_moving_pos=True)
 
-        elif machine.is_stage(2) and self.is_ready_for_transport("CB4"):
-            self.is_ready_for_transport("CB3")
+        elif machine.is_stage(2) and self.is_ready_for_transport("CB4", end_machine=False):
+            self.is_ready_for_transport("CB3", end_machine=True)
             # move down
             machine.move_to_position(Position(-1, -1, 1900))
         elif machine.is_stage(3):
@@ -378,7 +410,7 @@ class MainLoop:
             if machine.is_stage(1):
                 # move to cb3
                 machine.move_to_position(Position(97, 815, 1150), ignore_moving_pos=True)
-            elif machine.is_stage(2) and self.is_ready_for_transport("CB3"):
+            elif machine.is_stage(2) and self.is_ready_for_transport("CB3", end_machine=False):
                 # move down
                 machine.move_to_position(Position(-1, -1, 1250))
             elif machine.is_stage(3):
@@ -504,10 +536,10 @@ class MainLoop:
             if machine_running:
                 return False
             # all machines have ended
-            self.main.end_machine
+            self.end_machine
             return True
 
-    def is_ready_for_transport(self, machine_name: str) -> bool:
+    def is_ready_for_transport(self, machine_name: str, end_machine=True) -> bool:
         '''Returns the value of ready_for_transport for given machine.
         and if True set end_machine to True
 
@@ -522,12 +554,34 @@ class MainLoop:
             log.error(f"{machine_name} :Is not available")
             ready_for_transport = True
 
-        if ready_for_transport:
-            self.machines.pop(machine_name, False)
+        if ready_for_transport and end_machine:
+            try:
+                self.machines[machine_name].end_machine = True
+            except:
+                pass
 
         return ready_for_transport
     
 
 # Start RevPiApp app
 if __name__ == "__main__":
-    MainLoop()
+    # setup RevpiModIO
+    try:
+        revpi = RevPiModIO(autorefresh=True)
+    except:
+        # load simulation if not connected to factory
+        revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.img")
+    
+    revpi.mainloop(blocking=False)
+    exit_handler = ExitHandler(revpi)
+
+    thread1 = threading.Thread(target=MainLoop, args=(revpi, "1_Main", State.MPS, exit_handler), name="1_Main")
+    thread1.start()
+    thread2 = threading.Thread(target=MainLoop, args=(revpi, "2_Main", State.CB1, exit_handler), name="2_Main")
+    thread2.start()
+
+    thread1.join()
+    thread2.join()
+    
+    log.critical("End of program")
+    revpi.exit()
