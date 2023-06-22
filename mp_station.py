@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.22"
 
 import threading
 from time import sleep
@@ -59,7 +59,8 @@ class MPStation(Machine):
             self.thread = threading.Thread(target=self.run, args=(with_oven, False), name=self.name)
             self.thread.start()
             return
-
+        
+        log.warning(f"{self.name} :Running")
         try:
             compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
             vg_motor = Actuator(self.revpi, self.name + "_VG")
@@ -153,6 +154,7 @@ class MPStation(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
+            log.warning(f"{self.name} :End")
             self.state = self.switch_state(State.END)
             self.end_machine = True
             self.stage += 1

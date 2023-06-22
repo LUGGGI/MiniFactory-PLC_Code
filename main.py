@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.09"
+__version__ = "2023.06.22"
 
 from time import sleep
 from enum import Enum
@@ -24,15 +24,13 @@ from revpimodio2 import RevPiModIO
 from exit_handler import ExitHandler
 from logger import log
 from machine import Machine
-from sensor import Sensor, SensorType
-from actuator import Actuator
 from conveyor import Conveyor
 from punch_mach import PunchMach
 from mp_station import MPStation
 from grip_robot import GripRobot, Position, State as State_3D
 from vac_robot import VacRobot
 from sort_line import SortLine
-from warehouse import Warehouse, ShelfPos
+from warehouse import Warehouse
 
 class Status(Enum):
     NONE = 0
@@ -73,12 +71,14 @@ class State(Enum):
 class MainLoop(Machine):
     '''Controls the MiniFactory.
     
+    run(): starts the mainloop
     mainloop(): calls the different states
     switch_state(): switches state to given state if not BLOCKED or RUNNING
     run_...(): calls the different modules
     end(): Waits for any machines left running.
     is_ready_for_transport(): Returns the value of ready_for_transport for given machine.
     '''
+    FACTORY = "right"
     revpi: RevPiModIO = None
     exit_handler: ExitHandler = None
     state: State = State.INIT
@@ -94,9 +94,10 @@ class MainLoop(Machine):
 
         self.exit_handler = exit_handler
         self.config = config
-        del revpi, name, config, exit_handler
 
+    def run(self):
         self.switch_state(self.config["start_at"])
+        # self.run_init()
         log.info(f"{self.name}: Start Mainloop")
 
         while(not self.error_exception_in_machine and not self.end_machine and not self.exit_handler.was_called):
@@ -105,7 +106,6 @@ class MainLoop(Machine):
 
         self.machines.clear()
         log.critical(f"END of Mainloop: {self.name}")
-
       
     def mainloop(self):
         machine: Machine
@@ -121,6 +121,7 @@ class MainLoop(Machine):
         # end machines    
         for machine in self.machines.values():
             if machine.end_machine:
+                log.info(f"{self.name}: Ended: {machine.name}")
                 self.machines.pop(machine.name)
                 for state in State:
                     if state.name.find(machine.name) != -1:
@@ -135,6 +136,7 @@ class MainLoop(Machine):
                 self.switch_state(self.next_state)
 
         if self.state == State.END:
+            State.END.value[1] = Status.FREE
             self.ready_for_transport = True
             if not self.end():
                 return
@@ -143,7 +145,7 @@ class MainLoop(Machine):
 
         if self.state == State.TEST:
             if self.test():
-                self.switch_state(State.INIT)
+                return
 
         elif self.state == State.GR2:
             if self.run_gr2():
@@ -240,6 +242,17 @@ class MainLoop(Machine):
     # Methods that control the different states for the
     def test(self) -> False:
         pass
+
+    def run_init(self) -> False:
+        for gr in ["GR1", "GR2", "GR3"]:
+            self.machines[gr] = GripRobot(self.revpi, gr, Position(-1, -1, -1))
+            self.machines[gr].init(to_end=True)
+        for vg in ["VG1", "VG2"]:
+            self.machines[vg] = VacRobot(self.revpi, vg, Position(-1, -1, -1))
+            self.machines[vg].init(to_end=True)
+        self.machines["WH"] = Warehouse(self.revpi, "WH")
+        self.machines["WH"].init(to_end=True)
+        self.switch_state(State.END)
 
     def run_cb1(self) -> False:
         machine: Conveyor = self.machines.get("CB1")
@@ -367,7 +380,7 @@ class MainLoop(Machine):
             machine.move_to_position(Position(2245, 55, 3450))
         elif machine.is_stage(2):
                 # grip
-                machine.GRIPPER_CLOSED = 11
+                machine.GRIPPER_CLOSED = 10
                 machine.grip(as_thread=True)
         elif machine.is_stage(3):
             # move product to mps
@@ -402,7 +415,7 @@ class MainLoop(Machine):
             machine.move_to_position(Position(-1, -1, 1900))
         elif machine.is_stage(3):
             # grip product, move to cb5, release product
-            machine.move_product_to(Position(1870, 0, 1800), sensor="CB4_SENS_END")
+            machine.move_product_to(Position(1865, 10, 1800), sensor="CB4_SENS_END")
         elif machine.is_stage(4):
             # move back to init
             machine.init(to_end=True)
@@ -415,25 +428,22 @@ class MainLoop(Machine):
             self.machines[machine.name] = machine
             machine.init(as_thread=True)
 
-            # DEBUG
-            self.machines["SL"] = SortLine(self.revpi, "SL")
-            self.machines["SL"].color = "WHITE"
-
-
-        elif machine.is_stage(1) and self.machines["SL"].color == "WHITE":
+        elif machine.is_stage(1) and self.config["color"] == "WHITE":
             # move to white
-            machine.move_to_position(Position(0, 1450, 1400))
-        elif machine.is_stage(1) and self.machines["SL"].color == "RED":
+            machine.move_to_position(Position(0, 1450, 1200))
+        elif machine.is_stage(1) and self.config["color"] == "RED":
             # move to red
-            machine.move_to_position(Position(130, 1560, 1400))
-        elif machine.is_stage(1) and self.machines["SL"].color == "BLUE":
+            machine.move_to_position(Position(130, 1560, 1200))
+        elif machine.is_stage(1) and self.config["color"] == "BLUE":
             # move to blue
-            machine.move_to_position(Position(255, 1750, 1400))
-        elif machine.is_stage(2):
-            # grip product, move to out, release product
-            machine.move_product_to(Position(1000, 800, 1750), sensor=f"SL_SENS_{self.machines['SL'].color}")
-            self.machines["SL"].end_machine = True
+            machine.move_to_position(Position(255, 1750, 1200))
+
+        elif machine.is_stage(2) and self.is_ready_for_transport("SL", end_machine=True):
+            machine.move_to_position(Position(-1, -1, 1400))
         elif machine.is_stage(3):
+            # grip product, move to out, release product
+            machine.move_product_to(Position(1000, 800, 1750), sensor=f"SL_SENS_{self.config['color']}")
+        elif machine.is_stage(4):
             # move back to init
             machine.init(to_end=True)
             return True
@@ -479,17 +489,17 @@ class MainLoop(Machine):
             machine = SortLine(self.revpi, "SL")
             self.machines[machine.name] = machine
         elif machine.start_next_machine:
-            self.is_ready_for_transport("CB5")
+            self.is_ready_for_transport("CB5", end_machine=True)
             return True
         
         elif machine.is_stage(1):
-            machine.run(as_thread=True)
+            machine.run(color=self.config["color"])
 
     def run_wh_store(self) -> False:
         wh: Warehouse = self.machines.get("WH")
         vg: VacRobot = self.machines.get("VG1")
         if wh == None:
-            wh = Warehouse(self.revpi, "WH")
+            wh = Warehouse(self.revpi, "WH", self.FACTORY)
             self.machines[wh.name] = wh
             wh.init(for_store=True)
         if vg == None:
@@ -508,7 +518,7 @@ class MainLoop(Machine):
             # move down
             vg.move_to_position(Position(-1, -1, 1250))
         elif vg.is_stage(3):
-            # grip product, move to wh, release product
+            # grip product, move to wh
             vg.move_product_to(Position(1785, 1080, 400), sensor="CB3_SENS_END", release=False)
 
         # wait for warehouse to have a carrier
@@ -516,6 +526,7 @@ class MainLoop(Machine):
             # move down a bit
             vg.move_to_position(Position(-1, -1, 700))
         elif vg.is_stage(5):
+            # release product
             vg.release()
             # move up a bit
             vg.move_to_position(Position(-1, -1, 400))
@@ -538,7 +549,7 @@ class MainLoop(Machine):
         wh: Warehouse = self.machines.get("WH")
         vg: VacRobot = self.machines.get("VG1")
         if wh == None:
-            wh = Warehouse(self.revpi, "WH")
+            wh = Warehouse(self.revpi, "WH", self.FACTORY)
             self.machines[wh.name] = wh
             wh.init(for_retrieve=True)
         if vg == None:
@@ -624,24 +635,59 @@ if __name__ == "__main__":
     revpi.mainloop(blocking=False)
     exit_handler = ExitHandler(revpi)
 
-    config1 = {
-        # "start_at": State.CB3_TO_WH,
-        # "end_at": State.WH_STORE,
-        "start_at": State.PM,
-        "end_at": State.PM,
-        "with_oven": True,
-        "with_PM": True,
-        "with_WH": False,
-        "color": "RED"
-    }
-
-    thread1 = threading.Thread(target=MainLoop, args=(revpi, "1_Main", config1, exit_handler), name="1_Main")
-    thread1.start()
-    # thread2 = threading.Thread(target=MainLoop, args=(revpi, "2_Main", State.CB1, exit_handler), name="2_Main")
-    # thread2.start()
-
-    thread1.join()
-    # thread2.join()
+    configs = [
+        {
+            "name": "1_Main", 
+            "start_when": "start",
+            "start_at": State.CB5,
+            "end_at": State.END,
+            "with_oven": False,
+            "with_PM": False,
+            "with_WH": False,
+            "color": "RED",
+            "running": False
+        },
+        {
+            "name": "2_Main", 
+            "start_when": "no",
+            "start_at": State.WH_RETRIEVE,
+            "end_at": State.END,
+            "with_oven": False,
+            "with_PM": False,
+            "with_WH": True,
+            "color": "RED",
+            "running": False
+        }
+    ]
     
+    stage = "start"
+    threads: "list[threading.Thread]" = []
+    main_loops: "list[MainLoop]" = []
+
+    for config in configs:
+        main_loops.append(MainLoop(revpi, config["name"], config, exit_handler))
+        threads.append(threading.Thread(target=main_loops[-1].run, name=config["name"]))
+
+    running = True
+    while(running and not MainLoop.error_exception_in_machine):
+        running = False
+        for config, thread in zip(configs, threads):
+
+            if thread.is_alive():
+                running = True
+
+            elif config["start_when"] == stage:
+                running = True
+                if not config["running"]:
+                    log.critical(f"Start: {config['name']}")
+                    thread.start()
+                    config["running"] = True
+                elif not thread.is_alive():
+                    config["running"] = False
+                    stage = config["name"]
+                    log.critical(f"Stop: {config['name']}")
+        
+        sleep(1)
+
     log.critical("End of program")
     revpi.exit()

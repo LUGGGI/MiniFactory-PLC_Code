@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.22"
 
 import threading
 from enum import Enum
@@ -62,6 +62,7 @@ class Conveyor(Machine):
             self.thread.start()
             return
         
+        log.warning(f"{self.name} :Running to: {stop_sensor}")
         if start_sensor != None:
             # wait for start sensor to detect product
             self.state = self.switch_state(State.WAIT)
@@ -82,6 +83,7 @@ class Conveyor(Machine):
             else:
                 log.exception(error)
         else:
+            log.warning(f"{self.name} :Reached: {stop_sensor}")
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
             self.stage += 1

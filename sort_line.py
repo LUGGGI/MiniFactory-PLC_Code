@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.22"
 
 import threading
 from time import sleep
@@ -45,16 +45,17 @@ class SortLine(Machine):
         log.debug("Destroyed Sorting Line: " + self.name)
 
 
-    def run(self, as_thread=True):
+    def run(self, color: str=None, as_thread=True):
         '''Runs the Sorting Line routine.
         
         :as_thread: Runs the function as a thread
         '''      
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run, args=(False,), name=self.name)
+            self.thread = threading.Thread(target=self.run, args=(color, False), name=self.name)
             self.thread.start()
             return
 
+        log.warning(f"{self.name} :Running")
         try:
             # Color Sensing
             self.state = self.switch_state(State.COLOR_SENSING)
@@ -66,6 +67,8 @@ class SortLine(Machine):
             # move product through color sensor
             cb.run_to_stop_sensor("", f"{self.name}_CB_SENS_PISTON", as_thread=False)
 
+            if color:
+                self.color = color
             log.info(f"{self.name} :Color detected: {self.color}")
 
             # SORTING
@@ -78,9 +81,9 @@ class SortLine(Machine):
             if self.color == "WHITE":
                 position = 2
             elif self.color == "RED":
-                position = 11
+                position = 7
             elif self.color == "BLUE":
-                position = 19
+                position = 12
 
             # run to desired bay
             cb.run_to_counter_value("", f"{self.name}_CB_COUNTER", position, as_thread=False)
@@ -101,7 +104,7 @@ class SortLine(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.info(f"{self.name} :Product sorted into: {self.color}")
+            log.warning(f"{self.name} :Product sorted into: {self.color}")
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
             self.stage += 1

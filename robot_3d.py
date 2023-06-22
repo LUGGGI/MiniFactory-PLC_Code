@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.22"
 
 import threading
 from enum import Enum
@@ -98,7 +98,7 @@ class Robot3D(Machine):
             return
 
         self.state = self.switch_state(State.INIT)
-        log.info(f"Initializing {self.name}, moving to init position")
+        log.warning(f"Initializing {self.name}, moving to init position")
         try:
             # move to init position
             self.move_all_axes(Position(-1,0,0))
@@ -169,7 +169,7 @@ class Robot3D(Machine):
             self.thread.start()
             return
 
-        log.info(f"{self.name} :Moving to Position: {position}")
+        log.warning(f"{self.name} :Moving to Position: {position}")
 
         # ignore moving position if rotation and one other axis doesn't move
         if position.rotation == -1 and (position.horizontal == -1 or position.vertical == -1):
@@ -208,7 +208,7 @@ class Robot3D(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.info(f"{self.name} :Position reached: {position}")
+            log.warning(f"{self.name} :Position reached: {position}")
             self.state = self.switch_state(State.END)
             self.stage += 1
 

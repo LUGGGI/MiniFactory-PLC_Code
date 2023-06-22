@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.22"
 
 import threading
 from time import sleep
@@ -59,6 +59,7 @@ class IndexLine(Machine):
             self.thread.start()
             return
 
+        log.warning(f"{self.name} :Running")
         try:
             cb_mill = Conveyor(self.revpi, self.name + "_CB_MIll")
 
@@ -136,5 +137,6 @@ class IndexLine(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
+            log.warning(f"{self.name} :End")
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True    

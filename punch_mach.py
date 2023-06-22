@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.06.22"
 
 import threading
 from enum import Enum
@@ -52,6 +52,7 @@ class PunchMach(Machine):
             self.thread.start()
             return
         
+        log.warning(f"{self.name} :Running")
         try:
             puncher = Actuator(self.revpi, self.name)
             cb_punch = Conveyor(self.revpi, "PM_CB")
@@ -83,5 +84,6 @@ class PunchMach(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
+            log.warning(f"{self.name} :End")
             self.state = self.switch_state(State.END)
             self.stage += 1

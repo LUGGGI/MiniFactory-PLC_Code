@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.09"
+__version__ = "2023.06.22"
 
 import threading
 from time import sleep
@@ -54,7 +54,8 @@ class Warehouse(Machine):
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
     __JSON_FILE = "wh_content.json"
-    color = "COLOR_UNKNOWN"
+    __color = "COLOR_UNKNOWN"
+    __factory: str
 
     __ref_sw_arm_front: str = None
     __ref_sw_arm_back: str = None
@@ -65,13 +66,15 @@ class Warehouse(Machine):
     __motor_hor: Actuator = None
     __motor_ver: Actuator = None
 
-    def __init__(self, revpi, name: str):
+    def __init__(self, revpi, name: str, factory: str):
         '''Initializes the Warehouse
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :factory: left / right to use the correct config
         '''
         super().__init__(revpi, name)
+        self.__factory = factory
 
         self.__ref_sw_arm_front = self.name + "_REF_SW_ARM_FRONT"
         self.__ref_sw_arm_back = self.name + "_REF_SW_ARM_BACK"
@@ -109,7 +112,7 @@ class Warehouse(Machine):
             return
         
         self.state = self.switch_state(State.INIT)
-        log.info(f"Initializing {self.name}, moving to init position")
+        log.warning(f"Initializing {self.name}, moving to init position")
         current_stage = self.stage
         try:
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
@@ -160,7 +163,7 @@ class Warehouse(Machine):
             self.thread.start()
             return
 
-        color = color if color != None else self.color
+        color = color if color != None else self.__color
 
         try:
             if Sensor(self.revpi, self.name + "_SENS_OUT").get_current_value() == False:
@@ -170,7 +173,7 @@ class Warehouse(Machine):
                 # find empty shelf
                 with open(Warehouse.__JSON_FILE, "r") as fp:
                     json_obj = json.load(fp)
-                for key, val in json_obj["contents"].items():
+                for key, val in json_obj[self.__factory].items():
                     if val == "Empty":
                         for bay in ShelfPos:
                             if str(bay.name) == key:
@@ -182,7 +185,7 @@ class Warehouse(Machine):
             
             horizontal = shelf.value[0]
             vertical = shelf.value[1]
-            log.info(f"Store product at: {shelf.name}({horizontal},{vertical})")
+            log.warning(f"Store product at: {shelf.name}({horizontal},{vertical})")
 
             # if self.state != State.INIT:
             #     # move crane to cb
@@ -213,12 +216,12 @@ class Warehouse(Machine):
             # save Product to file
             with open(self.__JSON_FILE, "r") as fp:
                 json_obj = json.load(fp)
-            json_obj["contents"][shelf.name] = color
+            json_obj[self.__factory][shelf.name] = color
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
             self.ready_for_transport = True
-            log.info("Product stored at: " + str(f"({horizontal},{vertical})"))
+            log.warning(f"Product stored at: ({horizontal},{vertical})")
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -247,7 +250,7 @@ class Warehouse(Machine):
                 # find wanted color
                 with open(Warehouse.__JSON_FILE, "r") as fp:
                     json_obj = json.load(fp)
-                for key, val in json_obj["contents"].items():
+                for key, val in json_obj[self.__factory].items():
                     if val == color:
                         for bay in ShelfPos:
                             if str(bay.name) == key:
@@ -258,7 +261,7 @@ class Warehouse(Machine):
             
             horizontal = shelf.value[0]
             vertical = shelf.value[1]
-            log.info(f"Retrieve product from: {shelf.name}({horizontal},{vertical})")
+            log.warning(f"Retrieve product from: {shelf.name}({horizontal},{vertical})")
 
             # move to given rack
             self.state = self.switch_state(State.MOVING_TO_RACK)
@@ -288,11 +291,11 @@ class Warehouse(Machine):
             # save empty to file
             with open(self.__JSON_FILE, "r") as fp:
                 json_obj = json.load(fp)
-            json_obj["contents"][shelf.name] = "Empty"
+            json_obj[self.__factory][shelf.name] = "Empty"
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
-            log.info("Retrieved product from: " + str(f"({horizontal},{vertical})"))
+            log.warning(f"Retrieved product from: ({horizontal},{vertical})")
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
