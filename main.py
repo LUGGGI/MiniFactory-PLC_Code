@@ -96,6 +96,7 @@ class MainLoop(Machine):
         self.config = config
 
     def run(self):
+        # self.switch_state(State.TEST)
         self.switch_state(self.config["start_at"])
         # self.run_init()
         log.info(f"{self.name}: Start Mainloop")
@@ -241,7 +242,12 @@ class MainLoop(Machine):
     ####################################################################################################
     # Methods that control the different states for the
     def test(self) -> False:
-        pass
+        wh: Warehouse = self.machines.get("WH")
+        if wh == None:
+            wh = Warehouse(self.revpi, "WH", self.FACTORY)
+            self.machines[wh.name] = wh
+            # wh.init(for_store=True)
+            wh.store_product(color=self.config["color"])
 
     def run_init(self) -> False:
         for gr in ["GR1", "GR2", "GR3"]:
@@ -638,24 +644,24 @@ if __name__ == "__main__":
     configs = [
         {
             "name": "1_Main", 
-            "start_when": "start",
-            "start_at": State.CB5,
-            "end_at": State.END,
+            "start_when": "no",
+            "start_at": State.CB3_TO_WH,
+            "end_at": State.WH_STORE,
             "with_oven": False,
             "with_PM": False,
-            "with_WH": False,
+            "with_WH": True,
             "color": "RED",
             "running": False
         },
         {
             "name": "2_Main", 
-            "start_when": "no",
+            "start_when": "start",
             "start_at": State.WH_RETRIEVE,
-            "end_at": State.END,
+            "end_at": State.CB4,
             "with_oven": False,
             "with_PM": False,
             "with_WH": True,
-            "color": "RED",
+            "color": "WHITE",
             "running": False
         }
     ]

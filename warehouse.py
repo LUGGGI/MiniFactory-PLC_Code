@@ -8,7 +8,6 @@ __license__ = "GPL"
 __version__ = "2023.06.22"
 
 import threading
-from time import sleep
 from enum import Enum
 import json
 
@@ -29,17 +28,24 @@ class State(Enum):
     END = 100
     ERROR = 999
 
-class ShelfPos(Enum):
-    # [Horizontal, Vertical]
-    SHELF_1_1 = [1540, 200]
-    SHELF_1_2 = [1540, 900]
-    SHELF_1_3 = [1540, 1650]
-    SHELF_2_1 = [2675, 200]
-    SHELF_2_2 = [2675, 900]
-    SHELF_2_3 = [2675, 1650]
-    SHELF_3_1 = [3840, 200]
-    SHELF_3_2 = [3840, 900]
-    SHELF_3_3 = [3840, 1650]
+# Positions in the Warehouse rack
+POSITIONS: "list[list[tuple]]" = [
+    [ # first column
+        (1540, 200),
+        (1540, 900),
+        (1540, 1650)
+    ],
+    [ # second column
+        (2675, 200),
+        (2675, 900),
+        (2675, 1650)
+    ],
+    [ # third column
+        (3840, 200),
+        (3840, 900),
+        (3840, 1650)
+    ]
+]
 
 class Warehouse(Machine):
     '''Controls the Warehouse
@@ -150,16 +156,16 @@ class Warehouse(Machine):
                 self.stage = current_stage + 1
 
 
-    def store_product(self, shelf: ShelfPos=None, color: str=None, as_thread=True):
+    def store_product(self, position: POSITIONS=None, color: str=None, as_thread=True):
         '''Stores a product at given position.
 
-        :shelf: a position of a shelf defined in ShelfPos
+        :position: a position of a shelf defined in POSITIONS
         :color: Color of the wanted Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier)
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.store_product, args=(shelf, color, False), name=self.name)
+            self.thread = threading.Thread(target=self.store_product, args=(position, color, False), name=self.name)
             self.thread.start()
             return
 
@@ -169,30 +175,25 @@ class Warehouse(Machine):
             if Sensor(self.revpi, self.name + "_SENS_OUT").get_current_value() == False:
                 raise(Exception("No Product to store found"))
             
-            if shelf == None:
-                # find empty shelf
+            if position == None:
+                # find wanted color
                 with open(Warehouse.__JSON_FILE, "r") as fp:
-                    json_obj = json.load(fp)
-                for key, val in json_obj[self.__factory].items():
-                    if val == "Empty":
-                        for bay in ShelfPos:
-                            if str(bay.name) == key:
-                                shelf = bay
-                                break
-                        if shelf != None:
+                    positions = json.load(fp)[self.__factory]
+
+                # find the nearest empty bay
+                for hor in range(3):
+                    for ver in range(3):
+                        if positions[hor][ver] == "Empty":
+                            position = POSITIONS[hor][ver]
                             break
-
+                    else:
+                        continue
+                    break
             
-            horizontal = shelf.value[0]
-            vertical = shelf.value[1]
-            log.warning(f"Store product at: {shelf.name}({horizontal},{vertical})")
+            horizontal = position[0]
+            vertical = position[1]
+            log.warning(f"{self.name} :Store {color}-product at position: [hor:{hor},ver:{ver}]; {position}")
 
-            # if self.state != State.INIT:
-            #     # move crane to cb
-            #     self.state = self.switch_state(State.MOVING_TO_CB)
-            #     self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
-            #     self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
-            #     self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front, as_thread=False)
 
             # move product to inside
             self.state = self.switch_state(State.CB_FWD)
@@ -214,14 +215,21 @@ class Warehouse(Machine):
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
             
             # save Product to file
-            with open(self.__JSON_FILE, "r") as fp:
+            for hor in range(3):
+                for ver in range(3):
+                    if POSITIONS[ver][hor] == position:
+                        break
+                else:
+                    continue
+                break
+            with open(Warehouse.__JSON_FILE, "r") as fp:
                 json_obj = json.load(fp)
-            json_obj[self.__factory][shelf.name] = color
+            json_obj[self.__factory][hor][ver] = color
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
             self.ready_for_transport = True
-            log.warning(f"Product stored at: ({horizontal},{vertical})")
+            log.warning(f"{self.name} :{color}-product stored at position: [hor:{hor},ver:{ver}]; {position}")
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -232,36 +240,40 @@ class Warehouse(Machine):
             self.state = self.switch_state(State.END)
 
 
-    def retrieve_product(self, shelf: ShelfPos=None, color: str=None, as_thread=True):
+    def retrieve_product(self, position: tuple=None, color: str=None, as_thread=True):
         '''Retrieves a product from given position.
 
-        :shelf: a position of a shelf defined in ShelfPos
+        :position: a position of a shelf defined in POSITIONS
         :color: Color of the wanted Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier)
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.retrieve_product, args=(shelf, color, False), name=self.name)
+            self.thread = threading.Thread(target=self.retrieve_product, args=(position, color, False), name=self.name)
             self.thread.start()
             return
 
+        color = color if color != None else self.__color
+
         try:
-            if shelf == None:
+            if position == None:
                 # find wanted color
                 with open(Warehouse.__JSON_FILE, "r") as fp:
-                    json_obj = json.load(fp)
-                for key, val in json_obj[self.__factory].items():
-                    if val == color:
-                        for bay in ShelfPos:
-                            if str(bay.name) == key:
-                                shelf = bay
-                                break
-                        if shelf != None:
+                    positions = json.load(fp)[self.__factory]
+
+                # find the nearest empty bay
+                for hor in range(3):
+                    for ver in range(3):
+                        if positions[hor][ver] == color:
+                            position = POSITIONS[hor][ver]
                             break
+                    else:
+                        continue
+                    break
             
-            horizontal = shelf.value[0]
-            vertical = shelf.value[1]
-            log.warning(f"Retrieve product from: {shelf.name}({horizontal},{vertical})")
+            horizontal = position[0]
+            vertical = position[1]
+            log.warning(f"{self.name} :Retrieve {color}-product from position: [hor:{hor+1},ver:{ver+1}]; {position}")
 
             # move to given rack
             self.state = self.switch_state(State.MOVING_TO_RACK)
@@ -289,13 +301,21 @@ class Warehouse(Machine):
             self.__cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT", stop_delay_in_ms=200, as_thread=False)
 
             # save empty to file
-            with open(self.__JSON_FILE, "r") as fp:
+            for hor in range(3):
+                for ver in range(3):
+                    if POSITIONS[ver][hor] == position:
+                        break
+                else:
+                    continue
+                break
+            with open(Warehouse.__JSON_FILE, "r") as fp:
                 json_obj = json.load(fp)
-            json_obj[self.__factory][shelf.name] = "Empty"
+            json_obj[self.__factory][hor][ver] = "empty"
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
-            log.warning(f"Retrieved product from: ({horizontal},{vertical})")
+            self.ready_for_transport = True
+            log.warning(f"{self.name} :{color}-product retrieved from position: [hor:{hor+1},ver:{ver+1}]; {position}")
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
@@ -314,7 +334,7 @@ class Warehouse(Machine):
 
         -> Panics if axes movements did not complete
         '''
-        log.info("Moving Crane to position: " + str(f"({horizontal},{vertical})"))
+        log.info("Moving Crane to position: " + str(f"(hor:{horizontal},ver:{vertical})"))
 
         # get current position
         current_horizontal = self.__encoder_hor.get_current_value()

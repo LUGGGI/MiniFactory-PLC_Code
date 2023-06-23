@@ -1,2 +1,3 @@
 /__pycache__
-plc.log
+plc*.log
+!plc_all.log
