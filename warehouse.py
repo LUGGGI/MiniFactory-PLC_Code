@@ -60,17 +60,6 @@ class Warehouse(Machine):
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
     __JSON_FILE = "wh_content.json"
-    __color = "COLOR_UNKNOWN"
-    __factory: str
-
-    __ref_sw_arm_front: str = None
-    __ref_sw_arm_back: str = None
-    __cb: Conveyor = None
-    __encoder_hor: Sensor = None
-    __encoder_ver: Sensor = None
-    __motor_loading: Actuator = None
-    __motor_hor: Actuator = None
-    __motor_ver: Actuator = None
 
     def __init__(self, revpi, name: str, factory: str):
         '''Initializes the Warehouse
@@ -96,6 +85,8 @@ class Warehouse(Machine):
         self.__motor_loading = Actuator(self.revpi, self.name + "_ARM", type="loading")
         self.__motor_hor = Actuator(self.revpi, self.name + "_CRANE", type="horizontal")
         self.__motor_ver = Actuator(self.revpi, self.name + "_ARM", type="vertical")
+
+        self.__color = "COLOR_UNKNOWN"
 
         log.debug("Created Warehouse: " + self.name)
 
@@ -148,11 +139,11 @@ class Warehouse(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.warning()(f"{self.name}: Initialized")
             if to_end:
                 self.state = self.switch_state(State.END)
                 self.end_machine = True
             else:
+                log.warning(f"{self.name}: Initialized")
                 self.stage = current_stage + 1
 
 

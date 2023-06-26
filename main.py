@@ -77,29 +77,23 @@ class MainLoop(Machine):
     end(): Waits for any machines left running.
     '''
     FACTORY = "right"
-    revpi: RevPiModIO = None
-    exit_handler: ExitHandler = None
-    state: State = State.INIT
-    next_state: State = None
-    previous_state: State = None
-    machines = {}
-    config = {}
-    ready_for_transport = "None"
-
 
     def __init__(self, revpi, name: str, config: dict, exit_handler: ExitHandler):
         '''Initializes MiniFactory control loop.'''
         super().__init__(revpi, name)
 
         self.exit_handler = exit_handler
+        self.state = State.INIT
+        self.next_state: State = None
+        self.previous_state: State = None
+        self.machines = {}
         self.config = config
+        self.ready_for_transport = "None"
 
     def run(self):
         '''Starts the mainloop.'''
 
-        # self.switch_state(State.TEST)
         self.switch_state(self.config["start_at"])
-        # self.run_init()
         log.info(f"{self.name}: Start Mainloop")
         while(not self.error_exception_in_machine and not self.end_machine and not self.exit_handler.was_called):
             try:
@@ -108,6 +102,7 @@ class MainLoop(Machine):
             except Exception as error:
                 self.error_exception_in_machine = True
                 log.exception(error)
+                self.switch_state(State.ERROR)
 
         self.machines.clear()
         log.critical(f"END of Mainloop: {self.name}")
@@ -118,10 +113,7 @@ class MainLoop(Machine):
             # look for errors in the machines
             if machine.error_exception_in_machine:
                 self.switch_state(State.ERROR)
-                log.error("Error in Mainloop")
-                self.exit_handler.stop_factory()
-                self.error_exception_in_machine = True
-                return
+                break
             # look for ready_for_transport in machines and sets status to True
             elif machine.ready_for_transport:
                 machine.ready_for_transport = False
@@ -133,6 +125,12 @@ class MainLoop(Machine):
                 self.machines.pop(machine.name)
                 self.switch_status(machine.name, Status.FREE)
                 break
+        
+        if self.state == State.ERROR:
+            log.error("Error in Mainloop")
+            self.exit_handler.stop_factory()
+            self.error_exception_in_machine = True
+            return
 
         # wait for running or blocked machines
         if self.state == State.WAITING:
@@ -151,54 +149,59 @@ class MainLoop(Machine):
         if self.state == State.TEST:
             if self.test():
                 return
+            
+        if self.state == State.INIT:
+            if self.run_init():
+                self.switch_state(State.END)
 
         elif self.state == State.GR2:
             if self.run_gr2():
-                self.switch_state(State.MPS, True)
+                self.switch_state(State.MPS)
 
         elif self.state == State.MPS:
             if self.run_mps():
-                self.switch_state(State.CB1, True)
+                self.switch_state(State.CB1)
 
         elif self.state == State.CB1:
             if self.run_cb1():
                 if self.config["with_PM"]:
-                    self.switch_state(State.GR1_CB1_TO_PM, True)
+                    self.switch_state(State.GR1_CB1_TO_PM)
                 else:
-                    self.switch_state(State.GR1_CB1_TO_CB3, True) 
+                    self.switch_state(State.GR1_CB1_TO_CB3) 
         
         elif self.state == State.GR1_CB1_TO_PM:
             if self.run_gr1():
-                self.switch_state(State.PM, True)
+                self.switch_state(State.PM)
                 self.switch_status("CB1", Status.BLOCKED)
 
         elif self.state == State.PM:
             if self.run_pm():
-                self.switch_state(State.GR1_PM_TO_CB3, True)
+                self.switch_state(State.GR1_PM_TO_CB3)
 
         elif self.state == State.GR1_PM_TO_CB3:
             if self.run_gr1():
-                self.switch_state(State.CB3_TO_WH, True)
+                State.CB3_TO_WH.value[1] = Status.FREE
+                self.switch_state(State.CB3_TO_WH)
 
         elif self.state == State.GR1_CB1_TO_CB3:
             if self.run_gr1():
-                self.switch_state(State.CB3_TO_WH, True)
+                self.switch_state(State.CB3_TO_WH)
 
         elif self.state == State.CB3_TO_WH:
             if self.run_cb3():
                 if self.config["with_WH"]:
-                    self.switch_state(State.WH_STORE, True)
+                    self.switch_state(State.WH_STORE)
                     self.switch_status("CB3", Status.BLOCKED)
                 else:
-                    self.switch_state(State.CB3_TO_CB4, True)
+                    self.switch_state(State.CB3_TO_CB4)
         
         elif self.state == State.WH_STORE:
             if self.run_wh_store():
-                self.switch_state(State.WH_RETRIEVE, True)
+                self.switch_state(State.WH_RETRIEVE)
 
         elif self.state == State.WH_RETRIEVE:
             if self.run_wh_retrieve():
-                self.switch_state(State.CB3_TO_CB4, True)
+                self.switch_state(State.CB3_TO_CB4)
         
         elif self.state == State.CB3_TO_CB4:
             if self.run_cb3():
@@ -206,19 +209,19 @@ class MainLoop(Machine):
 
         elif self.state == State.CB4:
             if self.run_cb4():
-                self.switch_state(State.GR3, True)
+                self.switch_state(State.GR3)
 
         elif self.state == State.GR3:
             if self.run_gr3():
-                self.switch_state(State.CB5, True)
+                self.switch_state(State.CB5)
 
         elif self.state == State.CB5:
             if self.run_cb5():
-                self.switch_state(State.SL, True)
+                self.switch_state(State.SL)
 
         elif self.state == State.SL:
             if self.run_sl():
-                self.switch_state(State.VG2, True)
+                self.switch_state(State.VG2)
 
         elif self.state == State.VG2:
             if self.run_vg2():
@@ -275,8 +278,9 @@ class MainLoop(Machine):
         for vg in ["VG1", "VG2"]:
             self.machines[vg] = VacRobot(self.revpi, vg, Position(-1, -1, -1))
             self.machines[vg].init(to_end=True)
-        self.machines["WH"] = Warehouse(self.revpi, "WH")
+        self.machines["WH"] = Warehouse(self.revpi, "WH", factory=self.FACTORY)
         self.machines["WH"].init(to_end=True)
+        State.INIT.value[1] = Status.FREE
         self.switch_state(State.END)
 
     def run_cb1(self) -> False:
@@ -325,7 +329,7 @@ class MainLoop(Machine):
             self.machines[machine.name] = machine            
         
         elif machine.is_stage(1):
-            machine.run_to_stop_sensor("FWD", stop_sensor=f"{machine.name}_SENS_END")
+            machine.run_to_stop_sensor("FWD", stop_sensor=f"{machine.name}_SENS_END", end_machine=False)
         elif machine.is_stage(2):
             machine.run_to_stop_sensor("FWD", stop_sensor="SL_CB_SENS_START")
             return True
@@ -489,9 +493,9 @@ class MainLoop(Machine):
             cb.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_IN", end_machine=False)
 
         elif pm.is_stage(1):
-            pm.run()
+            pm.run(out_stop_sensor="CB2_SENS_END")
 
-        elif cb.is_stage(2) and pm.ready_for_transport:
+        elif cb.is_stage(2) and self.ready_for_transport == "PM":
             cb.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_START", start_sensor="PM_SENS_IN", stop_delay_in_ms=150, end_machine=False)
 
         elif cb.is_stage(3) and pm.is_stage(2):
@@ -638,11 +642,22 @@ if __name__ == "__main__":
 
     configs = [
         {
-            "name": "1_Main", 
+            "name": "INIT", 
             "start_when": "start",
-            "start_at": State.CB1,
+            "start_at": State.INIT,
             "end_at": State.END,
-            "with_oven": True,
+            "with_oven": False,
+            "with_PM": True,
+            "with_WH": True,
+            "color": "RED",
+            "running": False
+        },
+        {
+            "name": "1_Main", 
+            "start_when": "INIT",
+            "start_at": State.GR2,
+            "end_at": State.WH_STORE,
+            "with_oven": False,
             "with_PM": True,
             "with_WH": True,
             "color": "RED",
@@ -650,12 +665,23 @@ if __name__ == "__main__":
         },
         {
             "name": "2_Main", 
-            "start_when": "no",
+            "start_when": "INIT",
             "start_at": State.WH_RETRIEVE,
-            "end_at": State.CB4,
+            "end_at": State.END,
             "with_oven": False,
             "with_PM": False,
             "with_WH": True,
+            "color": "BLUE",
+            "running": False
+        },
+        {
+            "name": "3_Main", 
+            "start_when": "no",
+            "start_at": State.CB1,
+            "end_at": State.END,
+            "with_oven": False,
+            "with_PM": False,
+            "with_WH": False,
             "color": "WHITE",
             "running": False
         }

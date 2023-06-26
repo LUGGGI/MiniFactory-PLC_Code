@@ -24,9 +24,6 @@ class GripRobot(Robot3D):
     GRIPPER_CLOSED = 12
     GRIPPER_OPENED = 9
 
-    __encoder_claw: Sensor = None
-    __motor_claw: Actuator = None
-
     def __init__(self, revpi, name: str, moving_position: Position):
         '''Initializes the Gripper Robot.
         

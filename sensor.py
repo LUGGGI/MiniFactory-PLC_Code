@@ -36,11 +36,6 @@ class Sensor():
     '''
     CYCLE_TIME = 0.005 # s
 
-    counter_offset = 0
-
-    __revpi: RevPiModIO = None
-    name: str = None
-    type: SensorType = None
 
     def __init__(self, revpi: RevPiModIO, name: str, type: SensorType=None):
         '''Initializes the Sensor
@@ -52,6 +47,8 @@ class Sensor():
         self.__revpi = revpi
         self.name = name
         self.type = type
+
+        self.counter_offset = 0
 
         if type == None:
             if self.name.find("SENS") != -1:

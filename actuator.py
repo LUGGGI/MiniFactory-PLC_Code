@@ -34,15 +34,6 @@ class Actuator():
     __PWM_WINDOW = 300
     __PWM_DURATION = 100
 
-    __thread = None
-    exception = None
-    __pwm_value = 100
-
-    __revpi: RevPiModIO = None
-    name: str = None
-    __pwm: str = None
-    __type: str = None
-
     def __init__(self, revpi: RevPiModIO, name: str, pwm: str=None, type: str=None):
         '''Initializes the Actuator
         
@@ -55,6 +46,10 @@ class Actuator():
         self.name = name
         self.__pwm = pwm
         self.__type = ("_" + type) if type else ""
+
+        self.__thread = None
+        self.exception = None
+        self.__pwm_value = 100
 
         log.debug("Created Actuator: " + self.name + self.__type)
 

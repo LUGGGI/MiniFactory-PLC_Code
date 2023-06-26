@@ -21,22 +21,6 @@ class Machine:
     switch_state(): Switch to given state
     is_stage(): Returns True if no thread is running and given stage is current stage.
     '''
-    thread: threading.Thread = None
-
-    start_next_machine = False
-    end_machine = False
-    ready_for_next = False
-    ready_for_transport = False
-    error_exception_in_machine = False
-
-    stage = 0 # can count up the stages of a machine
-    state_is_init = False
-
-    revpi: RevPiModIO = None
-    name: str = None
-    state = None
-    __time_start: datetime = None
-    __state_time_start: datetime = None
 
     def __init__(self, revpi: RevPiModIO, name: str):
         '''Initializes the Maschine
@@ -48,6 +32,21 @@ class Machine:
         self.revpi = revpi
         self.__time_start = datetime.now()
         self.__state_time_start = datetime.now()
+
+        self.thread: threading.Thread = None
+
+        self.start_next_machine = False
+        self.end_machine = False
+        self.ready_for_next = False
+        self.ready_for_transport = False
+        self.error_exception_in_machine = False
+
+        self.stage = 0 # can count up the stages of a machine
+        self.state_is_init = False
+
+        self.state = None
+        self.__time_start: datetime = None
+        self.__state_time_start: datetime = None
 
 
     def get_run_time(self) -> int:

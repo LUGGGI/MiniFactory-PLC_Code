@@ -19,8 +19,7 @@ class State(Enum):
     START = 0
     CB_TO_PUNCH = 1
     PUNCHING = 2
-    CB_TO_CB2 = 3
-    CB_OUT = 4  
+    CB_TO_OUT = 3
     END = 100
     ERROR = 999
 
@@ -43,13 +42,14 @@ class PunchMach(Machine):
     def __del__(self):
         log.debug("Destroyed Punching Machine: " + self.name)
 
-    def run(self, as_thread=True):
+    def run(self, out_stop_sensor: str, as_thread=True):
         '''Runs the Punching Maschine routine.
         
+        :out_stop_sensor: Sensor at which the cb stops when outputting
         :as_thread: Runs the function as a thread
         '''
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run, args=(False,), name=self.name)
+            self.thread = threading.Thread(target=self.run, args=(out_stop_sensor, False), name=self.name)
             self.thread.start()
             return
         
@@ -62,7 +62,7 @@ class PunchMach(Machine):
             # raise puncher
             puncher.run_to_sensor("UP", stop_sensor="PM_REF_SW_TOP", as_thread=True)
             # Move product from inner conveyor belt to puncher
-            cb_punch.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_PM", start_sensor="CB2_SENS_END", as_thread=False)
+            cb_punch.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_PM", start_sensor="CB2_SENS_END", end_machine=False, as_thread=False)
 
             puncher.join()
             self.state = self.switch_state(State.PUNCHING)
@@ -71,10 +71,11 @@ class PunchMach(Machine):
             # raise puncher
             puncher.run_to_sensor("UP", stop_sensor="PM_REF_SW_TOP", as_thread=True)
 
-            self.state = self.switch_state(State.CB_TO_CB2)
-            self.start_next_machine = True
+            self.state = self.switch_state(State.CB_TO_OUT)
+
+            self.ready_for_transport = True
             #  Move product from puncher to connected conveyor
-            cb_punch.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_END", as_thread=False)
+            cb_punch.run_to_stop_sensor("BWD", stop_sensor=out_stop_sensor, as_thread=False)
 
             puncher.join()
             del puncher
@@ -85,7 +86,6 @@ class PunchMach(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            self.ready_for_transport = True
             self.state = self.switch_state(State.END)
-            self.end_machine = True
+            # self.end_machine = True # only if not called in the same functions as other cb
             self.stage += 1

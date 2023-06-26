@@ -45,14 +45,6 @@ class Robot3D(Machine):
     __MOVE_THRESHOLD_ROT = 40
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
-    
-    __moving_position: Position = None
-    __encoder_rot: Sensor = None
-    __encoder_hor: Sensor = None
-    __encoder_ver: Sensor = None
-    __motor_rot: Actuator = None
-    __motor_hor: Actuator = None
-    __motor_ver: Actuator = None
 
     def __init__(self, revpi, name: str, moving_position: Position):
         '''Initializes the 3D Robot
@@ -112,6 +104,7 @@ class Robot3D(Machine):
                 self.state = self.switch_state(State.END)
                 self.end_machine = True
             else:
+                log.warning(f"{self.name}: Initialized")
                 self.stage += 1
 
 

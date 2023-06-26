@@ -29,7 +29,6 @@ class Conveyor(Machine):
     run_to_stop_sensor(): Runs the Conveyor until the product has reached the stop sensor
     run_to_counter_value(): Runs the Conveyor until the trigger_value of encoder is reached
     '''
-    exception = None
 
     def __init__(self, revpi, name: str):
         '''Initializes the Sensor
@@ -39,6 +38,7 @@ class Conveyor(Machine):
         '''
         super().__init__(revpi, name)
         self.stage = 1
+        self.exception = None
         log.debug("Created Conveyor: " + self.name)
 
 
