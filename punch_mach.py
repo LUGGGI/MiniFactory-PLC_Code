@@ -16,6 +16,7 @@ from actuator import Actuator
 from conveyor import Conveyor
 
 class State(Enum):
+    START = 0
     CB_TO_PUNCH = 1
     PUNCHING = 2
     CB_TO_CB2 = 3
@@ -52,7 +53,7 @@ class PunchMach(Machine):
             self.thread.start()
             return
         
-        log.warning(f"{self.name} :Running")
+        self.state = self.switch_state(State.START)
         try:
             puncher = Actuator(self.revpi, self.name)
             cb_punch = Conveyor(self.revpi, "PM_CB")
@@ -84,7 +85,7 @@ class PunchMach(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.warning(f"{self.name} :End")
-            self.state = self.switch_state(State.END)
             self.ready_for_transport = True
+            self.state = self.switch_state(State.END)
+            self.end_machine = True
             self.stage += 1

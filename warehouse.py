@@ -118,7 +118,6 @@ class Warehouse(Machine):
             return
         
         self.state = self.switch_state(State.INIT)
-        log.warning(f"Initializing {self.name}, moving to init position")
         current_stage = self.stage
         try:
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
@@ -149,8 +148,9 @@ class Warehouse(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.info(f"Initialized {self.name}")
+            log.warning()(f"{self.name}: Initialized")
             if to_end:
+                self.state = self.switch_state(State.END)
                 self.end_machine = True
             else:
                 self.stage = current_stage + 1
@@ -234,7 +234,6 @@ class Warehouse(Machine):
             log.exception(error)
         else:
             log.warning(f"{self.name} :{color}-product stored at position: [hor:{hor},ver:{ver}]; {position}")
-            self.state = self.switch_state(State.END)
             self.ready_for_transport = True
             self.stage += 1
 
@@ -321,7 +320,6 @@ class Warehouse(Machine):
             log.exception(error)
         else:
             log.warning(f"{self.name} :{color}-product retrieved from position: [hor:{hor+1},ver:{ver+1}]; {position}")
-            self.state = self.switch_state(State.END)
             self.ready_for_transport = True
             self.stage += 1
 

@@ -18,6 +18,7 @@ from actuator import Actuator
 from conveyor import Conveyor
 
 class State(Enum):
+    START = 0
     TO_MILL = 1
     MILLING = 2        
     TO_DRILL = 3
@@ -59,7 +60,7 @@ class IndexLine(Machine):
             self.thread.start()
             return
 
-        log.warning(f"{self.name} :Running")
+        self.state = self.switch_state(State.START)
         try:
             cb_mill = Conveyor(self.revpi, self.name + "_CB_MIll")
 
@@ -137,6 +138,7 @@ class IndexLine(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.warning(f"{self.name} :End")
-            self.state = self.switch_state(State.END)
             self.ready_for_transport = True    
+            self.state = self.switch_state(State.END)
+            self.end_machine = True
+            self.stage += 1

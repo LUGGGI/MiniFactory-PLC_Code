@@ -9,7 +9,7 @@ __version__ = "2023.06.22"
 
 import threading
 from time import sleep
-from enum import Enum
+from enum import Enum, auto
 
 from logger import log
 from machine import Machine
@@ -17,13 +17,14 @@ from actuator import Actuator
 from conveyor import Conveyor
 
 class State(Enum):
-    INIT = 0   
-    OVEN = 1
-    TO_TABLE = 2
-    TO_SAW = 3
-    SAWING = 4
-    TO_CB = 5
-    CB = 6  
+    INIT = 0  
+    START = auto() 
+    OVEN = auto() 
+    TO_TABLE = auto() 
+    TO_SAW = auto() 
+    SAWING = auto() 
+    TO_CB = auto() 
+    CB = auto() 
     END = 100
     ERROR = 999
 
@@ -74,7 +75,7 @@ class MPStation(Machine):
             self.thread.start()
             return
         
-        log.warning(f"{self.name} :Running")
+        self.state = self.switch_state(State.START)
         try:
             compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
             vg_motor = Actuator(self.revpi, self.name + "_VG")
@@ -168,7 +169,6 @@ class MPStation(Machine):
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            log.warning(f"{self.name} :End")
             self.state = self.switch_state(State.END)
             self.end_machine = True
             self.stage += 1

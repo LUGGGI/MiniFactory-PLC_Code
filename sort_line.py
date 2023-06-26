@@ -18,6 +18,7 @@ from actuator import Actuator
 from conveyor import Conveyor
 
 class State(Enum):
+    START = 0
     COLOR_SENSING = 1
     SORTING = 2   
     END = 100
@@ -55,7 +56,7 @@ class SortLine(Machine):
             self.thread.start()
             return
 
-        log.warning(f"{self.name} :Running")
+        self.state = self.switch_state(State.START)
         try:
             # Color Sensing
             self.state = self.switch_state(State.COLOR_SENSING)
@@ -105,7 +106,7 @@ class SortLine(Machine):
             log.exception(error)
         else:
             log.warning(f"{self.name} :Product sorted into: {self.color}")
-            self.state = self.switch_state(State.END)
             self.ready_for_transport = True
+            self.state = self.switch_state(State.END)
             self.end_machine = True
             self.stage += 1

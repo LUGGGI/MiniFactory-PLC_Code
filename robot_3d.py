@@ -98,7 +98,6 @@ class Robot3D(Machine):
             return
 
         self.state = self.switch_state(State.INIT)
-        log.warning(f"Initializing {self.name}, moving to init position")
         try:
             # move to init position
             self.move_all_axes(Position(-1,0,0))
@@ -110,6 +109,7 @@ class Robot3D(Machine):
             log.exception(error)
         else:
             if to_end:
+                self.state = self.switch_state(State.END)
                 self.end_machine = True
             else:
                 self.stage += 1
@@ -209,7 +209,6 @@ class Robot3D(Machine):
             log.exception(error)
         else:
             log.warning(f"{self.name} :Position reached: {position}")
-            self.state = self.switch_state(State.END)
             self.stage += 1
 
 

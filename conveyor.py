@@ -85,9 +85,9 @@ class Conveyor(Machine):
                 log.exception(error)
         else:
             log.warning(f"{self.name} :Reached: {stop_sensor}")
-            self.state = self.switch_state(State.END)
             self.ready_for_transport = True
             if end_machine:
+                self.state = self.switch_state(State.END)
                 self.end_machine = True
             else:
                 self.stage += 1
@@ -109,6 +109,7 @@ class Conveyor(Machine):
             self.thread.start()
             return
 
+        log.warning(f"{self.name} :Running to value: {trigger_value} at {counter}")
         self.state = self.switch_state(State.RUN)
         try:
             encoder = Sensor(self.revpi, counter)
@@ -126,9 +127,10 @@ class Conveyor(Machine):
             else:
                 log.exception(error)
         else:
-            self.state = self.switch_state(State.END)
+            log.warning(f"{self.name} :Reached value: {trigger_value} at {counter}")
             self.ready_for_transport = True
             if end_machine:
+                self.state = self.switch_state(State.END)
                 self.end_machine = True
             else:
                 self.stage += 1
