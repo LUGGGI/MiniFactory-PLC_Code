@@ -42,12 +42,26 @@ class MPStation(Machine):
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
         super().__init__(revpi, name)
-        self.stage = 1
         log.debug("Created Multi Purpose Station: " + self.name)
 
     def __del__(self):
         log.debug("Destroyed Multi Purpose Station: " + self.name)
 
+
+    def init(self, as_thread=True):
+        '''Move to init position'''
+        if as_thread == True:
+            self.thread = threading.Thread(target=self.init, args=(False,), name=self.name+"_INIT")
+            self.thread.start()
+            return
+        try:
+            Actuator(self.revpi, self.name + "_VG").run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE")
+        except Exception as error:
+            self.state = self.switch_state(State.ERROR)
+            self.error_exception_in_machine = True
+            log.exception(error)
+        else:
+            self.stage = 1
 
     def run(self, with_oven=True, as_thread=True):
         '''Runs the Punching Maschine routine.

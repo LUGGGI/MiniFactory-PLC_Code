@@ -42,13 +42,13 @@ class PunchMach(Machine):
     def __del__(self):
         log.debug("Destroyed Punching Machine: " + self.name)
 
-    def run(self, as_thread=False):
+    def run(self, as_thread=True):
         '''Runs the Punching Maschine routine.
         
         :as_thread: Runs the function as a thread
         '''
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run, args=(), name=self.name)
+            self.thread = threading.Thread(target=self.run, args=(False,), name=self.name)
             self.thread.start()
             return
         
@@ -71,7 +71,7 @@ class PunchMach(Machine):
             puncher.run_to_sensor("UP", stop_sensor="PM_REF_SW_TOP", as_thread=True)
 
             self.state = self.switch_state(State.CB_TO_CB2)
-            self.ready_for_transport = True
+            self.start_next_machine = True
             #  Move product from puncher to connected conveyor
             cb_punch.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_END", as_thread=False)
 
@@ -86,4 +86,5 @@ class PunchMach(Machine):
         else:
             log.warning(f"{self.name} :End")
             self.state = self.switch_state(State.END)
+            self.ready_for_transport = True
             self.stage += 1

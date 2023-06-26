@@ -46,7 +46,7 @@ class Conveyor(Machine):
         log.debug("Destroyed Conveyor: " + self.name)
 
 
-    def run_to_stop_sensor(self, direction: str, stop_sensor: str, start_sensor: str=None, stop_delay_in_ms=0, timeout_in_s=10, as_thread=True):
+    def run_to_stop_sensor(self, direction: str, stop_sensor: str, start_sensor: str=None, stop_delay_in_ms=0, timeout_in_s=10, end_machine=True, as_thread=True):
         '''Runs the Conveyor until the product has reached the stop sensor.
         
         :direction: Conveyor direction, (last part of whole name)
@@ -54,11 +54,12 @@ class Conveyor(Machine):
         :start_sensor: Waits with starting until detection occurs at Sensor
         :stop_delay_in_ms: Runs for given ms after detection of stop_sensor
         :timeout_in_s: Time after which an exception is raised
+        :end_machine: Ends the machine if this function completes, set to false to keep machine 
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run_to_stop_sensor, args=(direction, stop_sensor, start_sensor, stop_delay_in_ms, timeout_in_s, False), name=self.name)
+            self.thread = threading.Thread(target=self.run_to_stop_sensor, args=(direction, stop_sensor, start_sensor, stop_delay_in_ms, timeout_in_s, end_machine, False), name=self.name)
             self.thread.start()
             return
         
@@ -86,21 +87,25 @@ class Conveyor(Machine):
             log.warning(f"{self.name} :Reached: {stop_sensor}")
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
-            self.stage += 1
+            if end_machine:
+                self.end_machine = True
+            else:
+                self.stage += 1
 
 
-    def run_to_counter_value(self, direction: str, counter: str, trigger_value: int, timeout_in_s=10, as_thread=True):
+    def run_to_counter_value(self, direction: str, counter: str, trigger_value: int, timeout_in_s=10, end_machine=True, as_thread=True):
         '''Runs the Conveyor until the trigger_value of encoder is reached.
         
         :direction: Actuator direction, (last part of whole name)
         :counter: Counter sensor that is checked with trigger_value
         :trigger_value: Value at which to stop Conveyor
         :timeout_in_s: Time after which an exception is raised
+        :end_machine: Ends the machine if this function completes, set to false to keep machine 
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run_to_counter_value, args=(direction, counter, trigger_value, timeout_in_s, False), name=self.name)
+            self.thread = threading.Thread(target=self.run_to_counter_value, args=(direction, counter, trigger_value, timeout_in_s, end_machine, False), name=self.name)
             self.thread.start()
             return
 
@@ -123,10 +128,13 @@ class Conveyor(Machine):
         else:
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
-            self.stage += 1
+            if end_machine:
+                self.end_machine = True
+            else:
+                self.stage += 1
 
     def join(self):
-        '''Joins the current thread and raises Exceptions'''
+        '''Joins the current thread and reraise Exceptions'''
         self.thread.join()
         if self.exception:
             raise self.exception

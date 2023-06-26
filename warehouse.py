@@ -228,16 +228,15 @@ class Warehouse(Machine):
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
-            self.ready_for_transport = True
-            log.warning(f"{self.name} :{color}-product stored at position: [hor:{hor},ver:{ver}]; {position}")
-
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            self.stage += 1
+            log.warning(f"{self.name} :{color}-product stored at position: [hor:{hor},ver:{ver}]; {position}")
             self.state = self.switch_state(State.END)
+            self.ready_for_transport = True
+            self.stage += 1
 
 
     def retrieve_product(self, position: tuple=None, color: str=None, as_thread=True):
@@ -314,16 +313,17 @@ class Warehouse(Machine):
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
-            self.ready_for_transport = True
-            log.warning(f"{self.name} :{color}-product retrieved from position: [hor:{hor+1},ver:{ver+1}]; {position}")
+            
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
             log.exception(error)
         else:
-            self.stage += 1
+            log.warning(f"{self.name} :{color}-product retrieved from position: [hor:{hor+1},ver:{ver+1}]; {position}")
             self.state = self.switch_state(State.END)
+            self.ready_for_transport = True
+            self.stage += 1
 
 
     def move_to_position(self, horizontal: int, vertical: int):

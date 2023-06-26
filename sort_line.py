@@ -65,7 +65,7 @@ class SortLine(Machine):
             # color_sensor = Sensor(self.revpi, f"{self.name}_COLOR_SENSOR")
 
             # move product through color sensor
-            cb.run_to_stop_sensor("", f"{self.name}_CB_SENS_PISTON", as_thread=False)
+            cb.run_to_stop_sensor("", stop_sensor=f"{self.name}_CB_SENS_PISTON", as_thread=False)
 
             if color:
                 self.color = color
@@ -107,4 +107,5 @@ class SortLine(Machine):
             log.warning(f"{self.name} :Product sorted into: {self.color}")
             self.state = self.switch_state(State.END)
             self.ready_for_transport = True
+            self.end_machine = True
             self.stage += 1

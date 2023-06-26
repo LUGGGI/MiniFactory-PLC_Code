@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.22"
+__version__ = "2023.06.26"
 
 from time import sleep
 from enum import Enum
@@ -43,15 +43,14 @@ class State(Enum):
 
     CB1 = [11, Status.FREE]
     CB2 = [12, Status.FREE]
-    CB3 = [13, Status.FREE]
     CB3_TO_WH = [131, Status.FREE]
     CB3_TO_CB4 = [132, Status.FREE]
     CB4 = [14, Status.FREE]
     CB5 = [15, Status.FREE]
 
-    GR1_CB1_TO_CB3 = [21, Status.FREE]
-    GR1_CB1_TO_PM = [211, Status.FREE]
-    GR1_PM_TO_CB3 = [212, Status.FREE]
+    GR1_CB1_TO_CB3 = [211, Status.FREE]
+    GR1_CB1_TO_PM = [212, Status.FREE]
+    GR1_PM_TO_CB3 = [213, Status.FREE]
     GR2 = [22, Status.FREE]
     GR3 = [23, Status.FREE]
 
@@ -76,7 +75,6 @@ class MainLoop(Machine):
     switch_state(): switches state to given state if not BLOCKED or RUNNING
     run_...(): calls the different modules
     end(): Waits for any machines left running.
-    is_ready_for_transport(): Returns the value of ready_for_transport for given machine.
     '''
     FACTORY = "right"
     revpi: RevPiModIO = None
@@ -86,6 +84,7 @@ class MainLoop(Machine):
     previous_state: State = None
     machines = {}
     config = {}
+    ready_for_transport = "None"
 
 
     def __init__(self, revpi, name: str, config: dict, exit_handler: ExitHandler):
@@ -96,49 +95,54 @@ class MainLoop(Machine):
         self.config = config
 
     def run(self):
+        '''Starts the mainloop.'''
+
         # self.switch_state(State.TEST)
         self.switch_state(self.config["start_at"])
         # self.run_init()
         log.info(f"{self.name}: Start Mainloop")
-
         while(not self.error_exception_in_machine and not self.end_machine and not self.exit_handler.was_called):
-            self.mainloop()
-            sleep(0.02)
+            try:
+                self.mainloop()
+                sleep(0.02)
+            except Exception as error:
+                self.error_exception_in_machine = True
+                log.exception(error)
 
         self.machines.clear()
         log.critical(f"END of Mainloop: {self.name}")
       
     def mainloop(self):
         machine: Machine
-        # look for errors in the machines
         for machine in self.machines.values():
+            # look for errors in the machines
             if machine.error_exception_in_machine:
                 self.switch_state(State.ERROR)
                 log.error("Error in Mainloop")
                 self.exit_handler.stop_factory()
                 self.error_exception_in_machine = True
                 return
-
-        # end machines    
-        for machine in self.machines.values():
-            if machine.end_machine:
+            # look for ready_for_transport in machines and sets status to True
+            elif machine.ready_for_transport:
+                machine.ready_for_transport = False
+                log.info(f"{self.name}: Ready for transport: {machine.name}")
+                self.ready_for_transport = machine.name
+            # end machines 
+            elif machine.end_machine and not machine.ready_for_transport:
                 log.info(f"{self.name}: Ended: {machine.name}")
                 self.machines.pop(machine.name)
-                for state in State:
-                    if state.name.find(machine.name) != -1:
-                        state.value[1] = Status.FREE
+                self.switch_status(machine.name, Status.FREE)
                 break
-        
+
         # wait for running or blocked machines
         if self.state == State.WAITING:
             if self.next_state.value[1] == Status.FREE:
-                self.previous_state.value[1] = Status.FREE
+                self.switch_status(self.previous_state, Status.FREE)
                 log.critical(f"{self.name}: Continuing to: {self.next_state}")
                 self.switch_state(self.next_state)
 
         if self.state == State.END:
             State.END.value[1] = Status.FREE
-            self.ready_for_transport = True
             if not self.end():
                 return
             self.end_machine = True
@@ -166,7 +170,7 @@ class MainLoop(Machine):
         elif self.state == State.GR1_CB1_TO_PM:
             if self.run_gr1():
                 self.switch_state(State.PM, True)
-                State.GR1_CB1_TO_PM.value[1] = Status.BLOCKED
+                self.switch_status("CB1", Status.BLOCKED)
 
         elif self.state == State.PM:
             if self.run_pm():
@@ -184,7 +188,7 @@ class MainLoop(Machine):
             if self.run_cb3():
                 if self.config["with_WH"]:
                     self.switch_state(State.WH_STORE, True)
-                    State.CB3_TO_WH.value[1] = Status.BLOCKED
+                    self.switch_status("CB3", Status.BLOCKED)
                 else:
                     self.switch_state(State.CB3_TO_CB4, True)
         
@@ -230,13 +234,28 @@ class MainLoop(Machine):
             if self.state == self.config["end_at"]:
                 state = State.END
             self.state = super().switch_state(state, wait=False)
+
+            self.switch_status(self.state, Status.BLOCKED)
             self.state.value[1] = Status.RUNNING
         else:
             log.critical(f"{self.name}: Waiting for: {state}")
-            self.state.value[1] = Status.BLOCKED
+            self.switch_status(self.state, Status.BLOCKED)
             self.previous_state = self.state
             self.next_state = state
             self.state = super().switch_state(State.WAITING, wait=False)
+
+    def switch_status(self, state_name, status: Status):
+        '''Switch status in states, switches all to a machine belonging states
+        
+        :state: can be a State Enum or a string of to switching state
+        :status: Status that the state should be switched to
+        '''
+        if type(state_name) == State:
+            state_name = state_name.name.split('_')[0]
+
+        for state in State:
+            if state.name.split('_')[0].find(state_name) != -1:
+                state.value[1] = status
 
     
     ####################################################################################################
@@ -277,9 +296,13 @@ class MainLoop(Machine):
             self.machines[machine.name] = machine          
         
         elif self.state == State.CB3_TO_WH and machine.is_stage(1):
-            machine.run_to_stop_sensor("FWD", stop_sensor=f"{machine.name}_SENS_END")
-            machine.stage = 0
-            return True
+            if self.config["with_WH"] == False:
+                machine.run_to_stop_sensor("FWD", stop_sensor=f"{machine.name}_SENS_END", end_machine=False)
+                machine.stage = 0
+                self.state = State.CB3_TO_CB4
+            else:
+                machine.run_to_stop_sensor("FWD", stop_sensor=f"{machine.name}_SENS_END")
+                return True
         
         elif self.state == State.CB3_TO_CB4 and machine.is_stage(1):
             machine.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START")
@@ -312,19 +335,18 @@ class MainLoop(Machine):
         if machine == None:
             machine = GripRobot(self.revpi, "GR1", Position(-1, -1, 1400))
             self.machines[machine.name] = machine
-            machine.init(as_thread=True)
+            machine.init()
         elif machine.ready_for_next:
             machine.ready_for_next = False
-            self.is_ready_for_transport("CB1", end_machine=True)
 
         # move from cb1 to cb2
         elif self.state == State.GR1_CB1_TO_PM:
             if machine.is_stage(1):
                 # move to cb1 (6s)
-                machine.reset_claw(as_thread=True)
+                machine.reset_claw()
                 machine.move_to_position(Position(245, 65, 1600), ignore_moving_pos=True)
             # Wait for cb1 to finish
-            elif machine.is_stage(2) and self.is_ready_for_transport("CB1", end_machine=False):
+            elif machine.is_stage(2) and self.ready_for_transport == "CB1":
                 # move down
                 machine.move_to_position(Position(-1, -1, 2100))
             elif machine.is_stage(3):
@@ -340,7 +362,7 @@ class MainLoop(Machine):
         elif self.state == State.GR1_PM_TO_CB3:
             if machine.is_stage(1) and machine.state == State_3D.INIT:
                 # move to cb2 if new gr1
-                machine.reset_claw(as_thread=True)
+                machine.reset_claw()
                 machine.move_to_position(Position(3845, 78, 1400), ignore_moving_pos=True)
                 machine.stage = 0
             if machine.is_stage(1):
@@ -358,10 +380,10 @@ class MainLoop(Machine):
         elif self.state == State.GR1_CB1_TO_CB3:
             if machine.is_stage(1):
                 # move to cb1 (6s)
-                machine.reset_claw(as_thread=True)
+                machine.reset_claw()
                 machine.move_to_position(Position(245, 65, 1600), ignore_moving_pos=True)
             # Wait for cb1 to finish
-            elif machine.is_stage(2) and self.is_ready_for_transport("CB1", end_machine=False):
+            elif machine.is_stage(2) and self.ready_for_transport == "CB1":
                 # move down
                 machine.move_to_position(Position(-1, -1, 2100))
             elif machine.is_stage(3):
@@ -377,7 +399,8 @@ class MainLoop(Machine):
         if machine == None:
             machine = GripRobot(self.revpi, "GR2", moving_position=Position(-1, 0, 1100))
             self.machines[machine.name] = machine
-            machine.init(as_thread=True)
+            machine.init()
+            self.run_mps()
 
         elif machine.is_stage(1):
             # get product from plate
@@ -387,14 +410,14 @@ class MainLoop(Machine):
         elif machine.is_stage(2):
                 # grip
                 machine.GRIPPER_CLOSED = 10
-                machine.grip(as_thread=True)
+                machine.grip()
         elif machine.is_stage(3):
             # move product to mps
             machine.move_to_position(Position(1365, 24, 1700))
         elif machine.is_stage(4):
                 # release
                 machine.GRIPPER_OPENED = 9
-                machine.release(as_thread=True)
+                machine.release()
         elif machine.is_stage(5):
             # move back to init
             machine.init(to_end=True)
@@ -405,18 +428,16 @@ class MainLoop(Machine):
         if machine == None:
             machine = GripRobot(self.revpi, "GR3", Position(-1, -1, 1400))
             self.machines[machine.name] = machine
-            machine.init(as_thread=True)
+            machine.init()
         elif machine.ready_for_next:
             machine.ready_for_next = False
-            self.is_ready_for_transport("CB4", end_machine=True)
 
         elif machine.is_stage(1):
             # move to cb4
-            machine.reset_claw(as_thread=True)
+            machine.reset_claw()
             machine.move_to_position(Position(437, 43, 1400), ignore_moving_pos=True)
 
-        elif machine.is_stage(2) and self.is_ready_for_transport("CB4", end_machine=False):
-            self.is_ready_for_transport("CB3", end_machine=True)
+        elif machine.is_stage(2) and self.ready_for_transport == "CB4":
             # move down
             machine.move_to_position(Position(-1, -1, 1900))
         elif machine.is_stage(3):
@@ -432,7 +453,7 @@ class MainLoop(Machine):
         if machine == None:
             machine = VacRobot(self.revpi, "VG2", Position(-1, -1, 400))
             self.machines[machine.name] = machine
-            machine.init(as_thread=True)
+            machine.init()
 
         elif machine.is_stage(1) and self.config["color"] == "WHITE":
             # move to white
@@ -444,7 +465,7 @@ class MainLoop(Machine):
             # move to blue
             machine.move_to_position(Position(255, 1750, 1200))
 
-        elif machine.is_stage(2) and self.is_ready_for_transport("SL", end_machine=True):
+        elif machine.is_stage(2) and self.ready_for_transport == "SL":
             machine.move_to_position(Position(-1, -1, 1400))
         elif machine.is_stage(3):
             # grip product, move to out, release product
@@ -465,13 +486,13 @@ class MainLoop(Machine):
             self.machines[cb.name] = cb
         
         elif cb.is_stage(1):
-            cb.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_IN", as_thread=True)
+            cb.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_IN", end_machine=False)
 
         elif pm.is_stage(1):
-            pm.run(as_thread=True)
+            pm.run()
 
         elif cb.is_stage(2) and pm.ready_for_transport:
-            cb.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_START", start_sensor="PM_SENS_IN", stop_delay_in_ms=150 ,as_thread=False)
+            cb.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_START", start_sensor="PM_SENS_IN", stop_delay_in_ms=150, end_machine=False)
 
         elif cb.is_stage(3) and pm.is_stage(2):
             pm.end_machine = True
@@ -483,11 +504,12 @@ class MainLoop(Machine):
         if machine == None:
             machine = MPStation(self.revpi, "MPS")
             self.machines[machine.name] = machine
+            machine.init()
         elif machine.start_next_machine:
             return True
         
         elif machine.is_stage(1):
-            machine.run(with_oven=self.config["with_oven"], as_thread=True)
+            machine.run(with_oven=self.config["with_oven"])
 
     def run_sl(self) -> False:
         machine: SortLine = self.machines.get("SL")
@@ -495,7 +517,6 @@ class MainLoop(Machine):
             machine = SortLine(self.revpi, "SL")
             self.machines[machine.name] = machine
         elif machine.start_next_machine:
-            self.is_ready_for_transport("CB5", end_machine=True)
             return True
         
         elif machine.is_stage(1):
@@ -513,14 +534,10 @@ class MainLoop(Machine):
             self.machines[vg.name] = vg
             vg.init()
 
-        if vg.ready_for_next and self.config["end_at"] == State.WH_STORE:
-            vg.ready_for_next = False
-            self.is_ready_for_transport("CB3", end_machine=True)
-
         if vg.is_stage(1):
             # move to cb3
             vg.move_to_position(Position(97, 815, 1150), ignore_moving_pos=True)
-        elif vg.is_stage(2) and self.is_ready_for_transport("CB3", end_machine=False):
+        elif vg.is_stage(2) and self.ready_for_transport == "CB3":
             # move down
             vg.move_to_position(Position(-1, -1, 1250))
         elif vg.is_stage(3):
@@ -592,6 +609,7 @@ class MainLoop(Machine):
         machine_running = False
         while(True):
             # check if there any machines left running
+            machine: Machine
             for machine in self.machines.values():
                 if not machine.end_machine and not machine.name == "Main":
                     # wait for running machines
@@ -604,30 +622,7 @@ class MainLoop(Machine):
             # all machines have ended
             self.end_machine
             return True
-
-    def is_ready_for_transport(self, machine_name: str, end_machine=True) -> bool:
-        '''Returns the value of ready_for_transport for given machine.
-        and if True set end_machine to True
-
-        :machine_name: Exact name of the machine in PiCtory (everything before first '_')
-        '''
-        ready_for_transport = False
-        try:
-            # try to get value
-            ready_for_transport = self.machines[machine_name].ready_for_transport
-        except:
-            # if machine not found return True by default
-            log.error(f"{machine_name} :Is not available")
-            ready_for_transport = True
-
-        if ready_for_transport and end_machine:
-            try:
-                self.machines[machine_name].end_machine = True
-            except:
-                pass
-
-        return ready_for_transport
-    
+            
 
 # Start RevPiApp app
 if __name__ == "__main__":
@@ -644,18 +639,18 @@ if __name__ == "__main__":
     configs = [
         {
             "name": "1_Main", 
-            "start_when": "no",
-            "start_at": State.CB3_TO_WH,
-            "end_at": State.WH_STORE,
-            "with_oven": False,
-            "with_PM": False,
+            "start_when": "start",
+            "start_at": State.CB1,
+            "end_at": State.END,
+            "with_oven": True,
+            "with_PM": True,
             "with_WH": True,
             "color": "RED",
             "running": False
         },
         {
             "name": "2_Main", 
-            "start_when": "start",
+            "start_when": "no",
             "start_at": State.WH_RETRIEVE,
             "end_at": State.CB4,
             "with_oven": False,
