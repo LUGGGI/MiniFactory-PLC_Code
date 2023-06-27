@@ -55,7 +55,7 @@ class Warehouse(Machine):
     move_to_position(): Moves Crane given coordinates.
     move_axis(): Moves one axis to the given trigger value.
     '''
-    __POS_CB_HORIZONTAL = 55
+    __POS_CB_HORIZONTAL = 85
     __POS_CB_VERTICAL = 1450
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
@@ -208,7 +208,7 @@ class Warehouse(Machine):
             # save Product to file
             for hor in range(3):
                 for ver in range(3):
-                    if POSITIONS[ver][hor] == position:
+                    if POSITIONS[hor][ver] == position:
                         break
                 else:
                     continue
@@ -289,17 +289,17 @@ class Warehouse(Machine):
             self.state = self.switch_state(State.CB_BWD)
             self.__cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT", stop_delay_in_ms=200, as_thread=False)
 
-            # save empty to file
+            # save "empty" to file
             for hor in range(3):
                 for ver in range(3):
-                    if POSITIONS[ver][hor] == position:
+                    if POSITIONS[hor][ver] == position:
                         break
                 else:
                     continue
                 break
             with open(Warehouse.__JSON_FILE, "r") as fp:
                 json_obj = json.load(fp)
-            json_obj[self.__factory][hor][ver] = "empty"
+            json_obj[self.__factory][hor][ver] = "Empty"
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 

@@ -86,7 +86,7 @@ class MainLoop(Machine):
         self.state = State.INIT
         self.next_state: State = None
         self.previous_state: State = None
-        self.machines = {}
+        self.machines: "dict[str, Machine]" = {}
         self.config = config
         self.ready_for_transport = "None"
 
@@ -108,7 +108,6 @@ class MainLoop(Machine):
         log.critical(f"END of Mainloop: {self.name}")
       
     def mainloop(self):
-        machine: Machine
         for machine in self.machines.values():
             # look for errors in the machines
             if machine.error_exception_in_machine:
@@ -172,15 +171,14 @@ class MainLoop(Machine):
         elif self.state == State.GR1_CB1_TO_PM:
             if self.run_gr1():
                 self.switch_state(State.PM)
-                self.switch_status("CB1", Status.BLOCKED)
 
         elif self.state == State.PM:
             if self.run_pm():
+                State.GR1_PM_TO_CB3.value[1] = Status.FREE
                 self.switch_state(State.GR1_PM_TO_CB3)
 
         elif self.state == State.GR1_PM_TO_CB3:
             if self.run_gr1():
-                State.CB3_TO_WH.value[1] = Status.FREE
                 self.switch_state(State.CB3_TO_WH)
 
         elif self.state == State.GR1_CB1_TO_CB3:
@@ -233,9 +231,9 @@ class MainLoop(Machine):
         :state: state Enum to switch to
         :wait: waits for input bevor switching
         '''
+        if self.state == self.config["end_at"]:
+            state = State.END
         if state.value[1] == Status.FREE:
-            if self.state == self.config["end_at"]:
-                state = State.END
             self.state = super().switch_state(state, wait=False)
 
             self.switch_status(self.state, Status.BLOCKED)
@@ -464,7 +462,7 @@ class MainLoop(Machine):
             machine.move_to_position(Position(0, 1450, 1200))
         elif machine.is_stage(1) and self.config["color"] == "RED":
             # move to red
-            machine.move_to_position(Position(130, 1560, 1200))
+            machine.move_to_position(Position(142, 1560, 1200))
         elif machine.is_stage(1) and self.config["color"] == "BLUE":
             # move to blue
             machine.move_to_position(Position(255, 1750, 1200))
@@ -647,9 +645,9 @@ if __name__ == "__main__":
             "start_at": State.INIT,
             "end_at": State.END,
             "with_oven": False,
-            "with_PM": True,
-            "with_WH": True,
-            "color": "RED",
+            "with_PM": False,
+            "with_WH": False,
+            "color": "COLOR_UNKNOWN",
             "running": False
         },
         {
@@ -676,7 +674,7 @@ if __name__ == "__main__":
         },
         {
             "name": "3_Main", 
-            "start_when": "no",
+            "start_when": "INIT",
             "start_at": State.CB1,
             "end_at": State.END,
             "with_oven": False,
@@ -695,24 +693,29 @@ if __name__ == "__main__":
         main_loops.append(MainLoop(revpi, config["name"], config, exit_handler))
         threads.append(threading.Thread(target=main_loops[-1].run, name=config["name"]))
 
+    exception = False
     running = True
-    while(running and not MainLoop.error_exception_in_machine):
+    while(running and not exception):
+        for main_loop in main_loops:
+            if main_loop.error_exception_in_machine:
+                log.error(f"Error in mainloop {main_loop.name}")
+                exception = True
+            
         running = False
         for config, thread in zip(configs, threads):
+            
+            if not config["running"] and config["start_when"] == stage:
+                log.critical(f"Start: {config['name']}")
+                thread.start()
+                config["running"] = True
 
-            if thread.is_alive():
+            if config["running"]:
                 running = True
-
-            elif config["start_when"] == stage:
-                running = True
-                if not config["running"]:
-                    log.critical(f"Start: {config['name']}")
-                    thread.start()
-                    config["running"] = True
-                elif not thread.is_alive():
+                if not thread.is_alive():
                     config["running"] = False
                     stage = config["name"]
                     log.critical(f"Stop: {config['name']}")
+                    break
         
         sleep(1)
 
