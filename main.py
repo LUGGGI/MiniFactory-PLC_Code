@@ -251,14 +251,6 @@ class MainLoop(Machine):
 
         elif self.state == State.PM:
             if self.run_pm():
-                can_switch = True
-                for state in State:
-                    if state.name.find("GR1") != -1:
-                        if state.value[1] == Status.RUNNING:
-                            can_switch = False
-                            break
-                if can_switch:
-                    State.GR1_PM_TO_CB3.value[1] = Status.FREE
                 self.switch_state(State.GR1_PM_TO_CB3)
 
         elif self.state == State.GR1_PM_TO_CB3:
