@@ -225,7 +225,6 @@ class Warehouse(Machine):
             log.exception(error)
         else:
             log.warning(f"{self.name} :{color}-product stored at position: [hor:{hor},ver:{ver}]; {position}")
-            self.ready_for_transport = True
             self.stage += 1
 
 
@@ -311,7 +310,6 @@ class Warehouse(Machine):
             log.exception(error)
         else:
             log.warning(f"{self.name} :{color}-product retrieved from position: [hor:{hor+1},ver:{ver+1}]; {position}")
-            self.ready_for_transport = True
             self.stage += 1
 
 

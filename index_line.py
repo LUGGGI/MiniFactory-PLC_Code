@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.22"
+__version__ = "2023.06.29"
 
 import threading
 from time import sleep
@@ -105,6 +105,7 @@ class IndexLine(Machine):
             del cb_mill
 
 
+            self.start_next_machine = True
             # Drilling
             self.state = self.switch_state(State.DRILLING)
             Actuator(self.revpi, self.name + "_DRILL_MOTOR").run_for_time("", self.__TIME_DRILLING)

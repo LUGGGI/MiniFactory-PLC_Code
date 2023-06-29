@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.22"
+__version__ = "2023.06.29"
 
 import threading
 from enum import Enum
@@ -108,17 +108,16 @@ class Robot3D(Machine):
                 self.stage += 1
 
 
-    def move_product_to(self, position: Position, sensor: str=None, release=True, as_thread=True):
+    def grip_and_move_to_position(self, position: Position, sensor: str=None, as_thread=True):
         '''Moves product from current postion to given position.
 
         :position: (rotation, horizontal, vertical): int
         :sensor: Sensor that will be checked for detection while moving to moving position
-        :release: Set to false to not release the product
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.move_product_to, args=(position, sensor, release, False), name=self.name)
+            self.thread = threading.Thread(target=self.grip_and_move_to_position, args=(position, sensor, False), name=self.name)
             self.thread.start()
             return
 
@@ -143,8 +142,7 @@ class Robot3D(Machine):
                 self.state = self.switch_state(State.ERROR)
                 self.error_exception_in_machine = True
                 return
-        if release:
-            self.release(as_thread = False)
+        
         self.stage = current_stage + 1
 
 
