@@ -158,6 +158,19 @@ class MainLoop(Machine):
             return True
         else:
             return False
+        
+    def get_machine(self, machine_name: str, machine_class, *args):
+        '''Returns given machine, if not available initializes it.
+        
+        :machine_name: Name of machine that should be returned
+        :machine_class: Class of the machine
+        :*args: additional arguments passed to machine
+        '''
+        machine = self.machines.get(machine_name)
+        if machine == None:
+            machine = machine_class(self.revpi, machine_name, *args)
+            self.machines[machine_name] = machine
+        return machine
     
     def end(self) -> False:
         '''Waits for any machines left running.'''
@@ -198,13 +211,20 @@ class Setup():
         self.main_loops: "list[MainLoop]" = []
 
     def add_mainloop(self, name: str, mainloop: MainLoop):
-        '''Add a new config'''
+        '''Add a new config
+        
+        :name: Name of given mainloop
+        :mainloop: Mainloop object to add
+        '''
 
         self.main_loops.append(mainloop)
         self.threads.append(threading.Thread(target=mainloop.run, name=name))
 
     def run_factory(self, configs: "list[dict]"):
-        '''Runs the factory and starts every mainloop'''
+        '''Runs the factory and starts every mainloop
+        
+        :configs: list of configs, same order as mainloops where added
+        '''
         exception = False
         running = True
         while(running and not exception):
