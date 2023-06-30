@@ -71,7 +71,8 @@ class MainRight(MainLoop):
     FACTORY = "right"
     def __init__(self, revpi, name: str, config: dict, exit_handler: ExitHandler):
         '''Initializes MiniFactory control loop.'''
-        super().__init__(revpi, name, config, exit_handler)
+        super().__init__(revpi, name, config, exit_handler, State)
+        self.state = State.INIT
 
     def mainloop(self):
         '''Switches the main states.'''
@@ -83,7 +84,7 @@ class MainRight(MainLoop):
             
         if self.state == State.INIT:
             if self.run_init():
-                self.switch_state(State.END)
+                self.switch_state(State.END, False)
 
         elif self.state == State.GR2:
             if self.run_gr2():
@@ -174,8 +175,7 @@ class MainRight(MainLoop):
             self.machines[vg].init(to_end=True)
         self.machines["WH"] = Warehouse(self.revpi, "WH", factory=self.FACTORY)
         self.machines["WH"].init(to_end=True)
-        State.INIT.value[1] = Status.FREE
-        self.switch_state(State.END)
+        return True
 
     def run_cb1(self) -> False:
         machine: Conveyor = self.machines.get("CB1")
@@ -405,7 +405,7 @@ class MainRight(MainLoop):
         elif cb.is_stage(3) and self.is_ready_for_transport("PM"):
             cb.run_to_stop_sensor("BWD", stop_sensor="CB2_SENS_START", stop_delay_in_ms=150, end_machine=False)
 
-        elif cb.is_stage(3) and pm.is_stage(2):
+        elif cb.is_stage(4) and pm.is_stage(2):
             pm.end_machine = True
             cb.end_machine = True
             return True
@@ -533,7 +533,7 @@ if __name__ == "__main__":
         {
             "name": "1_Main", 
             "start_when": "INIT",
-            "start_at": State.GR2,
+            "start_at": State.CB1,
             "end_at": State.WH_STORE,
             "with_oven": False,
             "with_PM": True,
@@ -543,7 +543,7 @@ if __name__ == "__main__":
         },
         {
             "name": "2_Main", 
-            "start_when": "INIT",
+            "start_when": "no",
             "start_at": State.WH_RETRIEVE,
             "end_at": State.END,
             "with_oven": False,
@@ -554,7 +554,7 @@ if __name__ == "__main__":
         },
         {
             "name": "3_Main", 
-            "start_when": "INIT",
+            "start_when": "no",
             "start_at": State.CB1,
             "end_at": State.END,
             "with_oven": False,
