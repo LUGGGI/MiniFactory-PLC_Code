@@ -14,15 +14,13 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.30"
+__version__ = "2023.07.03"
 
-from time import sleep
 from enum import Enum
-import threading
-from revpimodio2 import RevPiModIO
 
 from exit_handler import ExitHandler
 from logger import log
+from json_handler import JsonHandler
 from machine import Machine
 from sensor import Sensor
 from conveyor import Conveyor
@@ -186,7 +184,7 @@ class MainRight(MainLoop):
 
     def run_cb3(self) -> False:
         cb: Conveyor = self.get_machine("CB3", Conveyor)
-
+        # TODO: stage = 0 bug
         if self.state == State.CB3_TO_WH:
             if cb.is_stage(1) and State.WH_STORE == Status.FREE:
                 cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
@@ -255,6 +253,7 @@ class MainRight(MainLoop):
             if gr.is_stage(0) or gr.is_stage(2) and self.is_ready_for_transport("CB2"):
                 # move down
                 gr.move_to_position(Position(-1, -1, 2000))
+                gr.stage = 2
             elif gr.is_stage(3):
                 # grip product, move to cb3
                 gr.grip_and_move_to_position(Position(2305, 40, 1550), sensor="CB2_SENS_START")
@@ -480,52 +479,7 @@ class MainRight(MainLoop):
         
 
 if __name__ == "__main__":
-    configs = [
-        {
-            "name": "INIT", 
-            "start_when": "start",
-            "start_at": State.INIT,
-            "end_at": State.END,
-            "with_oven": False,
-            "with_PM": False,
-            "with_WH": False,
-            "color": "COLOR_UNKNOWN",
-            "running": False
-        },
-        {
-            "name": "1_Main", 
-            "start_when": "INIT",
-            "start_at": State.CB1,
-            "end_at": State.WH_STORE,
-            "with_oven": False,
-            "with_PM": True,
-            "with_WH": True,
-            "color": "RED",
-            "running": False
-        },
-        {
-            "name": "2_Main", 
-            "start_when": "no",
-            "start_at": State.WH_RETRIEVE,
-            "end_at": State.END,
-            "with_oven": False,
-            "with_PM": False,
-            "with_WH": True,
-            "color": "BLUE",
-            "running": False
-        },
-        {
-            "name": "3_Main", 
-            "start_when": "no",
-            "start_at": State.CB1,
-            "end_at": State.END,
-            "with_oven": False,
-            "with_PM": False,
-            "with_WH": False,
-            "color": "WHITE",
-            "running": False
-        }
-    ]
+    configs = JsonHandler().read("main_right.json", State)
 
     setup = Setup()
     setup.main_loops: "list[MainRight]" = []

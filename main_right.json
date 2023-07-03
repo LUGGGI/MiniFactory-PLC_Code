@@ -2,24 +2,48 @@
     "factory": "right",
     "lines": [
         {
-            "1_Main" : {
-                "start_when": "start",
-                "start_at": "IN",
-                "end_at": "WH",
-                "with_oven": "True",
-                "with_PM": "True",
-                "color": "RED"
-            }
+            "name": "INIT", 
+            "start_when": "start",
+            "start_at": "INIT",
+            "end_at": "END",
+            "with_oven": false,
+            "with_PM": false,
+            "with_WH": false,
+            "color": "COLOR_UNKNOWN",
+            "running": false
         },
         {
-            "2_Main" : {
-                "start_when": "1_Main",
-                "start_at": "WH",
-                "end_at": "OUT",
-                "with_oven": "False",
-                "with_PM": "False",
-                "color": "RED"
-            }
+            "name": "1_Main", 
+            "start_when": "INIT",
+            "start_at": "CB1",
+            "end_at": "WH_STORE",
+            "with_oven": false,
+            "with_PM": true,
+            "with_WH": true,
+            "color": "RED",
+            "running": false
+        },
+        {
+            "name": "2_Main", 
+            "start_when": "no",
+            "start_at": "WH_RETRIEVE",
+            "end_at": "END",
+            "with_oven": false,
+            "with_PM": false,
+            "with_WH": true,
+            "color": "BLUE",
+            "running": false
+        },
+        {
+            "name": "3_Main", 
+            "start_when": "no",
+            "start_at": "CB1",
+            "end_at": "END",
+            "with_oven": false,
+            "with_PM": false,
+            "with_WH": false,
+            "color": "WHITE",
+            "running": false
         }
     ]
 }
