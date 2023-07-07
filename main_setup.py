@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.30"
+__version__ = "2023.07.07"
 
 from time import sleep
 from enum import Enum
@@ -72,12 +72,12 @@ class MainLoop(Machine):
                 self.switch_state(self.states.ERROR)
                 break
             # look for ready_for_transport in machines and sets status to True
-            elif machine.ready_for_transport:
+            if machine.ready_for_transport:
                 machine.ready_for_transport = False
                 log.info(f"{self.name}: Ready for transport: {machine.name}")
                 self.ready_for_transport = machine.name
             # end machines 
-            elif machine.end_machine and not machine.ready_for_transport:
+            if machine.end_machine and not machine.ready_for_transport:
                 log.info(f"{self.name}: Ended: {machine.name}")
                 self.machines.pop(machine.name)
                 break
@@ -206,7 +206,7 @@ class Setup():
         self.revpi.mainloop(blocking=False)
         self.exit_handler = ExitHandler(self.revpi)
         
-        self.stage = "start"
+        self.stage = None
         self.threads: "list[threading.Thread]" = []
         self.main_loops: "list[MainLoop]" = []
 
@@ -235,8 +235,7 @@ class Setup():
                 
             running = False
             for config, thread in zip(configs, self.threads):
-                
-                if not config["running"] and config["start_when"] == self.stage:
+                if not config["running"] and (config["start_when"] == self.stage or config["start_when"] == "now"):
                     log.critical(f"Start: {config['name']}")
                     thread.start()
                     config["running"] = True
@@ -250,6 +249,3 @@ class Setup():
                         break
             
             sleep(1)
-
-        log.critical("End of program")
-        self.revpi.exit()
