@@ -21,7 +21,7 @@ class GripRobot(Robot3D):
     init(): Move to init position.
     move_to_position(): Moves to given position.
     '''
-    GRIPPER_CLOSED = 12
+    GRIPPER_CLOSED = 13
     GRIPPER_OPENED = 9
 
     def __init__(self, revpi, name: str, moving_position: Position):

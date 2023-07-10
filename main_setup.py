@@ -17,12 +17,14 @@ from revpimodio2 import RevPiModIO
 from exit_handler import ExitHandler
 from logger import log
 from machine import Machine
+from state_logger import StateLogger
 
 class Status(Enum):
     NONE = 0
     FREE = 1
     RUNNING = 2
     BLOCKED = 3
+    WAITING = 4
 
 class MainLoop(Machine):
     '''Controls the MiniFactory.
@@ -47,6 +49,10 @@ class MainLoop(Machine):
         self.previous_state = None
         self.machines: "dict[str, Machine]" = {}
         self.ready_for_transport = "None"
+        self.product_at: str = None
+        self.waiting_for = None
+
+        self.state_logger = StateLogger(f"files/({self.name})states.json", states)
 
     def run(self):
         '''Starts the mainloop.'''
@@ -77,31 +83,23 @@ class MainLoop(Machine):
                 log.info(f"{self.name}: Ready for transport: {machine.name}")
                 self.ready_for_transport = machine.name
             # end machines 
-            if machine.end_machine and not machine.ready_for_transport:
+            if machine.end_machine and not machine.ready_for_transport and machine.name != self.product_at:
                 log.info(f"{self.name}: Ended: {machine.name}")
+                self.switch_status(machine.name, Status.FREE)
                 self.machines.pop(machine.name)
                 break
         
-        # switch Status of State to FREE if machine is done
-        for state in self.states:
-            if state.value[1] != Status.FREE:
-                machine_name = state.name.split('_')[0]
-                machine = self.machines.get(machine_name, None)
-                if machine == None and self.ready_for_transport != machine_name:
-                    self.switch_status(state, Status.FREE)
-        
+        if self.waiting_for != None:
+        # waiting for running or blocked machines
+            if self.waiting_for.value[1] == Status.FREE:
+                state = self.waiting_for
+                log.critical(f"{self.name}: Continuing to: {state}")
+
         if self.state == self.states.ERROR:
             log.error("Error in Mainloop")
             self.exit_handler.stop_factory()
             self.error_exception_in_machine = True
             return
-
-        if self.state == self.states.WAITING:
-        # wait for running or blocked machines
-            if self.next_state.value[1] == Status.FREE:
-                self.switch_status(self.previous_state, Status.FREE)
-                log.critical(f"{self.name}: Continuing to: {self.next_state}")
-                self.switch_state(self.next_state)
 
         if self.state == self.states.END:
             self.states.END.value[1] = Status.FREE
@@ -122,31 +120,35 @@ class MainLoop(Machine):
         '''
         if self.state == self.config["end_at"]:
             state = self.states.END
-        if state.value[1] == Status.FREE:
-            self.switch_status(self.state, Status.FREE)
+        elif state.value[1] == Status.FREE or state.value[2] == self.name:
+            log.critical(self.name + ": Switching state to: " + str(state.name))
             self.state = super().switch_state(state, wait)
-
-            self.switch_status(self.state, Status.BLOCKED)
-            self.state.value[1] = Status.RUNNING
         else:
             log.critical(f"{self.name}: Waiting for: {state}")
-            self.switch_status(self.state, Status.BLOCKED)
-            self.previous_state = self.state
-            self.next_state = state
-            self.state = super().switch_state(self.states.WAITING, wait=False)
+            self.switch_status(self.state, Status.WAITING)
+            self.waiting_for = state
 
     def switch_status(self, state_name, status: Status):
-        '''Switch status in states, switches all to a machine belonging states
+        '''Switch status in states, if name switches all to a machine belonging states
         
         :state: can be a State Enum or a string of to switching state
         :status: Status that the state should be switched to
         '''
-        if type(state_name) != str:
-            state_name = state_name.name.split('_')[0]
+        # get the used_by tag
+        name_tag = "None" if status == Status.FREE else self.name
 
-        for state in self.states:
-            if state.name.split('_')[0].find(state_name) != -1:
-                state.value[1] = status
+        if type(state_name) != str:
+            state_name.value[1] = status
+            # set the used_by tag
+            state_name.value[2] = name_tag
+        else:
+            for state in self.states:
+                if state.name.split('_')[0].find(state_name) != -1:
+                    # set status
+                    state.value[1] = status
+                    # set the used_by tag
+                    state.value[2] = name_tag
+        self.state_logger.update_file(self.states)
 
     def is_ready_for_transport(self, machine_name):
         '''Returns true if given machine is ready_for_transport.
@@ -170,6 +172,7 @@ class MainLoop(Machine):
         if machine == None:
             machine = machine_class(self.revpi, machine_name, *args)
             self.machines[machine_name] = machine
+            self.switch_status(machine_name, Status.RUNNING)
         return machine
     
     def end(self) -> False:
@@ -235,6 +238,8 @@ class Setup():
                 
             running = False
             for config, thread in zip(configs, self.threads):
+                if config["finished"]:
+                    continue
                 if not config["running"] and (config["start_when"] == self.stage or config["start_when"] == "now"):
                     log.critical(f"Start: {config['name']}")
                     thread.start()
@@ -244,6 +249,7 @@ class Setup():
                     running = True
                     if not thread.is_alive():
                         config["running"] = False
+                        config["finished"] = True
                         self.stage = config["name"]
                         log.critical(f"Stop: {config['name']}")
                         break

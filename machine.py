@@ -45,8 +45,8 @@ class Machine:
         self.state_is_init = False
 
         self.state = None
-        self.__time_start: datetime = None
-        self.__state_time_start: datetime = None
+        # self.__time_start: datetime = None
+        # self.__state_time_start: datetime = None
 
 
     def get_run_time(self) -> int:
@@ -73,9 +73,10 @@ class Machine:
         '''
         if wait:
             input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
-        self.__state_time_start = datetime.now()
+        # self.__state_time_start = datetime.now()
         self.state_is_init = False
-        log.warning(self.name + ": Switching state to: " + str(state.name))
+        if self.name.lower().find("main") == -1 and self.name.lower().find("init") == -1:
+            log.warning(self.name + ": Switching state to: " + str(state.name))
         return state
 
     

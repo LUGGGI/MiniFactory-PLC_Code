@@ -24,7 +24,7 @@ class State(Enum):
 
 
 class Conveyor(Machine):
-    '''Controls a conveyor
+    '''Controls a conveyor. If conveyor isn't run with end_machine=True, the flag has to be set manually
     
     run_to_stop_sensor(): Runs the Conveyor until the product has reached the stop sensor
     run_to_counter_value(): Runs the Conveyor until the trigger_value of encoder is reached
@@ -46,7 +46,7 @@ class Conveyor(Machine):
         log.debug("Destroyed Conveyor: " + self.name)
 
 
-    def run_to_stop_sensor(self, direction: str, stop_sensor: str, start_sensor: str=None, stop_delay_in_ms=0, timeout_in_s=10, end_machine=True, as_thread=True):
+    def run_to_stop_sensor(self, direction: str, stop_sensor: str, start_sensor: str=None, stop_delay_in_ms=0, timeout_in_s=10, end_machine=False, as_thread=True):
         '''Runs the Conveyor until the product has reached the stop sensor.
         
         :direction: Conveyor direction, (last part of whole name)
@@ -93,7 +93,7 @@ class Conveyor(Machine):
                 self.stage += 1
 
 
-    def run_to_counter_value(self, direction: str, counter: str, trigger_value: int, timeout_in_s=10, end_machine=True, as_thread=True):
+    def run_to_counter_value(self, direction: str, counter: str, trigger_value: int, timeout_in_s=10, end_machine=False, as_thread=True):
         '''Runs the Conveyor until the trigger_value of encoder is reached.
         
         :direction: Actuator direction, (last part of whole name)
