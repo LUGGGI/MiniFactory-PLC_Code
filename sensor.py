@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.07.11"
 
 import time
 from enum import Enum
@@ -94,7 +94,7 @@ class Sensor():
         try:
             self.__revpi.io[self.name].reg_event(event_det_at_sensor, edge=edge)
         except RuntimeError:
-            log.debug(f"{self.name} :Already monitoring")
+            log.debug(f"{self.name} (Sens) already monitoring")
 
 
     def remove_monitor(self, edge=BOTH):
@@ -128,14 +128,14 @@ class Sensor():
         -> Panics if timeout is reached (no detection happened)
         '''
         if self.get_current_value() == True:
-            log.info(f"{self.name} :Already detected")
+            log.info(f"{self.name} (Sens) already detected")
             return
 
         if self.__revpi.io[self.name].wait(edge=edge, timeout=timeout_in_s*1000) == False:
             # sensor detected product
-            log.info(f"{self.name} :Detection") 
+            log.info(f"{self.name} (Sens) detection") 
         else:
-            raise(Exception(f"{self.name} :No detection"))
+            raise(Exception(f"{self.name} (Sens) no detection"))
 
 
     def wait_for_encoder(self, trigger_value: int, trigger_threshold: int, timeout_in_s=10) -> int:
@@ -168,7 +168,7 @@ class Sensor():
 
             if abs(new_value - trigger_value) <= trigger_threshold:
 
-                log.info(f"{self.name} :Value reached: {new_value}")
+                log.info(f"{self.name} (Sens) Value reached {new_value}")
                 return self.get_current_value() 
             
             # wait for next cycle
@@ -184,7 +184,7 @@ class Sensor():
             # wait until the actuator has stopped
             time.sleep(0.06)
             if self.__revpi.io[self.name].value == 0:
-                log.info("Reset encoder: " + self.name)
+                log.info(f"Reset encoder: {self.name}")
                 self.counter_offset = 0
                 return
         raise(Exception(f"{self.name} :ERROR while reset"))

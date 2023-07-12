@@ -52,7 +52,7 @@ class MainLoop(Machine):
         self.product_at: str = None
         self.waiting_for = None
 
-        self.state_logger = StateLogger(f"files/({self.name})states.json", states)
+        self.state_logger = StateLogger(f"files/({self.name})states.json")
 
     def run(self):
         '''Starts the mainloop.'''
@@ -119,7 +119,7 @@ class MainLoop(Machine):
         :wait: waits for input bevor switching
         '''
         if self.state == self.config["end_at"]:
-            state = self.states.END
+            self.switch_state(self.states.END, wait)
         elif state.value[1] == Status.FREE or state.value[2] == self.name:
             log.critical(self.name + ": Switching state to: " + str(state.name))
             self.state = super().switch_state(state, wait)
@@ -148,7 +148,7 @@ class MainLoop(Machine):
                     state.value[1] = status
                     # set the used_by tag
                     state.value[2] = name_tag
-        self.state_logger.update_file(self.states)
+        self.state_logger.__update_file(self.states)
 
     def is_ready_for_transport(self, machine_name):
         '''Returns true if given machine is ready_for_transport.

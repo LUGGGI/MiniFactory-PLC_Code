@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.14"
+__version__ = "2023.07.11"
 
 import threading
 import time
@@ -74,14 +74,14 @@ class Actuator():
             self.__thread.start()
             return
 
-        log.info(f"{actuator} :Actuator running to sensor: {stop_sensor}")
+        log.info(f"{actuator} (Act) run to sensor {stop_sensor}")
 
         try:
             sensor = Sensor(self.__revpi, stop_sensor)
 
             # check if already at stop sensor
             if sensor.get_current_value() == True:
-                log.info(f"{actuator} :Actuator already at sensor: {stop_sensor}")
+                log.info(f"{actuator} (Act) already at sensor {stop_sensor}")
                 return
 
             #start actuator
@@ -89,14 +89,16 @@ class Actuator():
 
             sensor.wait_for_detect(timeout_in_s=timeout_in_s)
             time.sleep(stop_delay_in_ms/1000)
+            
+            #stop actuator
+            self.stop(direction)
         except Exception as e:
+            #stop actuator
+            self.stop(direction)
             if self.__thread:
                 self.exception = e
             else:
                 raise
-        finally:
-            #stop actuator
-            self.stop(direction)
 
 
     def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None, as_thread=False):
@@ -114,7 +116,7 @@ class Actuator():
             self.__thread.start()
             return
 
-        log.info(f"{actuator} :Actuator running for time: {wait_time_in_s}")
+        log.info(f"{actuator} (Act) run for time: {wait_time_in_s}")
         try:
             self.start(direction)
             
@@ -124,10 +126,8 @@ class Actuator():
                 sensor.start_monitor()
 
             time.sleep(wait_time_in_s) # Wait for given time
-            log.info(f"{actuator} :Run time reached")
+            log.info(f"{actuator} (Act) run time reached")
 
-            #stop actuator
-            self.stop(direction)
 
             if check_sensor and sensor.is_detected() == False:
                 raise(Exception(f"{check_sensor} :No detection"))
@@ -137,6 +137,9 @@ class Actuator():
                 self.exception = e
             else:
                 raise
+        finally:
+            #stop actuator
+            self.stop(direction)
 
 
     def run_to_encoder_value(self, direction: str, encoder: Sensor, trigger_value: int, timeout_in_s=20, as_thread=False):
@@ -155,7 +158,7 @@ class Actuator():
             self.__thread.start()
             return
 
-        log.info(f"{actuator} :Actuator running to value: {trigger_value}, at: {encoder.name}")
+        log.info(f"{actuator} (Act) run to value {trigger_value} at {encoder.name}")
 
         
         trigger_threshold = self.__ENCODER_TRIGGER_THRESHOLD if encoder.type == SensorType.ENCODER else self.__COUNTER_TRIGGER_THRESHOLD
@@ -175,7 +178,7 @@ class Actuator():
                 self.start(direction)                
             
             # run to trigger_value
-            log.info(f"{actuator} :Stopped at: {encoder.wait_for_encoder(trigger_value, trigger_threshold, timeout_in_s)}")
+            log.info(f"{actuator} (Act) stopped at {encoder.wait_for_encoder(trigger_value, trigger_threshold, timeout_in_s)}")
 
         except Exception as e:
             if self.__thread:
@@ -205,7 +208,7 @@ class Actuator():
             self.__thread.start()
             return
 
-        log.info(f"{actuator} :Actuator running to encoder start")
+        log.info(f"{actuator} (Act) run to encoder start")
         try:
             self.run_to_sensor(direction, stop_sensor, timeout_in_s=timeout_in_s)
             encoder.reset_encoder()
@@ -266,8 +269,9 @@ class Actuator():
         actuator = self.name + ( "_" + direction if direction != "" else "")
         if self.__pwm:
             self.__revpi.io[self.__pwm].value = self.__pwm_value
-        log.info(f"{actuator} :Started actuator")
-        self.__revpi.io[actuator].value = True 
+        if self.__revpi.io[actuator].value != True:
+            log.info(f"{actuator} (Act) start")
+            self.__revpi.io[actuator].value = True 
 
 
     def stop(self, direction: str=""):
@@ -276,7 +280,7 @@ class Actuator():
         :direction: Motor direction, (last part of whole name)
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
-        log.info(f"{actuator} :Stopped actuator")
+        log.info(f"{actuator} (Act) stop")
         self.__revpi.io[actuator].value = False
         if self.__pwm:
             self.__revpi.io[self.__pwm].value = 0
@@ -290,8 +294,9 @@ class Actuator():
         if percentage < 0 or percentage > 100:
             raise(Exception(f"{self.__pwm}: {percentage} :Out of range (0-100)"))
         
-        log.info(f"{self.__pwm} :Set to {percentage}%")
+        log.info(f"{self.__pwm} (Act) set to {percentage}%")
         self.__pwm_value = percentage
+
 
     def join(self):
         '''Joins the current thread and raises Exceptions'''

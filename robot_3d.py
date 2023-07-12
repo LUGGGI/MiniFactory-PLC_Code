@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.29"
+__version__ = "2023.07.11"
 
 import threading
 from enum import Enum
@@ -184,10 +184,22 @@ class Robot3D(Machine):
 
                 # move non moving position axes
                 self.state = self.switch_state(State.MOVING)
-                # only move axis if there was no moving position for axis
-                rotation = position.rotation if self.__moving_position.rotation == -1 or position.rotation < self.__moving_position.rotation else -1
-                horizontal = position.horizontal if self.__moving_position.horizontal == -1 or position.horizontal < self.__moving_position.horizontal else -1
-                vertical = position.vertical if self.__moving_position.vertical == -1 or position.vertical < self.__moving_position.vertical else -1
+                # only move axis if there was no moving position for axis or the value is smaller than the moving position
+                if self.__moving_position.rotation == -1 or position.rotation < self.__moving_position.rotation:
+                    rotation = position.rotation
+                    position.rotation = -1
+                else:
+                    rotation = -1
+                if self.__moving_position.horizontal == -1 or position.horizontal < self.__moving_position.horizontal:
+                    horizontal = position.horizontal
+                    position.horizontal = -1
+                else:
+                    horizontal = -1
+                if self.__moving_position.vertical == -1 or position.vertical < self.__moving_position.vertical:
+                    vertical = position.vertical
+                    position.vertical = -1
+                else:
+                    vertical = -1
                 self.move_all_axes(Position(rotation, horizontal, vertical))
 
             # move to destination

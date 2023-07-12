@@ -160,9 +160,31 @@ class MPStation(Machine):
             self.start_next_machine = True
             # run cb
             self.state = self.switch_state(State.CB)
-            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "CB1_SENS_START", timeout_in_s=30, as_thread=False)
+            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "MPS_SENS_CB", as_thread=False)
             table.join()
             del table
+
+        except Exception as error:
+            self.state = self.switch_state(State.ERROR)
+            self.error_exception_in_machine = True
+            log.exception(error)
+        else:
+            self.stage += 1
+
+    def run_to_out(self, as_thread=True):
+        '''Runs the Conveyor to move the product out.
+        
+        :as_thread: Runs the function as a thread
+        '''
+        # call this function again as a thread
+        if as_thread == True:
+            self.thread = threading.Thread(target=self.run_to_out, args=(False, ), name=self.name)
+            self.thread.start()
+            return
+        
+        try:
+            self.state = self.switch_state(State.CB)
+            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "CB1_SENS_START", as_thread=False)
 
         except Exception as error:
             self.state = self.switch_state(State.ERROR)
