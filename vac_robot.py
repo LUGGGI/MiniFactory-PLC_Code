@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.07.12"
 
 import threading
 from time import sleep
@@ -23,14 +23,18 @@ class VacRobot(Robot3D):
     release(): Release product.
     '''
 
-    def __init__(self, revpi, name: str, moving_position=Position(-1, -1, 1400)):
+    def __init__(self, revpi, name: str, mainloop_name: str, moving_position=Position(-1, -1, 1400)):
         '''Initializes the Vacuum Robot.
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
         :moving_position: Positions that the axes should be to allow save moving
         '''
-        super().__init__(revpi, name, moving_position)
+        super().__init__(revpi, name, mainloop_name, moving_position)
+
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Vac)")
 
         self.compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
         self.valve = Actuator(self.revpi, self.name + "_VALVE_VACUUM")

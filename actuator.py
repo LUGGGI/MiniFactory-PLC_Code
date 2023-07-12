@@ -5,13 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.11"
+__version__ = "2023.07.12"
 
 import threading
 import time
 from revpimodio2 import RevPiModIO
 
-from logger import log
+from logger import log, logging
+from copy import copy
 from sensor import Sensor, SensorType
 
 detection = False
@@ -34,16 +35,18 @@ class Actuator():
     __PWM_WINDOW = 300
     __PWM_DURATION = 100
 
-    def __init__(self, revpi: RevPiModIO, name: str, pwm: str=None, type: str=None):
+    def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str, pwm: str=None, type: str=None):
         '''Initializes the Actuator
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
         :pwm: Name of PWM-pin, Slows motor down, bevor reaching the value
         :type: specifier for motor name
         '''
         self.__revpi = revpi
         self.name = name
+        self.mainloop_name = mainloop_name
         self.__pwm = pwm
         self.__type = ("_" + type) if type else ""
 
@@ -51,7 +54,10 @@ class Actuator():
         self.exception = None
         self.__pwm_value = 100
 
-        log.debug("Created Actuator: " + self.name + self.__type)
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Act)")
+
+        log.warning("Created Actuator: " + self.name + self.__type)
 
 
     def __del__(self):

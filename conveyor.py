@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.22"
+__version__ = "2023.07.12"
 
 import threading
 from enum import Enum
@@ -30,15 +30,20 @@ class Conveyor(Machine):
     run_to_counter_value(): Runs the Conveyor until the trigger_value of encoder is reached
     '''
 
-    def __init__(self, revpi, name: str):
+    def __init__(self, revpi, name: str, mainloop_name: str):
         '''Initializes the Sensor
         
         :revpi: RevPiModIO Object to control the motors and sensors
+        :mainloop_name: name of current mainloop
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
         '''
-        super().__init__(revpi, name)
+        super().__init__(revpi, name, mainloop_name)
         self.stage = 1
         self.exception = None
+
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Conv)")
+
         log.debug("Created Conveyor: " + self.name)
 
 

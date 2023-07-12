@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.22"
+__version__ = "2023.07.12"
 
 import threading
 from enum import Enum
@@ -61,14 +61,19 @@ class Warehouse(Machine):
     __MOVE_THRESHOLD_VER = 40
     __JSON_FILE = "wh_content.json"
 
-    def __init__(self, revpi, name: str, factory: str):
+    def __init__(self, revpi, name: str, mainloop_name: str, factory: str):
         '''Initializes the Warehouse
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
         :factory: left / right to use the correct config
         '''
-        super().__init__(revpi, name)
+        super().__init__(revpi, name, mainloop_name)
+
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Ware)")
+
         self.__factory = factory
 
         self.__ref_sw_arm_front = self.name + "_REF_SW_ARM_FRONT"

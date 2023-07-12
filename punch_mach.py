@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.29"
+__version__ = "2023.07.12"
 
 import threading
 from enum import Enum
@@ -29,14 +29,19 @@ class PunchMach(Machine):
     run(): Runs the Punching Maschine routine.
     '''
 
-    def __init__(self, revpi, name: str):
+    def __init__(self, revpi, name: str, mainloop_name: str):
         '''Initializes the Punching Maschine.
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
         '''
-        super().__init__(revpi, name)
+        super().__init__(revpi, name, mainloop_name)
         self.stage = 1
+
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Pun)")
+
         log.debug("Created Punching Machine: " + self.name)
 
     def __del__(self):

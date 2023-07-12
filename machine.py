@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.14"
+__version__ = "2023.07.12"
 
 import threading
 from datetime import datetime
@@ -22,14 +22,17 @@ class Machine:
     is_stage(): Returns True if no thread is running and given stage is current stage.
     '''
 
-    def __init__(self, revpi: RevPiModIO, name: str):
+    def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str):
         '''Initializes the Maschine
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
         '''
         self.name = name
         self.revpi = revpi
+        self.mainloop_name = mainloop_name
+
         self.__time_start = datetime.now()
         self.__state_time_start = datetime.now()
 
@@ -45,8 +48,9 @@ class Machine:
         self.state_is_init = False
 
         self.state = None
-        # self.__time_start: datetime = None
-        # self.__state_time_start: datetime = None
+
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Mach)")
 
 
     def get_run_time(self) -> int:

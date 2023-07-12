@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.05.23"
+__version__ = "2023.07.12"
 
 import threading
 
@@ -24,14 +24,18 @@ class GripRobot(Robot3D):
     GRIPPER_CLOSED = 13
     GRIPPER_OPENED = 9
 
-    def __init__(self, revpi, name: str, moving_position: Position):
+    def __init__(self, revpi, name: str, mainloop_name: str, moving_position: Position):
         '''Initializes the Gripper Robot.
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
         :moving_position: Positions that the axes should be to allow save moving
         '''
-        super().__init__(revpi, name, moving_position)
+        super().__init__(revpi, name, mainloop_name, moving_position)
+        
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Grip)")
 
         # change encoder to counter
         self._Robot3D__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_COUNTER", SensorType.COUNTER)

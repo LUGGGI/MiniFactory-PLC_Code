@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.11"
+__version__ = "2023.07.12"
 
 import time
 from enum import Enum
@@ -37,15 +37,17 @@ class Sensor():
     CYCLE_TIME = 0.005 # s
 
 
-    def __init__(self, revpi: RevPiModIO, name: str, type: SensorType=None):
+    def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str, type: SensorType=None):
         '''Initializes the Sensor
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
         :type: Type of the sensor, if empty type is determined from name
         '''
         self.__revpi = revpi
         self.name = name
+        self.mainloop_name = mainloop_name
         self.type = type
 
         self.counter_offset = 0
@@ -59,6 +61,9 @@ class Sensor():
                 self.type = SensorType.ENCODER
             if self.name.find("COUNTER") != -1:
                 self.type = SensorType.COUNTER
+
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Sens)")
 
         log.debug(f"Created Sensor({self.type.name}): {self.name}")
 

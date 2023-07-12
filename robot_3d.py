@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.11"
+__version__ = "2023.07.12"
 
 import threading
 from enum import Enum
@@ -46,13 +46,19 @@ class Robot3D(Machine):
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
 
-    def __init__(self, revpi, name: str, moving_position: Position):
+    def __init__(self, revpi, name: str, mainloop_name: str, moving_position: Position):
         '''Initializes the 3D Robot
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
+        :moving_position: Positions that the axes should be to allow save moving
         '''
-        super().__init__(revpi, name)
+        super().__init__(revpi, name, mainloop_name)
+
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Rob)")
+
         self.__moving_position = moving_position
 
         # get encoder

@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.22"
+__version__ = "2023.07.12"
 
 import threading
 from time import sleep
@@ -36,13 +36,18 @@ class MPStation(Machine):
     __TIME_OVEN = 2
     __TIME_SAW = 2
 
-    def __init__(self, revpi, name: str):
+    def __init__(self, revpi, name: str, mainloop_name: str):
         '''Initializes the Multi Purpose Station
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
         '''
-        super().__init__(revpi, name)
+        super().__init__(revpi, name, mainloop_name)
+
+        global log
+        log = log.getChild(f"{self.mainloop_name}(Mps)")
+
         log.debug("Created Multi Purpose Station: " + self.name)
 
     def __del__(self):
