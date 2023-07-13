@@ -46,12 +46,12 @@ class MPStation(Machine):
         super().__init__(revpi, name, mainloop_name)
 
         global log
-        log = log.getChild(f"{self.mainloop_name}(Mps)")
+        self.log = log.getChild(f"{self.mainloop_name}(Mps)")
 
-        log.debug("Created Multi Purpose Station: " + self.name)
+        self.log.debug("Created Multi Purpose Station: " + self.name)
 
     def __del__(self):
-        log.debug("Destroyed Multi Purpose Station: " + self.name)
+        self.log.debug("Destroyed Multi Purpose Station: " + self.name)
 
 
     def init(self, as_thread=True):
@@ -61,11 +61,12 @@ class MPStation(Machine):
             self.thread.start()
             return
         try:
-            Actuator(self.revpi, self.name + "_VG").run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE")
+            self.switch_state(State.INIT)
+            Actuator(self.revpi, self.name + "_VG", self.mainloop_name).run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE")
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
             self.stage = 1
 
@@ -80,17 +81,17 @@ class MPStation(Machine):
             self.thread.start()
             return
         
-        self.state = self.switch_state(State.START)
+        self.switch_state(State.START)
         try:
-            compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
-            vg_motor = Actuator(self.revpi, self.name + "_VG")
+            compressor = Actuator(self.revpi, self.name + "_COMPRESSOR", self.mainloop_name)
+            vg_motor = Actuator(self.revpi, self.name + "_VG", self.mainloop_name)
             vg_motor.run_to_sensor("TO_OVEN", self.name + "_REF_SW_VG_OVEN", as_thread=True) # move vg to oven
 
             if with_oven:
                 # Move oven tray into oven and close door
-                self.state = self.switch_state(State.OVEN)
-                tray = Actuator(self.revpi, self.name + "_OVEN_TRAY")
-                oven_door_valve = Actuator(self.revpi, self.name + "_VALVE_OVEN_DOOR")
+                self.switch_state(State.OVEN)
+                tray = Actuator(self.revpi, self.name + "_OVEN_TRAY", self.mainloop_name)
+                oven_door_valve = Actuator(self.revpi, self.name + "_VALVE_OVEN_DOOR", self.mainloop_name)
 
                 compressor.run_for_time("", 0.5, as_thread=True)
                 oven_door_valve.start() # open door
@@ -98,7 +99,7 @@ class MPStation(Machine):
                 tray.run_to_sensor("IN", self.name + "_REF_SW_OVEN_TRAY_IN") # move tray in
                 oven_door_valve.stop() # close door
                 compressor.join()
-                Actuator(self.revpi, self.name + "_LIGHT_OVEN").run_for_time("", self.__TIME_OVEN) # turn light on for time
+                Actuator(self.revpi, self.name + "_LIGHT_OVEN", self.mainloop_name).run_for_time("", self.__TIME_OVEN) # turn light on for time
                 compressor.run_for_time("", 0.5, as_thread=True)
                 oven_door_valve.start() # open door
                 tray.run_to_sensor("OUT", self.name + "_REF_SW_OVEN_TRAY_OUT") # move tray out
@@ -111,10 +112,10 @@ class MPStation(Machine):
 
 
             # move product to table with vacuum gripper
-            self.state = self.switch_state(State.TO_TABLE)
-            vg_valve = Actuator(self.revpi, self.name + "_VALVE_VG_VACUUM")
-            vg_lower_valve = Actuator(self.revpi, self.name + "_VALVE_VG_LOWER")
-            table = Actuator(self.revpi, self.name + "_TABLE", self.name + "_TABLE_PWM")
+            self.switch_state(State.TO_TABLE)
+            vg_valve = Actuator(self.revpi, self.name + "_VALVE_VG_VACUUM", self.mainloop_name)
+            vg_lower_valve = Actuator(self.revpi, self.name + "_VALVE_VG_LOWER", self.mainloop_name)
+            table = Actuator(self.revpi, self.name + "_TABLE", self.mainloop_name, self.name + "_TABLE_PWM")
 
             table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
 
@@ -142,21 +143,21 @@ class MPStation(Machine):
 
             table.join()
             # rotate table to saw
-            self.state = self.switch_state(State.TO_SAW)
+            self.switch_state(State.TO_SAW)
             table.set_pwm(75)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_SAW")
 
 
             # sawing
-            self.state = self.switch_state(State.SAWING)
-            Actuator(self.revpi, self.name + "_SAW").run_for_time("", self.__TIME_SAW)
+            self.switch_state(State.SAWING)
+            Actuator(self.revpi, self.name + "_SAW", self.mainloop_name).run_for_time("", self.__TIME_SAW)
 
 
             # move product to cb
-            self.state = self.switch_state(State.TO_CB)
+            self.switch_state(State.TO_CB)
             table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_CB") # rotate table to cb
             compressor.run_for_time("", 0.5, as_thread=True)
-            Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON").run_for_time("", 0.5)
+            Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON", self.mainloop_name).run_for_time("", 0.5)
             compressor.join()
             del compressor
             table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table back to vg
@@ -164,15 +165,15 @@ class MPStation(Machine):
 
             self.start_next_machine = True
             # run cb
-            self.state = self.switch_state(State.CB)
-            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "MPS_SENS_CB", as_thread=False)
+            self.switch_state(State.CB)
+            Conveyor(self.revpi, self.name + "_CB", self.mainloop_name).run_to_stop_sensor("FWD", "MPS_SENS_CB", as_thread=False)
             table.join()
             del table
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
             self.stage += 1
 
@@ -188,14 +189,14 @@ class MPStation(Machine):
             return
         
         try:
-            self.state = self.switch_state(State.CB)
-            Conveyor(self.revpi, self.name + "_CB").run_to_stop_sensor("FWD", "CB1_SENS_START", as_thread=False)
+            self.switch_state(State.CB)
+            Conveyor(self.revpi, self.name + "_CB", self.mainloop_name).run_to_stop_sensor("FWD", "CB1_SENS_START", as_thread=False)
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
-            self.state = self.switch_state(State.END)
             self.end_machine = True
             self.stage += 1
+            self.switch_state(State.END)

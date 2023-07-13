@@ -35,21 +35,21 @@ class GripRobot(Robot3D):
         super().__init__(revpi, name, mainloop_name, moving_position)
         
         global log
-        log = log.getChild(f"{self.mainloop_name}(Grip)")
+        self.log = log.getChild(f"{self.mainloop_name}(Grip)")
 
         # change encoder to counter
-        self._Robot3D__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_COUNTER", SensorType.COUNTER)
+        self._Robot3D__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_COUNTER", self.mainloop_name, SensorType.COUNTER)
         self._Robot3D__MOVE_THRESHOLD_HOR = 2
 
         # get encoder and motor for claw
-        self.__encoder_claw = Sensor(self.revpi, self.name + "_CLAW_COUNTER", SensorType.COUNTER)
-        self.__motor_claw = Actuator(self.revpi, self.name, type="claw")
+        self.__encoder_claw = Sensor(self.revpi, self.name + "_CLAW_COUNTER", self.mainloop_name, SensorType.COUNTER)
+        self.__motor_claw = Actuator(self.revpi, self.name, self.mainloop_name, type="claw")
 
-        log.debug("Created Gripper Robot: " + self.name)
+        self.log.debug("Created Gripper Robot: " + self.name)
 
 
     def __del__(self):
-        log.debug("Destroyed Gripper Robot: " + self.name)
+        self.log.debug("Destroyed Gripper Robot: " + self.name)
 
 
     def grip(self, as_thread=True):
@@ -63,12 +63,12 @@ class GripRobot(Robot3D):
             return
 
         try:
-            log.info(f"{self.name} :Gripping")
+            self.log.info(f"{self.name} :Gripping")
             self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, self.GRIPPER_CLOSED)
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
             self.stage += 1
 
@@ -84,12 +84,12 @@ class GripRobot(Robot3D):
             return
 
         try:
-            log.info(f"{self.name} :Releasing")
+            self.log.info(f"{self.name} :Releasing")
             self.__motor_claw.run_to_encoder_value("OPEN", self.__encoder_claw, self.GRIPPER_OPENED)
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
             self.stage += 1
 
@@ -109,6 +109,6 @@ class GripRobot(Robot3D):
             self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, self.GRIPPER_OPENED)
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)

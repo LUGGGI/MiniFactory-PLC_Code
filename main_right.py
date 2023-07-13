@@ -14,14 +14,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.03"
+__version__ = "2023.07.12"
 
 from enum import Enum
 
 from exit_handler import ExitHandler
 from logger import log
 from json_handler import JsonHandler
-from machine import Machine
+from actuator import Actuator
 from sensor import Sensor
 from conveyor import Conveyor
 from punch_mach import PunchMach
@@ -71,6 +71,10 @@ class MainRight(MainLoop):
     def __init__(self, revpi, name: str, config: dict, exit_handler: ExitHandler):
         '''Initializes MiniFactory control loop.'''
         super().__init__(revpi, name, config, exit_handler, State)
+        
+        global log
+        self.log = log.getChild(f"{self.mainloop_name}(Main)")
+
         self.state = State.INIT
 
     def mainloop(self):
@@ -165,16 +169,16 @@ class MainRight(MainLoop):
         pass
 
     def run_init(self) -> False:
-        if self.state_is_init == False:
-            self.state_is_init = True
+        if self.stage == 0:
+            self.stage = 1
             self.switch_status(State.INIT, Status.RUNNING)
             for gr in ["GR1", "GR2", "GR3"]:
-                self.machines[gr] = GripRobot(self.revpi, gr, Position(-1, -1, -1))
+                self.machines[gr] = GripRobot(self.revpi, gr, self.name, Position(-1, -1, -1))
                 self.machines[gr].init(to_end=True)
             for vg in ["VG1", "VG2"]:
-                self.machines[vg] = VacRobot(self.revpi, vg, Position(-1, -1, -1))
+                self.machines[vg] = VacRobot(self.revpi, vg, self.name, Position(-1, -1, -1))
                 self.machines[vg].init(to_end=True)
-            self.machines["WH"] = Warehouse(self.revpi, "WH", factory=self.FACTORY)
+            self.machines["WH"] = Warehouse(self.revpi, "WH", self.name, factory=self.FACTORY)
             self.machines["WH"].init(to_end=True)
 
         if self.machines.__len__() <= 0:
@@ -294,7 +298,7 @@ class MainRight(MainLoop):
         # move from pm to cb3    
         elif self.state == State.GR2_PM_TO_CB3:
             # init if new gr1, should not happen in normal operation
-            if gr.is_stage(0) and abs(Sensor(self.revpi, gr.name + "_ROTATION_ENCODER").get_current_value() - 3850) > 40:
+            if gr.is_stage(0) and abs(Sensor(self.revpi, gr.name + "_ROTATION_ENCODER", self.mainloop_name).get_current_value() - 3850) > 40:
                 gr.init()
             elif gr.is_stage(1):
                 # move to pm
@@ -433,6 +437,7 @@ class MainRight(MainLoop):
         if sl.is_stage(1):
             sl.run(color=self.config["color"])
         if sl.is_stage(2):
+            self.end_machine = True
             return True
 
     def run_wh_store(self) -> False:

@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.07"
+__version__ = "2023.07.12"
 
 from time import sleep
 from enum import Enum
@@ -40,7 +40,10 @@ class MainLoop(Machine):
 
     def __init__(self, revpi, name: str, config: dict, exit_handler: ExitHandler, states):
         '''Initializes MiniFactory control loop.'''
-        super().__init__(revpi, name)
+        super().__init__(revpi, name, name)
+
+        global log
+        self.log = log.getChild(f"{self.mainloop_name}(Set)")
 
         self.config = config
         self.exit_handler = exit_handler
@@ -52,23 +55,23 @@ class MainLoop(Machine):
         self.product_at: str = None
         self.waiting_for = None
 
-        self.state_logger = StateLogger(f"files/({self.name})states.json")
+        self.state_logger = StateLogger()
 
     def run(self):
         '''Starts the mainloop.'''
         self.switch_state(self.config["start_at"], False)
-        log.info(f"{self.name}: Start Mainloop")
+        self.log.info(f"{self.name}: Start Mainloop")
         while(not self.error_exception_in_machine and not self.end_machine and not self.exit_handler.was_called):
             try:
                 self.mainloop()
                 sleep(0.02)
             except Exception as error:
                 self.error_exception_in_machine = True
-                log.exception(error)
+                self.log.exception(error)
                 self.switch_state(self.states.ERROR)
 
         self.machines.clear()
-        log.critical(f"END of Mainloop: {self.name}")
+        self.log.critical(f"END of Mainloop: {self.name}")
 
     def mainloop_config(self):
         '''Config functionality'''
@@ -80,23 +83,26 @@ class MainLoop(Machine):
             # look for ready_for_transport in machines and sets status to True
             if machine.ready_for_transport:
                 machine.ready_for_transport = False
-                log.info(f"{self.name}: Ready for transport: {machine.name}")
+                self.log.info(f"{self.name}: Ready for transport: {machine.name}")
                 self.ready_for_transport = machine.name
             # end machines 
             if machine.end_machine and not machine.ready_for_transport and machine.name != self.product_at:
-                log.info(f"{self.name}: Ended: {machine.name}")
+                self.log.info(f"{self.name}: Ended: {machine.name}")
                 self.switch_status(machine.name, Status.FREE)
                 self.machines.pop(machine.name)
                 break
+            # update status
+            self.state_logger.update_machine(self.mainloop_name, machine.name, machine.get_status_dict())
+        
         
         if self.waiting_for != None:
         # waiting for running or blocked machines
             if self.waiting_for.value[1] == Status.FREE:
                 state = self.waiting_for
-                log.critical(f"{self.name}: Continuing to: {state}")
+                self.log.critical(f"{self.name}: Continuing to: {state}")
 
         if self.state == self.states.ERROR:
-            log.error("Error in Mainloop")
+            self.log.error("Error in Mainloop")
             self.exit_handler.stop_factory()
             self.error_exception_in_machine = True
             return
@@ -121,10 +127,12 @@ class MainLoop(Machine):
         if self.state == self.config["end_at"]:
             self.switch_state(self.states.END, wait)
         elif state.value[1] == Status.FREE or state.value[2] == self.name:
-            log.critical(self.name + ": Switching state to: " + str(state.name))
-            self.state = super().switch_state(state, wait)
+            if wait:
+                input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
+            self.log.critical(self.name + ": Switching state to: " + str(state.name))
+            self.state = state
         else:
-            log.critical(f"{self.name}: Waiting for: {state}")
+            self.log.critical(f"{self.name}: Waiting for: {state}")
             self.switch_status(self.state, Status.WAITING)
             self.waiting_for = state
 
@@ -148,7 +156,8 @@ class MainLoop(Machine):
                     state.value[1] = status
                     # set the used_by tag
                     state.value[2] = name_tag
-        self.state_logger.__update_file(self.states)
+        self.state_logger.update_main_states(self.states)
+        self.state_logger.update_file()
 
     def is_ready_for_transport(self, machine_name):
         '''Returns true if given machine is ready_for_transport.
@@ -170,7 +179,7 @@ class MainLoop(Machine):
         '''
         machine = self.machines.get(machine_name)
         if machine == None:
-            machine = machine_class(self.revpi, machine_name, *args)
+            machine = machine_class(self.revpi, machine_name, self.name, *args)
             self.machines[machine_name] = machine
             self.switch_status(machine_name, Status.RUNNING)
         return machine
@@ -186,7 +195,7 @@ class MainLoop(Machine):
                     # wait for running machines
                     machine_running = True
                     if machine.stage != 100:
-                        log.info(f"Waiting for machine to end: {machine.name}")
+                        self.log.info(f"Waiting for machine to end: {machine.name}")
                         machine.stage = 100
             if machine_running:
                 return False
@@ -212,6 +221,7 @@ class Setup():
         self.stage = None
         self.threads: "list[threading.Thread]" = []
         self.main_loops: "list[MainLoop]" = []
+        self.state_logger = StateLogger()
 
     def add_mainloop(self, name: str, mainloop: MainLoop):
         '''Add a new config
@@ -228,6 +238,14 @@ class Setup():
         
         :configs: list of configs, same order as mainloops where added
         '''
+
+        # init state_logger
+        names_of_mainsloops = []
+        for main_loop in self.main_loops:
+            names_of_mainsloops.append(main_loop.name)
+        self.state_logger.init("states.json", names_of_mainsloops)
+
+
         exception = False
         running = True
         while(running and not exception):
@@ -254,4 +272,5 @@ class Setup():
                         log.critical(f"Stop: {config['name']}")
                         break
             
-            sleep(1)
+            self.state_logger.update_file()
+            sleep(0.01)

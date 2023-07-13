@@ -57,14 +57,14 @@ class Robot3D(Machine):
         super().__init__(revpi, name, mainloop_name)
 
         global log
-        log = log.getChild(f"{self.mainloop_name}(Rob)")
+        self.log = log.getChild(f"{self.mainloop_name}(Rob)")
 
         self.__moving_position = moving_position
 
         # get encoder
-        self.__encoder_rot = Sensor(self.revpi, self.name + "_ROTATION_ENCODER")
-        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER")
-        self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER")
+        self.__encoder_rot = Sensor(self.revpi, self.name + "_ROTATION_ENCODER", self.mainloop_name)
+        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER", self.mainloop_name)
+        self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER", self.mainloop_name)
 
         # get pwm pins
         pwm_rot = self.name + "_ROTATION_PWM"
@@ -72,15 +72,15 @@ class Robot3D(Machine):
         pwm_ver = None
 
         # get motors
-        self.__motor_rot = Actuator(self.revpi, self.name, pwm=pwm_rot, type="rotation")
-        self.__motor_hor = Actuator(self.revpi, self.name, pwm=pwm_hor, type="horizontal")
-        self.__motor_ver = Actuator(self.revpi, self.name, pwm=pwm_ver, type="vertical")
+        self.__motor_rot = Actuator(self.revpi, self.name, self.mainloop_name, pwm=pwm_rot, type="rotation")
+        self.__motor_hor = Actuator(self.revpi, self.name, self.mainloop_name, pwm=pwm_hor, type="horizontal")
+        self.__motor_ver = Actuator(self.revpi, self.name, self.mainloop_name, pwm=pwm_ver, type="vertical")
 
-        log.debug("Created 3D Robot: " + self.name)
+        self.log.debug("Created 3D Robot: " + self.name)
 
 
     def __del__(self):
-        log.debug("Destroyed 3D Robot: " + self.name)
+        self.log.debug("Destroyed 3D Robot: " + self.name)
 
 
     def init(self, to_end=False, as_thread=True):
@@ -95,22 +95,22 @@ class Robot3D(Machine):
             self.thread.start()
             return
 
-        self.state = self.switch_state(State.INIT)
+        self.switch_state(State.INIT)
         try:
             # move to init position
             self.move_all_axes(Position(-1,0,0))
             self.move_all_axes(Position(0,-1,-1))
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
             if to_end:
-                self.state = self.switch_state(State.END)
                 self.end_machine = True
+                self.switch_state(State.END)
             else:
-                log.warning(f"{self.name}: Initialized")
+                self.log.warning(f"{self.name}: Initialized")
                 self.stage += 1
 
 
@@ -145,7 +145,7 @@ class Robot3D(Machine):
             self.move_to_position(current_position, as_thread=False)
             self.grip(as_thread = False)
             if self.move_to_position(position, sensor, as_thread=False) == False:
-                self.state = self.switch_state(State.ERROR)
+                self.switch_state(State.ERROR)
                 self.error_exception_in_machine = True
                 return
         
@@ -166,7 +166,7 @@ class Robot3D(Machine):
             self.thread.start()
             return
 
-        log.warning(f"{self.name} :Moving to Position: {position}")
+        self.log.warning(f"{self.name} :Moving to Position: {position}")
 
         # ignore moving position if rotation and one other axis doesn't move
         if position.rotation == -1 and (position.horizontal == -1 or position.vertical == -1):
@@ -174,7 +174,7 @@ class Robot3D(Machine):
         try:
             if not ignore_moving_pos:
                 # move to moving position
-                self.state = self.switch_state(State.TO_MOVING_POS)
+                self.switch_state(State.TO_MOVING_POS)
                 if self.__encoder_ver.get_current_value() <= self.__moving_position.vertical:
                     # if robot is higher than moving postion rotate directly
                     self.move_all_axes(Position(position.rotation, self.__moving_position.horizontal, self.__moving_position.vertical))
@@ -182,14 +182,14 @@ class Robot3D(Machine):
                     self.move_all_axes(self.__moving_position)
 
                 # check if Product was picked up
-                if sensor and Sensor(self.revpi, sensor).get_current_value() == True:
-                    log.error(f"{self.name} :Product still at Sensor")
+                if sensor and Sensor(self.revpi, sensor, self.mainloop_name).get_current_value() == True:
+                    self.log.error(f"{self.name} :Product still at Sensor")
                     return False
                 else:
                     self.ready_for_next = True
 
                 # move non moving position axes
-                self.state = self.switch_state(State.MOVING)
+                self.switch_state(State.MOVING)
                 # only move axis if there was no moving position for axis or the value is smaller than the moving position
                 if self.__moving_position.rotation == -1 or position.rotation < self.__moving_position.rotation:
                     rotation = position.rotation
@@ -209,15 +209,15 @@ class Robot3D(Machine):
                 self.move_all_axes(Position(rotation, horizontal, vertical))
 
             # move to destination
-            self.state = self.switch_state(State.TO_DESTINATION)
+            self.switch_state(State.TO_DESTINATION)
             self.move_all_axes(position)
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
-            log.warning(f"{self.name} :Position reached: {position}")
+            self.log.warning(f"{self.name} :Position reached: {position}")
             self.stage += 1
 
 
@@ -228,7 +228,7 @@ class Robot3D(Machine):
 
         -> Panics if axes movements did not complete
         '''
-        log.info(f"{self.name} :Moving axes to: {position}")
+        self.log.info(f"{self.name} :Moving axes to: {position}")
 
         # get current position
         current_position = Position(
@@ -258,7 +258,7 @@ class Robot3D(Machine):
         self.__motor_hor.join()
         self.__motor_ver.join()
 
-        log.info(f"{self.name} :Axes moved to: {position}")
+        self.log.info(f"{self.name} :Axes moved to: {position}")
 
 
     def grip():

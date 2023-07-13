@@ -72,7 +72,7 @@ class Warehouse(Machine):
         super().__init__(revpi, name, mainloop_name)
 
         global log
-        log = log.getChild(f"{self.mainloop_name}(Ware)")
+        self.log = log.getChild(f"{self.mainloop_name}(Ware)")
 
         self.__factory = factory
 
@@ -80,24 +80,24 @@ class Warehouse(Machine):
         self.__ref_sw_arm_back = self.name + "_REF_SW_ARM_BACK"
 
         # get conveyor
-        self.__cb = Conveyor(self.revpi, self.name + "_CB")
+        self.__cb = Conveyor(self.revpi, self.name + "_CB", self.mainloop_name)
 
         # get encoder
-        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER")
-        self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER")
+        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER", self.mainloop_name)
+        self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER", self.mainloop_name)
 
         # get motors
-        self.__motor_loading = Actuator(self.revpi, self.name + "_ARM", type="loading")
-        self.__motor_hor = Actuator(self.revpi, self.name + "_CRANE", type="horizontal")
-        self.__motor_ver = Actuator(self.revpi, self.name + "_ARM", type="vertical")
+        self.__motor_loading = Actuator(self.revpi, self.name + "_ARM", self.mainloop_name, type="loading")
+        self.__motor_hor = Actuator(self.revpi, self.name + "_CRANE", self.mainloop_name, type="horizontal")
+        self.__motor_ver = Actuator(self.revpi, self.name + "_ARM", self.mainloop_name, type="vertical")
 
         self.__color = "COLOR_UNKNOWN"
 
-        log.debug("Created Warehouse: " + self.name)
+        self.log.debug("Created Warehouse: " + self.name)
 
 
     def __del__(self):
-        log.debug("Destroyed Warehouse: " + self.name)
+        self.log.debug("Destroyed Warehouse: " + self.name)
 
 
     def init(self, for_store=False, for_retrieve=False, to_end=False, as_thread=True):
@@ -113,7 +113,7 @@ class Warehouse(Machine):
             self.thread.start()
             return
         
-        self.state = self.switch_state(State.INIT)
+        self.switch_state(State.INIT)
         current_stage = self.stage
         try:
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
@@ -121,34 +121,34 @@ class Warehouse(Machine):
 
             if for_store:
                 # get empty carrier if non is available
-                if Sensor(self.revpi, self.name + "_SENS_OUT").get_current_value() == False:
+                if Sensor(self.revpi, self.name + "_SENS_OUT", self.mainloop_name).get_current_value() == False:
                     self.retrieve_product(color="Carrier", as_thread=False)
                 self.ready_for_next = True
                 # move arm to cb
-                self.state = self.switch_state(State.MOVING_TO_CB)
-                Actuator(self.revpi, self.name + "_CB_BWD").run_for_time("", 0.5)
+                self.switch_state(State.MOVING_TO_CB)
+                Actuator(self.revpi, self.name + "_CB_BWD", self.mainloop_name).run_for_time("", 0.5)
                 self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
                 self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
             elif for_retrieve:
                 # if carrier at cb, move it into storage
-                if Sensor(self.revpi, self.name + "_SENS_OUT").get_current_value() == True:
+                if Sensor(self.revpi, self.name + "_SENS_OUT", self.mainloop_name).get_current_value() == True:
                     # move arm to cb
-                    self.state = self.switch_state(State.MOVING_TO_CB)
-                    Actuator(self.revpi, self.name + "_CB_BWD").run_for_time("", 0.5)
+                    self.switch_state(State.MOVING_TO_CB)
+                    Actuator(self.revpi, self.name + "_CB_BWD", self.mainloop_name).run_for_time("", 0.5)
                     self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
                     self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
                     self.store_product(color="Carrier", as_thread=False)
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
             if to_end:
-                self.state = self.switch_state(State.END)
                 self.end_machine = True
+                self.switch_state(State.END)
             else:
-                log.warning(f"{self.name}: Initialized")
+                self.log.warning(f"{self.name}: Initialized")
                 self.stage = current_stage + 1
 
 
@@ -168,7 +168,7 @@ class Warehouse(Machine):
         color = color if color != None else self.__color
 
         try:
-            if Sensor(self.revpi, self.name + "_SENS_OUT").get_current_value() == False:
+            if Sensor(self.revpi, self.name + "_SENS_OUT", self.mainloop_name).get_current_value() == False:
                 raise(Exception("No Product to store found"))
             
             if position == None:
@@ -188,24 +188,24 @@ class Warehouse(Machine):
             
             horizontal = position[0]
             vertical = position[1]
-            log.warning(f"{self.name} :Store {color}-product at position: [hor:{hor},ver:{ver}]; {position}")
+            self.log.warning(f"{self.name} :Store {color}-product at position: [hor:{hor},ver:{ver}]; {position}")
 
 
             # move product to inside
-            self.state = self.switch_state(State.CB_FWD)
+            self.switch_state(State.CB_FWD)
             self.__cb.run_to_stop_sensor("FWD", self.name + "_SENS_IN", as_thread=False)
 
             # get product from cb
-            self.state = self.switch_state(State.GETTING_PRODUCT)
+            self.switch_state(State.GETTING_PRODUCT)
             self.move_to_position(-1, self.__POS_CB_VERTICAL - 150)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
 
             # move crane to given rack
-            self.state = self.switch_state(State.MOVING_TO_RACK)
+            self.switch_state(State.MOVING_TO_RACK)
             self.move_to_position(horizontal, vertical - 100)
 
             # store product in rack
-            self.state = self.switch_state(State.SETTING_PRODUCT)
+            self.switch_state(State.SETTING_PRODUCT)
             self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
             self.move_to_position(-1, vertical)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
@@ -225,11 +225,11 @@ class Warehouse(Machine):
                 json.dump(json_obj, fp, indent=4)
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
-            log.warning(f"{self.name} :{color}-product stored at position: [hor:{hor},ver:{ver}]; {position}")
+            self.log.warning(f"{self.name} :{color}-product stored at position: [hor:{hor},ver:{ver}]; {position}")
             self.stage += 1
 
 
@@ -266,31 +266,31 @@ class Warehouse(Machine):
             
             horizontal = position[0]
             vertical = position[1]
-            log.warning(f"{self.name} :Retrieve {color}-product from position: [hor:{hor+1},ver:{ver+1}]; {position}")
+            self.log.warning(f"{self.name} :Retrieve {color}-product from position: [hor:{hor+1},ver:{ver+1}]; {position}")
 
             # move to given rack
-            self.state = self.switch_state(State.MOVING_TO_RACK)
+            self.switch_state(State.MOVING_TO_RACK)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
             self.move_to_position(horizontal, vertical)
 
             # get product from rack
-            self.state = self.switch_state(State.GETTING_PRODUCT)
+            self.switch_state(State.GETTING_PRODUCT)
             self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
             self.move_to_position(-1, vertical - 100)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
 
             # move to cb
-            self.state = self.switch_state(State.MOVING_TO_CB)
+            self.switch_state(State.MOVING_TO_CB)
             self.move_to_position(0, self.__POS_CB_VERTICAL - 100)
             self.move_to_position(self.__POS_CB_HORIZONTAL, -1)
 
             # put product on cb
-            self.state = self.switch_state(State.SETTING_PRODUCT)
+            self.switch_state(State.SETTING_PRODUCT)
             self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
             self.move_to_position(-1, self.__POS_CB_VERTICAL)
 
             # move product to outside
-            self.state = self.switch_state(State.CB_BWD)
+            self.switch_state(State.CB_BWD)
             self.__cb.run_to_stop_sensor("BWD", self.name + "_SENS_OUT", stop_delay_in_ms=200, as_thread=False)
 
             # save "empty" to file
@@ -310,11 +310,11 @@ class Warehouse(Machine):
             
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
-            log.warning(f"{self.name} :{color}-product retrieved from position: [hor:{hor+1},ver:{ver+1}]; {position}")
+            self.log.warning(f"{self.name} :{color}-product retrieved from position: [hor:{hor+1},ver:{ver+1}]; {position}")
             self.stage += 1
 
 
@@ -326,7 +326,7 @@ class Warehouse(Machine):
 
         -> Panics if axes movements did not complete
         '''
-        log.info("Moving Crane to position: " + str(f"(hor:{horizontal},ver:{vertical})"))
+        self.log.info("Moving Crane to position: " + str(f"(hor:{horizontal},ver:{vertical})"))
 
         # get current position
         current_horizontal = self.__encoder_hor.get_current_value()
@@ -350,4 +350,4 @@ class Warehouse(Machine):
         self.__motor_hor.join()
         self.__motor_ver.join()
 
-        log.info("Moved crane to: " + str(f"({horizontal},{vertical})"))
+        self.log.info("Moved crane to: " + str(f"({horizontal},{vertical})"))

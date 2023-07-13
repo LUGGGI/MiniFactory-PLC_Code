@@ -34,16 +34,16 @@ class VacRobot(Robot3D):
         super().__init__(revpi, name, mainloop_name, moving_position)
 
         global log
-        log = log.getChild(f"{self.mainloop_name}(Vac)")
+        self.log = log.getChild(f"{self.mainloop_name}(Vac)")
 
-        self.compressor = Actuator(self.revpi, self.name + "_COMPRESSOR")
-        self.valve = Actuator(self.revpi, self.name + "_VALVE_VACUUM")
+        self.compressor = Actuator(self.revpi, self.name + "_COMPRESSOR", self.mainloop_name)
+        self.valve = Actuator(self.revpi, self.name + "_VALVE_VACUUM", self.mainloop_name)
 
-        log.debug("Created Vacuum Robot: " + self.name)
+        self.log.debug("Created Vacuum Robot: " + self.name)
 
 
     def __del__(self):
-        log.debug("Destroyed Vacuum Robot: " + self.name)
+        self.log.debug("Destroyed Vacuum Robot: " + self.name)
             
     def grip(self, as_thread=True):
         '''Grip Product.
@@ -56,15 +56,15 @@ class VacRobot(Robot3D):
             return
 
         try:
-            log.info(f"{self.name} :Gripping")
+            self.log.info(f"{self.name} :Gripping")
             self.compressor.run_for_time("", 0.3, as_thread=True)
             sleep(0.2)
             self.valve.start()
             self.compressor.join()
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
             self.stage += 1
 
@@ -79,11 +79,11 @@ class VacRobot(Robot3D):
             return
 
         try:
-            log.info(f"{self.name} :Releasing")
+            self.log.info(f"{self.name} :Releasing")
             self.valve.stop()
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
             self.stage += 1

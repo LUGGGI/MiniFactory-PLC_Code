@@ -63,13 +63,13 @@ class Sensor():
                 self.type = SensorType.COUNTER
 
         global log
-        log = log.getChild(f"{self.mainloop_name}(Sens)")
+        self.log = log.getChild(f"{self.mainloop_name}(Sens)")
 
-        log.debug(f"Created Sensor({self.type.name}): {self.name}")
+        self.log.debug(f"Created Sensor({self.type.name}): {self.name}")
 
 
     def __del__(self):
-        log.debug(f"Destroyed Sensor({self.type.name}): {self.name}")
+        self.log.debug(f"Destroyed Sensor({self.type.name}): {self.name}")
 
 
     def get_current_value(self):
@@ -99,7 +99,7 @@ class Sensor():
         try:
             self.__revpi.io[self.name].reg_event(event_det_at_sensor, edge=edge)
         except RuntimeError:
-            log.debug(f"{self.name} (Sens) already monitoring")
+            self.log.debug(f"{self.name} (Sens) already monitoring")
 
 
     def remove_monitor(self, edge=BOTH):
@@ -133,12 +133,12 @@ class Sensor():
         -> Panics if timeout is reached (no detection happened)
         '''
         if self.get_current_value() == True:
-            log.info(f"{self.name} (Sens) already detected")
+            self.log.info(f"{self.name} (Sens) already detected")
             return
 
         if self.__revpi.io[self.name].wait(edge=edge, timeout=timeout_in_s*1000) == False:
             # sensor detected product
-            log.info(f"{self.name} (Sens) detection") 
+            self.log.info(f"{self.name} (Sens) detection") 
         else:
             raise(Exception(f"{self.name} (Sens) no detection"))
 
@@ -173,7 +173,7 @@ class Sensor():
 
             if abs(new_value - trigger_value) <= trigger_threshold:
 
-                log.info(f"{self.name} (Sens) Value reached {new_value}")
+                self.log.info(f"{self.name} (Sens) Value reached {new_value}")
                 return self.get_current_value() 
             
             # wait for next cycle
@@ -189,7 +189,7 @@ class Sensor():
             # wait until the actuator has stopped
             time.sleep(0.06)
             if self.__revpi.io[self.name].value == 0:
-                log.info(f"Reset encoder: {self.name}")
+                self.log.info(f"Reset encoder: {self.name}")
                 self.counter_offset = 0
                 return
         raise(Exception(f"{self.name} :ERROR while reset"))
@@ -197,6 +197,6 @@ class Sensor():
 
 def event_det_at_sensor(io_name, __):
     '''Set detection to True'''
-    log.info(f"{io_name} :Detection")
+    self.log.info(f"{io_name} :Detection")
     global detection 
     detection = True    

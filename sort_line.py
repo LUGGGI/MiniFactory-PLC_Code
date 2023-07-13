@@ -43,13 +43,13 @@ class SortLine(Machine):
         self.color = "WHITE"
 
         global log
-        log = log.getChild(f"{self.mainloop_name}(Sort)")
+        self.log = log.getChild(f"{self.mainloop_name}(Sort)")
 
-        log.debug("Created Sorting Line: " + self.name)
+        self.log.debug("Created Sorting Line: " + self.name)
 
 
     def __del__(self):
-        log.debug("Destroyed Sorting Line: " + self.name)
+        self.log.debug("Destroyed Sorting Line: " + self.name)
 
 
     def run(self, color: str=None, as_thread=True):
@@ -62,11 +62,11 @@ class SortLine(Machine):
             self.thread.start()
             return
 
-        self.state = self.switch_state(State.START)
+        self.switch_state(State.START)
         try:
             # Color Sensing
-            self.state = self.switch_state(State.COLOR_SENSING)
-            cb = Conveyor(self.revpi, f"{self.name}_CB_FWD")
+            self.switch_state(State.COLOR_SENSING)
+            cb = Conveyor(self.revpi, f"{self.name}_CB_FWD", self.mainloop_name)
 
             # TODO: Handle color sensing
             # color_sensor = Sensor(self.revpi, f"{self.name}_COLOR_SENSOR")
@@ -76,11 +76,11 @@ class SortLine(Machine):
 
             if color:
                 self.color = color
-            log.info(f"{self.name} :Color detected: {self.color}")
+            self.log.info(f"{self.name} :Color detected: {self.color}")
 
             # SORTING
-            self.state = self.switch_state(State.SORTING)
-            compressor = Actuator(self.revpi, f"{self.name}_COMPRESSOR")
+            self.switch_state(State.SORTING)
+            compressor = Actuator(self.revpi, f"{self.name}_COMPRESSOR", self.mainloop_name)
 
             self.start_next_machine = True
             # determine sorting position
@@ -97,25 +97,23 @@ class SortLine(Machine):
             cb.run_to_counter_value("", f"{self.name}_CB_COUNTER", position, as_thread=False)
             del cb
 
-            self.state = self.switch_state(State.INTO_BAY)
+            self.switch_state(State.INTO_BAY)
             # push into bay
             compressor.start()
             sleep(0.2)
-            Actuator(self.revpi, f"{self.name}_VALVE_PISTON_{self.color}").run_for_time("", 0.5)
+            Actuator(self.revpi, f"{self.name}_VALVE_PISTON_{self.color}", self.mainloop_name).run_for_time("", 0.5)
             compressor.stop()
             # check if in bay
             sleep(1)
-            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}").get_current_value() == False:
+            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}", self.mainloop_name).get_current_value() == False:
                 # no detection at sensor
                 raise(Exception(f"{self.name} :Product not in right bay"))
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
-            log.warning(f"{self.name} :Product sorted into: {self.color}")
-            self.ready_for_transport = True
-            self.state = self.switch_state(State.END)
-            self.end_machine = True
+            self.log.warning(f"{self.name} :Product sorted into: {self.color}")
             self.stage += 1
+            self.switch_state(State.END)

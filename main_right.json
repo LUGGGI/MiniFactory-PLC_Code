@@ -3,17 +3,17 @@
     "with_init": true,
     "lines": [
         {
-            "name": "1_Main", 
-            "start_when": "no",
-            "start_at": "MPS",
-            "end_at": "WH_STORE",
+            "name": "Main1", 
+            "start_when": "now",
+            "start_at": "GR1",
+            "end_at": "END",
             "with_oven": true,
-            "with_PM": false,
+            "with_PM": true,
             "with_WH": true,
             "color": "RED"
         },
         {
-            "name": "2_Main", 
+            "name": "Main2", 
             "start_when": "no",
             "start_at": "WH_RETRIEVE",
             "end_at": "END",
@@ -23,8 +23,8 @@
             "color": "BLUE"
         },
         {
-            "name": "3_Main", 
-            "start_when": "now",
+            "name": "Main3", 
+            "start_when": "no",
             "start_at": "CB1",
             "end_at": "END",
             "with_oven": false,

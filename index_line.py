@@ -45,13 +45,13 @@ class IndexLine(Machine):
         super().__init__(revpi, name, mainloop_name)
         
         global log
-        log = log.getChild(f"{self.mainloop_name}(Indx)")
+        self.log = log.getChild(f"{self.mainloop_name}(Indx)")
 
-        log.debug("Created Index Line: " + self.name)
+        self.log.debug("Created Index Line: " + self.name)
     
 
     def __del__(self):
-        log.debug("Destroyed Index Line: " + self.name)
+        self.log.debug("Destroyed Index Line: " + self.name)
 
 
     def run(self, as_thread=True):
@@ -64,21 +64,21 @@ class IndexLine(Machine):
             self.thread.start()
             return
 
-        self.state = self.switch_state(State.START)
+        self.switch_state(State.START)
         try:
-            cb_mill = Conveyor(self.revpi, self.name + "_CB_MIll")
+            cb_mill = Conveyor(self.revpi, self.name + "_CB_MIll", self.mainloop_name)
 
             # Move product to Mill
-            self.state = self.switch_state(State.TO_MILL)
-            pusher_in = Actuator(self.revpi, self.name + "_PUSH1")
-            cb_start = Conveyor(self.revpi, self.name + "_CB_START")
+            self.switch_state(State.TO_MILL)
+            pusher_in = Actuator(self.revpi, self.name + "_PUSH1", self.mainloop_name)
+            cb_start = Conveyor(self.revpi, self.name + "_CB_START", self.mainloop_name)
 
             # move pusher to back
             pusher_in.run_to_sensor("BWD", self.name + "_REF_SW_PUSH1_BACK", as_thread=True) 
             # move product to pusher_in
             cb_start.run_to_stop_sensor("", self.name + "_REF_SW_PUSH1_FRONT", as_thread=True)
             # wait for product to be detected by sensor 
-            Sensor(self.revpi, self.name + "_SENS_PUSH1").wait_for_detect()
+            Sensor(self.revpi, self.name + "_SENS_PUSH1", self.mainloop_name).wait_for_detect()
             sleep(1) # wait for product to be in front of pusher
             # push product to cb_mill
             pusher_in.join()
@@ -92,14 +92,14 @@ class IndexLine(Machine):
             
 
             # Milling
-            self.state = self.switch_state(State.MILLING)
-            Actuator(self.revpi, self.name + "_MILL_MOTOR").run_for_time("", self.__TIME_MILLING)
+            self.switch_state(State.MILLING)
+            Actuator(self.revpi, self.name + "_MILL_MOTOR", self.mainloop_name).run_for_time("", self.__TIME_MILLING)
 
 
-            cb_drill = Conveyor(self.revpi, self.name + "_CB_DRIll")
+            cb_drill = Conveyor(self.revpi, self.name + "_CB_DRIll", self.mainloop_name)
 
             # Move product to Drill
-            self.state = self.switch_state(State.TO_DRILL)
+            self.switch_state(State.TO_DRILL)
             cb_mill.run_to_stop_sensor("", self.name + "_SENS_DRILL", as_thread=True)
             cb_drill.run_to_stop_sensor("", self.name + "_SENS_DRILL", as_thread=False)
 
@@ -111,14 +111,14 @@ class IndexLine(Machine):
 
             self.start_next_machine = True
             # Drilling
-            self.state = self.switch_state(State.DRILLING)
-            Actuator(self.revpi, self.name + "_DRILL_MOTOR").run_for_time("", self.__TIME_DRILLING)
+            self.switch_state(State.DRILLING)
+            Actuator(self.revpi, self.name + "_DRILL_MOTOR", self.mainloop_name).run_for_time("", self.__TIME_DRILLING)
 
 
             # Move product to Out
-            self.state = self.switch_state(State.TO_OUT)
-            pusher_out = Actuator(self.revpi, self.name + "_PUSH2")
-            cb_end = Conveyor(self.revpi, self.name + "_CB_END")
+            self.switch_state(State.TO_OUT)
+            pusher_out = Actuator(self.revpi, self.name + "_PUSH2", self.mainloop_name)
+            cb_end = Conveyor(self.revpi, self.name + "_CB_END", self.mainloop_name)
 
             # move pusher to back
             pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", as_thread=True)
@@ -139,11 +139,11 @@ class IndexLine(Machine):
             del pusher_out
 
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
-            log.exception(error)
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         else:
             self.ready_for_transport = True    
-            self.state = self.switch_state(State.END)
             self.end_machine = True
             self.stage += 1
+            self.switch_state(State.END)

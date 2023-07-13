@@ -22,7 +22,7 @@ parser.add_argument("--log", choices=["DEBUG", "INFO", "WARNING", "ERROR"], defa
 log_level: str = parser.parse_args().log
 
 log_formatter_file = logging.Formatter("%(asctime)s.%(msecs)03d; %(levelname)-8s; %(name)-12s %(message)-70s; %(threadName)s; %(module)s; %(funcName)s(%(lineno)d); ", datefmt='%H:%M:%S')
-log_formatter_console = logging.Formatter("%(asctime)s.%(msecs)03d %(levelname)-8s %(name)-12s %(message)-70s %(threadName)s %(module)s %(funcName)s(%(lineno)d): ", datefmt='%M:%S')
+log_formatter_console = logging.Formatter("%(asctime)s.%(msecs)03d %(levelname)-8s %(name)-12s %(message)-70s %(threadName)s, %(module)s, %(funcName)s(%(lineno)d): ", datefmt='%M:%S')
 
 # Setup File handler, change mode tp 'a' to keep the log after relaunch
 file_handler = logging.FileHandler(log_file_path, mode='a')

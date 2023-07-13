@@ -12,6 +12,7 @@ from datetime import datetime
 
 from revpimodio2 import RevPiModIO
 from logger import log
+from state_logger import StateLogger
 
 class Machine:
     '''Parent class for all machine modules.
@@ -45,18 +46,19 @@ class Machine:
         self.error_exception_in_machine = False
 
         self.stage = 0 # can count up the stages of a machine
-        self.state_is_init = False
 
         self.state = None
 
         global log
-        log = log.getChild(f"{self.mainloop_name}(Mach)")
+        self.log = log.getChild(f"{self.mainloop_name}(Mach)")
+
+        self.state_logger = StateLogger()
 
 
     def get_run_time(self) -> int:
         '''Get run time of machine in seconds since creation of object.'''
         run_time = (datetime.now() - self.__time_start).total_seconds()
-        log.info("Runtime: " + str(run_time))
+        self.log.info("Runtime: " + str(run_time))
         run_time = round(run_time)
         return run_time
 
@@ -64,7 +66,7 @@ class Machine:
     def get_state_time(self) -> int:
         '''Get run time of state in seconds since switch.'''
         state_time = (datetime.now() - self.__state_time_start).total_seconds()
-        log.info(str(self.state) + " time: " + str(state_time))
+        self.log.info(str(self.state) + " time: " + str(state_time))
         state_time = round(state_time)
         return state_time
 
@@ -78,10 +80,9 @@ class Machine:
         if wait:
             input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
         # self.__state_time_start = datetime.now()
-        self.state_is_init = False
-        if self.name.lower().find("main") == -1 and self.name.lower().find("init") == -1:
-            log.warning(self.name + ": Switching state to: " + str(state.name))
-        return state
+        self.state = state
+
+        self.log.warning(self.name + ": Switching state to: " + str(state.name))
 
     
     def is_stage(self, stage: int) -> bool:
@@ -100,3 +101,16 @@ class Machine:
             return False
 
         return True
+
+
+    def get_status_dict(self) -> dict:
+        '''Returns a dict of a statuses'''
+        return {
+            "state": self.state.name if self.state else None,
+            "stage": self.stage,
+            "start_next_machine": self.start_next_machine,
+            "end_machine": self.end_machine,
+            "ready_for_next": self.ready_for_next,
+            "ready_for_transport": self.ready_for_transport,
+            "error_exception_in_machine": self.error_exception_in_machine,
+        }

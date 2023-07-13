@@ -34,21 +34,21 @@ class Conveyor(Machine):
         '''Initializes the Sensor
         
         :revpi: RevPiModIO Object to control the motors and sensors
-        :mainloop_name: name of current mainloop
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
+        :mainloop_name: name of current mainloop
         '''
         super().__init__(revpi, name, mainloop_name)
         self.stage = 1
         self.exception = None
 
         global log
-        log = log.getChild(f"{self.mainloop_name}(Conv)")
+        self.log = log.getChild(f"{self.mainloop_name}(Conv)")
 
-        log.debug("Created Conveyor: " + self.name)
+        self.log.debug("Created Conveyor: " + self.name)
 
 
     def __del__(self):
-        log.debug("Destroyed Conveyor: " + self.name)
+        self.log.debug("Destroyed Conveyor: " + self.name)
 
 
     def run_to_stop_sensor(self, direction: str, stop_sensor: str, start_sensor: str=None, stop_delay_in_ms=0, timeout_in_s=10, end_machine=False, as_thread=True):
@@ -68,32 +68,32 @@ class Conveyor(Machine):
             self.thread.start()
             return
         
-        log.warning(f"{self.name} :Running to: {stop_sensor}")
+        self.log.warning(f"{self.name} :Running to: {stop_sensor}")
         if start_sensor != None:
             # wait for start sensor to detect product
-            self.state = self.switch_state(State.WAIT)
-            Sensor(self.revpi, start_sensor).wait_for_detect(timeout_in_s=(timeout_in_s//2))
+            self.switch_state(State.WAIT)
+            Sensor(self.revpi, start_sensor, self.mainloop_name).wait_for_detect(timeout_in_s=(timeout_in_s//2))
         
-        self.state = self.switch_state(State.RUN)
+        self.switch_state(State.RUN)
         try:
-            motor = Actuator(self.revpi, self.name)
+            motor = Actuator(self.revpi, self.name, self.mainloop_name)
             motor.run_to_sensor(direction, stop_sensor, stop_delay_in_ms, timeout_in_s)
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
+            self.switch_state(State.ERROR)
             if self.name.find("_") != -1: # if called from another module
                 if self.thread:
                     self.exception = error
                 else:
                     raise
             else:
-                log.exception(error)
+                self.log.exception(error)
         else:
-            log.warning(f"{self.name} :Reached: {stop_sensor}")
+            self.log.warning(f"{self.name} :Reached: {stop_sensor}")
             self.ready_for_transport = True
             if end_machine:
-                self.state = self.switch_state(State.END)
                 self.end_machine = True
+                self.switch_state(State.END)
             else:
                 self.stage += 1
 
@@ -114,29 +114,29 @@ class Conveyor(Machine):
             self.thread.start()
             return
 
-        log.warning(f"{self.name} :Running to value: {trigger_value} at {counter}")
-        self.state = self.switch_state(State.RUN)
+        self.log.warning(f"{self.name} :Running to value: {trigger_value} at {counter}")
+        self.switch_state(State.RUN)
         try:
-            encoder = Sensor(self.revpi, counter)
+            encoder = Sensor(self.revpi, counter, self.mainloop_name)
             encoder.reset_encoder()
-            Actuator(self.revpi, self.name).run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s)
+            Actuator(self.revpi, self.name, self.mainloop_name).run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s)
             
         except Exception as error:
-            self.state = self.switch_state(State.ERROR)
             self.error_exception_in_machine = True
+            self.switch_state(State.ERROR)
             if self.name.find("_") != -1: # if called from another module
                 if self.thread:
                     self.exception = error
                 else:
                     raise
             else:
-                log.exception(error)
+                self.log.exception(error)
         else:
-            log.warning(f"{self.name} :Reached value: {trigger_value} at {counter}")
+            self.log.warning(f"{self.name} :Reached value: {trigger_value} at {counter}")
             self.ready_for_transport = True
             if end_machine:
-                self.state = self.switch_state(State.END)
                 self.end_machine = True
+                self.switch_state(State.END)
             else:
                 self.stage += 1
 
