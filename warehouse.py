@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 import threading
 from enum import Enum
@@ -75,6 +75,7 @@ class Warehouse(Machine):
         self.log = log.getChild(f"{self.mainloop_name}(Ware)")
 
         self.__factory = factory
+        self.ready_for_product = False
 
         self.__ref_sw_arm_front = self.name + "_REF_SW_ARM_FRONT"
         self.__ref_sw_arm_back = self.name + "_REF_SW_ARM_BACK"
@@ -123,7 +124,7 @@ class Warehouse(Machine):
                 # get empty carrier if non is available
                 if Sensor(self.revpi, self.name + "_SENS_OUT", self.mainloop_name).get_current_value() == False:
                     self.retrieve_product(color="Carrier", as_thread=False)
-                self.ready_for_next = True
+                self.ready_for_product = True
                 # move arm to cb
                 self.switch_state(State.MOVING_TO_CB)
                 Actuator(self.revpi, self.name + "_CB_BWD", self.mainloop_name).run_for_time("", 0.5)

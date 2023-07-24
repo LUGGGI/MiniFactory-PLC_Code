@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 import threading
 
@@ -18,11 +18,10 @@ from robot_3d import Robot3D, Position, State
 class GripRobot(Robot3D):
     '''Controls the Gripper Robot
     
-    init(): Move to init position.
-    move_to_position(): Moves to given position.
+    grip(): Grip Product..
+    release(): Release Product.
+    reset_claw(): Reset claw to init position.
     '''
-    GRIPPER_CLOSED = 13
-    GRIPPER_OPENED = 9
 
     def __init__(self, revpi, name: str, mainloop_name: str, moving_position: Position):
         '''Initializes the Gripper Robot.
@@ -33,6 +32,8 @@ class GripRobot(Robot3D):
         :moving_position: Positions that the axes should be to allow save moving
         '''
         super().__init__(revpi, name, mainloop_name, moving_position)
+        self.GRIPPER_CLOSED = 13
+        self.GRIPPER_OPENED = 9
         
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Grip)")
@@ -63,8 +64,8 @@ class GripRobot(Robot3D):
             return
 
         try:
-            self.log.info(f"{self.name} :Gripping")
-            self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, self.GRIPPER_CLOSED)
+            self.switch_state(State.GRIPPING)
+            self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, self.GRIPPER_CLOSED, timeout_in_s=5)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -84,8 +85,8 @@ class GripRobot(Robot3D):
             return
 
         try:
-            self.log.info(f"{self.name} :Releasing")
-            self.__motor_claw.run_to_encoder_value("OPEN", self.__encoder_claw, self.GRIPPER_OPENED)
+            self.switch_state(State.RELEASE)
+            self.__motor_claw.run_to_encoder_value("OPEN", self.__encoder_claw, self.GRIPPER_OPENED, timeout_in_s=5)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)

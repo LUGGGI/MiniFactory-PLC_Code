@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 import threading
 from enum import Enum
@@ -22,6 +22,7 @@ class State(Enum):
     TO_DESTINATION = 3
     GRIPPING = 4
     RELEASE = 5
+    GET_PRODUCT = 6
     END = 100
     ERROR = 999
 
@@ -114,59 +115,63 @@ class Robot3D(Machine):
                 self.stage += 1
 
 
-    def grip_and_move_to_position(self, position: Position, sensor: str=None, as_thread=True):
-        '''Moves product from current postion to given position.
+    def get_product(self, vertical_position: int, sensor: str=None, as_thread=True):
+        '''Moves to position without moving position, grips product and moves back up to original position.
 
-        :position: (rotation, horizontal, vertical): int
-        :sensor: Sensor that will be checked for detection while moving to moving position
+        :vertical_position: vertical value to move to to grip
+        :sensor: Sensor that will be checked for detection while moving up
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.grip_and_move_to_position, args=(position, sensor, False), name=self.name)
+            self.thread = threading.Thread(target=self.get_product, args=(vertical_position, sensor, False), name=self.name)
             self.thread.start()
             return
 
+        self.switch_state(State.GET_PRODUCT)
         current_stage = self.stage
-        # get current position
-        current_position = Position(
-            self.__encoder_rot.get_current_value(),
-            self.__encoder_hor.get_current_value(),
-            self.__encoder_ver.get_current_value()
-        )
-        self.grip(as_thread = False)
+        # start position
+        start_vertical_position = self.__encoder_ver.get_current_value()
+        max_tries = 3
+        for try_num in range(max_tries):
+            if self.error_exception_in_machine:
+                break
 
-        if self.move_to_position(position, sensor, as_thread=False) == False:
-            # move back and try again
-            if self.name.find("GR") != -1:
-                self.reset_claw(as_thread=False)
-            else:
-                self.release(as_thread = False)
-            self.move_to_position(current_position, as_thread=False)
+            self.move_all_axes(Position(-1, -1, vertical_position))
             self.grip(as_thread = False)
-            if self.move_to_position(position, sensor, as_thread=False) == False:
-                self.switch_state(State.ERROR)
-                self.error_exception_in_machine = True
-                return
-        
+            self.move_all_axes(Position(-1, -1, start_vertical_position))
+
+            # check if product still at sensor, if true try to grip again
+            if sensor and Sensor(self.revpi, sensor, self.mainloop_name).get_current_value() == True:
+                self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num+1}")
+                self.reset_claw(as_thread=False)
+                if try_num == max_tries-1:
+                    self.log.error(f"{self.name} :Product still at Sensor, grip failed")
+                    self.error_exception_in_machine = True
+                    self.switch_state(State.ERROR)
+                continue
+
+            break
+
         self.stage = current_stage + 1
 
 
-    def move_to_position(self, position: Position, sensor: str=None, ignore_moving_pos=False, as_thread=True) -> True:
-        '''Moves to Robot given position.
+    def move_to_position(self, position: Position, ignore_moving_pos=False, as_thread=True) -> True:
+        '''Moves Robot to given position.
 
         :position: (rotation, horizontal, vertical): int
-        :sensor: Sensor that will be checked for detection when at moving position
         :ignore_moving_pos: Robot won't move to moving Position
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread:
-            self.thread = threading.Thread(target=self.move_to_position, args=(position, sensor, ignore_moving_pos, False), name=self.name)
+            self.thread = threading.Thread(target=self.move_to_position, args=(position, ignore_moving_pos, False), name=self.name)
             self.thread.start()
             return
 
-        self.log.warning(f"{self.name} :Moving to Position: {position}")
+        
+        end_position = position
+        self.log.warning(f"{self.name} :Moving to Position: {end_position}")
 
         # ignore moving position if rotation and one other axis doesn't move
         if position.rotation == -1 and (position.horizontal == -1 or position.vertical == -1):
@@ -180,13 +185,6 @@ class Robot3D(Machine):
                     self.move_all_axes(Position(position.rotation, self.__moving_position.horizontal, self.__moving_position.vertical))
                 else:
                     self.move_all_axes(self.__moving_position)
-
-                # check if Product was picked up
-                if sensor and Sensor(self.revpi, sensor, self.mainloop_name).get_current_value() == True:
-                    self.log.error(f"{self.name} :Product still at Sensor")
-                    return False
-                else:
-                    self.ready_for_next = True
 
                 # move non moving position axes
                 self.switch_state(State.MOVING)
@@ -217,7 +215,7 @@ class Robot3D(Machine):
             self.switch_state(State.ERROR)
             self.log.exception(error)
         else:
-            self.log.warning(f"{self.name} :Position reached: {position}")
+            self.log.warning(f"{self.name} :Position reached: {end_position}")
             self.stage += 1
 
 
@@ -261,9 +259,12 @@ class Robot3D(Machine):
         self.log.info(f"{self.name} :Axes moved to: {position}")
 
 
-    def grip():
-        '''Abstract function, see subclass'''
+    def grip(self, as_thread=True):
+        '''Grip product. Abstract function, see subclass'''
         pass
-    def release():
-        '''Abstract function, see subclass'''
+    def release(self, as_thread=True):
+        '''Release product. Abstract function, see subclass'''
+        pass
+    def reset_claw(self, as_thread=True):
+        '''Reset gripper. Abstract function, see subclass'''
         pass

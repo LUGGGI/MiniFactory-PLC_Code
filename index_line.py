@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 import threading
 from time import sleep
@@ -44,6 +44,7 @@ class IndexLine(Machine):
         '''
         super().__init__(revpi, name, mainloop_name)
         
+        self.start_next_machine = False
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Indx)")
 

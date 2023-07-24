@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 import time
 from enum import Enum
@@ -99,7 +99,7 @@ class Sensor():
         try:
             self.__revpi.io[self.name].reg_event(event_det_at_sensor, edge=edge)
         except RuntimeError:
-            self.log.debug(f"{self.name} (Sens) already monitoring")
+            self.log.debug(f"{self.name} already monitoring")
 
 
     def remove_monitor(self, edge=BOTH):
@@ -133,14 +133,14 @@ class Sensor():
         -> Panics if timeout is reached (no detection happened)
         '''
         if self.get_current_value() == True:
-            self.log.info(f"{self.name} (Sens) already detected")
+            self.log.info(f"{self.name} already detected")
             return
 
         if self.__revpi.io[self.name].wait(edge=edge, timeout=timeout_in_s*1000) == False:
             # sensor detected product
-            self.log.info(f"{self.name} (Sens) detection") 
+            self.log.info(f"{self.name} detection") 
         else:
-            raise(Exception(f"{self.name} (Sens) no detection"))
+            raise(Exception(f"{self.name} no detection"))
 
 
     def wait_for_encoder(self, trigger_value: int, trigger_threshold: int, timeout_in_s=10) -> int:
@@ -173,7 +173,7 @@ class Sensor():
 
             if abs(new_value - trigger_value) <= trigger_threshold:
 
-                self.log.info(f"{self.name} (Sens) Value reached {new_value}")
+                self.log.info(f"{self.name} Value reached {new_value}")
                 return self.get_current_value() 
             
             # wait for next cycle

@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 from time import sleep
 from enum import Enum
@@ -38,7 +38,7 @@ class MainLoop(Machine):
     run_...(): Calls the different modules
     '''
 
-    def __init__(self, revpi, name: str, config: dict, exit_handler: ExitHandler, states):
+    def __init__(self, revpi, name: str, config: dict, states):
         '''Initializes MiniFactory control loop.'''
         super().__init__(revpi, name, name)
 
@@ -46,14 +46,11 @@ class MainLoop(Machine):
         self.log = log.getChild(f"{self.mainloop_name}(Set)")
 
         self.config = config
-        self.exit_handler = exit_handler
         self.states = states
-        self.next_state = None
-        self.previous_state = None
         self.machines: "dict[str, Machine]" = {}
         self.ready_for_transport = "None"
         self.product_at: str = None
-        self.waiting_for = None
+        self.waiting_for_state = None
 
         self.state_logger = StateLogger()
 
@@ -61,7 +58,7 @@ class MainLoop(Machine):
         '''Starts the mainloop.'''
         self.switch_state(self.config["start_at"], False)
         self.log.info(f"{self.name}: Start Mainloop")
-        while(not self.error_exception_in_machine and not self.end_machine and not self.exit_handler.was_called):
+        while(not self.error_exception_in_machine and not self.end_machine):
             try:
                 self.mainloop()
                 sleep(0.02)
@@ -76,6 +73,8 @@ class MainLoop(Machine):
     def mainloop_config(self):
         '''Config functionality'''
         for machine in self.machines.values():
+            # update status
+            self.state_logger.update_machine(self.mainloop_name, machine.name, machine.get_status_dict())
             # look for errors in the machines
             if machine.error_exception_in_machine:
                 self.switch_state(self.states.ERROR)
@@ -83,27 +82,23 @@ class MainLoop(Machine):
             # look for ready_for_transport in machines and sets status to True
             if machine.ready_for_transport:
                 machine.ready_for_transport = False
-                self.log.info(f"{self.name}: Ready for transport: {machine.name}")
+                self.log.info(f"Ready for transport: {machine.name}")
                 self.ready_for_transport = machine.name
             # end machines 
             if machine.end_machine and not machine.ready_for_transport and machine.name != self.product_at:
-                self.log.info(f"{self.name}: Ended: {machine.name}")
+                self.log.info(f"Ended: {machine.name}")
                 self.switch_status(machine.name, Status.FREE)
                 self.machines.pop(machine.name)
-                break
-            # update status
-            self.state_logger.update_machine(self.mainloop_name, machine.name, machine.get_status_dict())
+                break        
         
-        
-        if self.waiting_for != None:
+        if self.waiting_for_state != None:
         # waiting for running or blocked machines
-            if self.waiting_for.value[1] == Status.FREE:
-                state = self.waiting_for
-                self.log.critical(f"{self.name}: Continuing to: {state}")
+            if self.waiting_for_state.value[1] == Status.FREE:
+                self.log.critical(f"Continuing to: {self.waiting_for_state}")
+                self.switch_state(self.waiting_for_state)
+                self.waiting_for_state = None
 
         if self.state == self.states.ERROR:
-            self.log.error("Error in Mainloop")
-            self.exit_handler.stop_factory()
             self.error_exception_in_machine = True
             return
 
@@ -113,6 +108,16 @@ class MainLoop(Machine):
                 return
             self.end_machine = True
             return
+        
+        # update mainloop status for state_logger
+        status_dict = {
+            "state": self.state.name if self.state else None,
+            "product_at": self.product_at,
+            "ready_for_transport": self.ready_for_transport,
+            "waiting_for_state": self.waiting_for_state.name if self.waiting_for_state else None
+        }
+        self.state_logger.update_machine(self.name, "self", status_dict)
+
         
     def mainloop(self):
         '''Abstract function should never be called'''
@@ -134,7 +139,7 @@ class MainLoop(Machine):
         else:
             self.log.critical(f"{self.name}: Waiting for: {state}")
             self.switch_status(self.state, Status.WAITING)
-            self.waiting_for = state
+            self.waiting_for_state = state
 
     def switch_status(self, state_name, status: Status):
         '''Switch status in states, if name switches all to a machine belonging states
@@ -252,8 +257,16 @@ class Setup():
             for main_loop in self.main_loops:
                 if main_loop.error_exception_in_machine:
                     log.error(f"Error in mainloop {main_loop.name}")
+                    self.exit_handler.stop_factory()
                     exception = True
-                
+                    break
+
+            if self.exit_handler.was_called or exception:
+                for main_loop in self.main_loops:
+                    log.critical(f"Ending mainloop: {main_loop.name}")
+                    main_loop.end_machine = True
+                return
+
             running = False
             for config, thread in zip(configs, self.threads):
                 if config["finished"]:

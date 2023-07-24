@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 import threading
 from datetime import datetime
@@ -39,7 +39,6 @@ class Machine:
 
         self.thread: threading.Thread = None
 
-        self.start_next_machine = False
         self.end_machine = False
         self.ready_for_next = False
         self.ready_for_transport = False
@@ -108,9 +107,7 @@ class Machine:
         return {
             "state": self.state.name if self.state else None,
             "stage": self.stage,
-            "start_next_machine": self.start_next_machine,
             "end_machine": self.end_machine,
-            "ready_for_next": self.ready_for_next,
             "ready_for_transport": self.ready_for_transport,
             "error_exception_in_machine": self.error_exception_in_machine,
         }

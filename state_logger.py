@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 from time import sleep
 import json
@@ -30,7 +30,7 @@ class StateLogger():
 
         StateLogger.__json_dict.update({"states": []})
         for mainloop in names_of_mainsloops:
-            StateLogger.__json_dict.update({mainloop: {}})
+            StateLogger.__json_dict.update({mainloop: {"self": {}}})
         self.update_main_states([])
 
 
@@ -80,7 +80,6 @@ class StateLogger():
             log.exception(error)
         finally:
             StateLogger.__updating = False
-            
 
 
     def update_file(self):

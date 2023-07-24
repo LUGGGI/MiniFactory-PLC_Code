@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 import threading
 from time import sleep
@@ -44,6 +44,7 @@ class MPStation(Machine):
         :mainloop_name: name of current mainloop
         '''
         super().__init__(revpi, name, mainloop_name)
+        self.table = Actuator(self.revpi, self.name + "_TABLE", self.mainloop_name, self.name + "_TABLE_PWM")
 
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Mps)")
@@ -115,9 +116,8 @@ class MPStation(Machine):
             self.switch_state(State.TO_TABLE)
             vg_valve = Actuator(self.revpi, self.name + "_VALVE_VG_VACUUM", self.mainloop_name)
             vg_lower_valve = Actuator(self.revpi, self.name + "_VALVE_VG_LOWER", self.mainloop_name)
-            table = Actuator(self.revpi, self.name + "_TABLE", self.mainloop_name, self.name + "_TABLE_PWM")
 
-            table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
+            self.table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
 
             vg_motor.join() # wait for the vg to be at oven
             compressor.run_for_time("", 1.5, as_thread=True)
@@ -141,11 +141,11 @@ class MPStation(Machine):
             del vg_lower_valve
 
 
-            table.join()
+            self.table.join()
             # rotate table to saw
             self.switch_state(State.TO_SAW)
-            table.set_pwm(75)
-            table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_SAW")
+            self.table.set_pwm(75)
+            self.table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_SAW")
 
 
             # sawing
@@ -155,20 +155,17 @@ class MPStation(Machine):
 
             # move product to cb
             self.switch_state(State.TO_CB)
-            table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_CB") # rotate table to cb
+            self.table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_CB") # rotate table to cb
             compressor.run_for_time("", 0.5, as_thread=True)
             Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON", self.mainloop_name).run_for_time("", 0.5)
             compressor.join()
             del compressor
-            table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table back to vg
+            self.table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table back to vg
 
 
-            self.start_next_machine = True
             # run cb
             self.switch_state(State.CB)
             Conveyor(self.revpi, self.name + "_CB", self.mainloop_name).run_to_stop_sensor("FWD", "MPS_SENS_CB", as_thread=False)
-            table.join()
-            del table
 
         except Exception as error:
             self.error_exception_in_machine = True
@@ -191,6 +188,9 @@ class MPStation(Machine):
         try:
             self.switch_state(State.CB)
             Conveyor(self.revpi, self.name + "_CB", self.mainloop_name).run_to_stop_sensor("FWD", "CB1_SENS_START", as_thread=False)
+            
+            self.table.join()
+            del self.table
 
         except Exception as error:
             self.error_exception_in_machine = True

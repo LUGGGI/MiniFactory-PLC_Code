@@ -5,8 +5,9 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.06.09"
+__version__ = "2023.07.24"
 
+import threading
 from time import sleep
 from revpimodio2 import RevPiModIO
 import signal
@@ -31,7 +32,13 @@ class ExitHandler:
 
     def stop_factory(self, *_):
         '''Disables the API for factory and stops all Actuators'''
-        self.was_called = True
+        # call this function again as a thread
+        if self.was_called == False:
+            self.was_called = True
+            self.thread = threading.Thread(target=self.stop_factory, name="STOP")
+            self.thread.start()
+            return
+        
         log.critical("Program aborted: ")
         self.revpi.cleanup() # stop API access for factory
 
