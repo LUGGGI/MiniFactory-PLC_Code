@@ -1,13 +1,13 @@
 {
     "factory": "right",
-    "with_init": true,
+    "with_init": false,
     "lines": [
         {
             "name": "Main1", 
-            "start_when": "no",
-            "start_at": "MPS",
-            "end_at": "WH_STORE",
-            "with_oven": true,
+            "start_when": "now",
+            "start_at": "CB1",
+            "end_at": "CB1",
+            "with_oven": false,
             "with_PM": false,
             "with_WH": true,
             "color": "RED"
@@ -15,12 +15,12 @@
         {
             "name": "Main2", 
             "start_when": "no",
-            "start_at": "WH_RETRIEVE",
-            "end_at": "END",
-            "with_oven": false,
+            "start_at": "MPS",
+            "end_at": "CB1",
+            "with_oven": true,
             "with_PM": false,
             "with_WH": true,
-            "color": "BLUE"
+            "color": "WHITE"
         },
         {
             "name": "Main3", 
@@ -34,8 +34,8 @@
         },
         {
             "name": "Main4", 
-            "start_when": "now",
-            "start_at": "VG2",
+            "start_when": "no",
+            "start_at": "CB4",
             "end_at": "END",
             "with_oven": false,
             "with_PM": true,

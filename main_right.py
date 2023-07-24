@@ -192,10 +192,10 @@ class MainRight(MainLoop):
         
         if cb.is_stage(1):
             self.product_at = cb.name
-            cb.run_to_stop_sensor("FWD", f"{cb.name}_SENS_END")
+            cb.run_to_stop_sensor("FWD", f"{cb.name}_SENS_END", end_machine=True)
         if cb.is_stage(2):
-            cb.end_machine = True
             return True
+        
         # init gr2()
         if self.state != self.config["end_at"] and (State.GR2_CB1_TO_CB3.value[1] == Status.FREE or State.GR2_CB1_TO_CB3.value[2] == self.name):
             self.run_gr2()
@@ -249,7 +249,8 @@ class MainRight(MainLoop):
         gr: GripRobot = self.get_machine("GR1", GripRobot, Position(-1, 0, 1100))
         if gr.is_stage(0):
             gr.init()
-            self.run_mps()
+            if State.MPS.value[1] == Status.FREE:
+                self.run_mps()
 
         elif gr.is_stage(1):
             # get product from plate
@@ -365,7 +366,7 @@ class MainRight(MainLoop):
         elif gr.is_stage(1):
             # move to cb4
             gr.reset_claw()
-            gr.move_to_position(Position(437, 43, 1400), ignore_moving_pos=True)
+            gr.move_to_position(Position(437, 43, 1600), ignore_moving_pos=True)
 
         elif gr.is_stage(2) and self.is_ready_for_transport("CB4"):
             # move down, grip product, move up

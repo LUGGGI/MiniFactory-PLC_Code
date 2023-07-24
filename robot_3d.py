@@ -139,10 +139,15 @@ class Robot3D(Machine):
 
             self.move_all_axes(Position(-1, -1, vertical_position))
             self.grip(as_thread = False)
-            self.move_all_axes(Position(-1, -1, start_vertical_position))
+
+            # move back up and continue if gripping worked
+            self.__motor_ver.start("UP")
+            self.__encoder_ver.wait_for_encoder(start_vertical_position, self.__motor_ver._Actuator__PWM_TRIGGER_THRESHOLD)
+            # self.move_all_axes(Position(-1, -1, start_vertical_position))
 
             # check if product still at sensor, if true try to grip again
             if sensor and Sensor(self.revpi, sensor, self.mainloop_name).get_current_value() == True:
+                self.__motor_ver.stop("UP")
                 self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num+1}")
                 self.reset_claw(as_thread=False)
                 if try_num == max_tries-1:

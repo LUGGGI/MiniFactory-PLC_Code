@@ -197,6 +197,6 @@ class Sensor():
 
 def event_det_at_sensor(io_name, __):
     '''Set detection to True'''
-    self.log.info(f"{io_name} :Detection")
+    log.info(f"{io_name} :Detection")
     global detection 
     detection = True    

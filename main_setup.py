@@ -129,7 +129,7 @@ class MainLoop(Machine):
         :state: state Enum to switch to
         :wait: waits for input bevor switching
         '''
-        if self.state == self.config["end_at"]:
+        if self.state == self.config["end_at"] and state != self.states.END:
             self.switch_state(self.states.END, wait)
         elif state.value[1] == Status.FREE or state.value[2] == self.name:
             if wait:

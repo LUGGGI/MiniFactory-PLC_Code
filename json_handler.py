@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.07.24"
 
 import json
 
@@ -40,7 +40,7 @@ class JsonHandler():
                 if type(config["start_at"]) != str and type(config["end_at"]) != str:
                     break
             else:
-                raise Exception(f"Config {config['name']} could not be parsed")
+                raise Exception(f"Config {config['name']} could not be parsed for {state}")
 
         if json_dict["with_init"]:
             init_config = {
