@@ -192,8 +192,9 @@ class MainRight(MainLoop):
         
         if cb.is_stage(1):
             self.product_at = cb.name
-            cb.run_to_stop_sensor("FWD", f"{cb.name}_SENS_END", end_machine=True)
+            cb.run_to_stop_sensor("FWD", f"{cb.name}_SENS_END")
         if cb.is_stage(2):
+            cb.end_conveyor()
             return True
         
         # init gr2()
@@ -208,7 +209,7 @@ class MainRight(MainLoop):
                 self.product_at = cb.name
                 cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
             elif cb.is_stage(2):
-                cb.end_machine = True
+                cb.end_conveyor()
                 return True
             # init wh
             if self.state != self.config["end_at"] and (State.WH_STORE.value[1] == Status.FREE or State.WH_STORE.value[2] == self.name):
@@ -229,7 +230,7 @@ class MainRight(MainLoop):
             self.product_at = cb.name
             cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END", stop_delay_in_ms=100)
         elif cb.is_stage(2):
-            cb.end_machine = True
+            cb.end_conveyor()
             return True
         # init gr3
         if self.state != self.config["end_at"] and (State.GR3.value[1] == Status.FREE or State.GR3.value[2] == self.name):
@@ -256,10 +257,9 @@ class MainRight(MainLoop):
             # get product from plate
             gr.GRIPPER_OPENED = 5
             gr.reset_claw()
-            gr.move_to_position(Position(2245, 55, 3450))
+            gr.move_to_position(Position(2245, 67, 3450))
         elif gr.is_stage(2):
             # grip product
-            gr.GRIPPER_CLOSED = 10
             gr.grip()
         elif gr.is_stage(3):
             self.product_at = gr.name
@@ -267,10 +267,9 @@ class MainRight(MainLoop):
             gr.move_to_position(Position(1365, 0, 1700))
         elif gr.is_stage(4) and (State.MPS.value[1] == Status.FREE or State.MPS.value[2] == self.name):
             # move to tray
-            gr.move_to_position(Position(-1, 24, -1))
+            gr.move_to_position(Position(-1, 33, -1))
         elif gr.is_stage(5):
             # release product
-            gr.GRIPPER_OPENED = 9
             gr.release()
         elif gr.is_stage(6):
             # move back to init
@@ -280,23 +279,25 @@ class MainRight(MainLoop):
     def run_gr2(self) -> False:
         gr: GripRobot = self.get_machine("GR2", GripRobot, Position(-1, -1, 1400))
 
-        # move from cb1 to pm
-        if self.state == State.GR2_CB1_TO_PM or (self.state == State.CB1 and self.config["with_PM"] == True):
+        # move gr to cb1
+        if self.state == State.CB1 or self.state == State.GR2_CB1_TO_PM or self.state == State.GR2_CB1_TO_CB3:
             if gr.is_stage(0):
                 gr.init()
             elif gr.is_stage(1):
                 # move to cb1 (6s)
                 gr.reset_claw()
                 gr.move_to_position(Position(245, 65, 1600), ignore_moving_pos=True)
-            # Wait for cb1 to finish
-            elif gr.is_stage(2) and self.is_ready_for_transport("CB1"):
+
+        # move from cb1 to pm
+        if self.state == State.GR2_CB1_TO_PM and State.PM.value[1] == Status.FREE:
+            if gr.is_stage(2):
                 # move down, grip product, move up
                 gr.get_product(2100, sensor="CB1_SENS_END")
             elif gr.is_stage(3):
                 self.product_at = gr.name
                 # move to cb2
                 gr.move_to_position(Position(3860, 78, 1400))
-            elif gr.is_stage(4) and State.PM.value[1] == Status.FREE:
+            elif gr.is_stage(4):
                 # move down
                 gr.move_to_position(Position(-1, -1, 1950))
             elif gr.is_stage(5):
@@ -308,20 +309,11 @@ class MainRight(MainLoop):
                 gr.end_machine = True
                 return True
 
-        # move from pm to cb3    
-        elif self.state == State.GR2_PM_TO_CB3:
-            # init if new gr1, should not happen in normal operation
-            if gr.is_stage(0) and abs(Sensor(self.revpi, gr.name + "_ROTATION_ENCODER", self.mainloop_name).get_current_value() - 3860) > 40:
-                gr.init()
-            elif gr.is_stage(1):
-                # move to pm
-                gr.reset_claw()
-                gr.move_to_position(Position(3860, 78, 1400), ignore_moving_pos=True)
-
-            elif (gr.is_stage(0) or gr.is_stage(2)) and self.is_ready_for_transport("CB2"):
+        # move from cb1 to cb3    
+        elif self.state == State.GR2_CB1_TO_CB3:
+            if gr.is_stage(2):
                 # move down, grip product, move up
-                gr.stage = 2
-                gr.get_product(2000, sensor="CB2_SENS_START")
+                gr.get_product(2100, sensor="CB1_SENS_END")
             elif gr.is_stage(3):
                 self.product_at = gr.name
                 # move to cb3
@@ -333,19 +325,21 @@ class MainRight(MainLoop):
                 # move back to init
                 gr.init(to_end=True)
                 return True
-
-        # move from cb1 to cb3    
-        elif self.state == State.GR2_CB1_TO_CB3 or (self.state == State.CB1 and self.config["with_PM"] == False):
-            if gr.is_stage(0):
+            
+        # move from pm to cb3    
+        elif self.state == State.GR2_PM_TO_CB3:
+            # init if new gr1, should not happen in normal operation
+            if gr.is_stage(0) and abs(Sensor(self.revpi, gr.name + "_ROTATION_ENCODER", self.mainloop_name).get_current_value() - 3860) > 40:
                 gr.init()
-            if gr.is_stage(1):
-                # move to cb1 (6s)
+            elif gr.is_stage(1):
+                # move to pm
                 gr.reset_claw()
-                gr.move_to_position(Position(245, 65, 1600), ignore_moving_pos=True)
-            # Wait for cb1 to finish
-            elif gr.is_stage(2) and self.is_ready_for_transport("CB1"):
+                gr.move_to_position(Position(3860, 78, 1400), ignore_moving_pos=True)
+
+            elif gr.is_stage(0) or gr.is_stage(2):
                 # move down, grip product, move up
-                gr.get_product(2100, sensor="CB1_SENS_END")
+                gr.stage = 2
+                gr.get_product(2000, sensor="CB2_SENS_START")
             elif gr.is_stage(3):
                 self.product_at = gr.name
                 # move to cb3
@@ -366,9 +360,10 @@ class MainRight(MainLoop):
         elif gr.is_stage(1):
             # move to cb4
             gr.reset_claw()
-            gr.move_to_position(Position(437, 43, 1600), ignore_moving_pos=True)
+            gr.move_to_position(Position(440, 43, 1600), ignore_moving_pos=True)
 
-        elif gr.is_stage(2) and self.is_ready_for_transport("CB4"):
+        # if product ready move it
+        elif gr.is_stage(2) and self.state == State.GR3:
             # move down, grip product, move up
             gr.get_product(1900, sensor="CB4_SENS_END")
         elif gr.is_stage(3):
@@ -401,7 +396,7 @@ class MainRight(MainLoop):
             # move to blue
             vg.move_to_position(Position(255, 1750, 1200))
 
-        elif vg.is_stage(2) and self.is_ready_for_transport("SL"):
+        elif vg.is_stage(2) and self.state == State.VG2:
             vg.get_product(1400, sensor=f"SL_SENS_{self.config['color']}")
         elif vg.is_stage(3):
             self.product_at = vg.name
@@ -424,18 +419,16 @@ class MainRight(MainLoop):
             cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
         elif cb.is_stage(2):
             cb.run_to_stop_sensor("FWD", stop_sensor=f"{pm.name}_SENS_IN")
-
-        elif pm.is_stage(1) and self.is_ready_for_transport(cb.name):
             self.product_at = pm.name
             pm.run(out_stop_sensor=f"{cb.name}_SENS_END")
 
-        elif cb.is_stage(3) and self.is_ready_for_transport(pm.name):
+        elif cb.is_stage(3) and pm.ready_for_transport:
             self.product_at = cb.name
             cb.run_to_stop_sensor("BWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=150)
 
         elif cb.is_stage(4) and pm.is_stage(2):
             pm.end_machine = True
-            cb.end_machine = True
+            cb.end_conveyor()
             return True
 
     def run_mps(self) -> False:
@@ -445,7 +438,7 @@ class MainRight(MainLoop):
         
         elif mps.is_stage(1):
             self.product_at = mps.name
-            mps.run(with_oven=self.config["with_oven"])
+            mps.run(with_oven=self.config["with_oven"], with_saw=self.config["with_saw"])
         elif mps.is_stage(2) and State.CB1.value[1] == Status.FREE:
             mps.run_to_out()
             return True
@@ -459,7 +452,6 @@ class MainRight(MainLoop):
             self.product_at = sl.name
             sl.run(color=self.config["color"])
         if sl.is_stage(2):
-            sl.ready_for_transport = True
             sl.end_machine = True
             return True
 
@@ -474,7 +466,8 @@ class MainRight(MainLoop):
         if vg.is_stage(1):
             # move to cb3
             vg.move_to_position(Position(97, 815, 950), ignore_moving_pos=True)
-        elif vg.is_stage(2) and self.is_ready_for_transport("CB3"):
+
+        elif vg.is_stage(2) and self.state == State.WH_STORE:
             # move down, grip product, move up
             vg.get_product(1250, sensor="CB3_SENS_END")
         elif vg.is_stage(3):
@@ -519,7 +512,6 @@ class MainRight(MainLoop):
         if wh.is_stage(1):
             self.product_at = wh.name
             wh.retrieve_product(color=self.config["color"])
-        
         if vg.is_stage(1):
             # move to wh if new vg1
             vg.move_to_position(Position(1785, 1080, 400), ignore_moving_pos=True)

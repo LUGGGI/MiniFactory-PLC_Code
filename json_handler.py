@@ -26,6 +26,7 @@ class JsonHandler():
             self.__check_variable(config, "start_at", str)
             self.__check_variable(config, "end_at", str)
             self.__check_variable(config, "with_oven", bool)
+            self.__check_variable(config, "with_saw", bool)
             self.__check_variable(config, "with_PM", bool)
             self.__check_variable(config, "with_WH", bool)
             self.__check_variable(config, "color", str)

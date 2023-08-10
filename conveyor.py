@@ -90,11 +90,9 @@ class Conveyor(Machine):
                 self.log.exception(error)
         else:
             self.log.warning(f"{self.name} :Reached: {stop_sensor}")
-            self.ready_for_transport = True
             self.stage += 1
             if end_machine:
-                self.end_machine = True
-                self.switch_state(State.END)
+                self.end_conveyor()
 
 
     def run_to_counter_value(self, direction: str, counter: str, trigger_value: int, timeout_in_s=10, end_machine=False, as_thread=True):
@@ -132,11 +130,9 @@ class Conveyor(Machine):
                 self.log.exception(error)
         else:
             self.log.warning(f"{self.name} :Reached value: {trigger_value} at {counter}")
-            self.ready_for_transport = True
             self.stage += 1
             if end_machine:
-                self.end_machine = True
-                self.switch_state(State.END)
+                self.end_conveyor()
                 
 
     def join(self):
@@ -144,3 +140,8 @@ class Conveyor(Machine):
         self.thread.join()
         if self.exception:
             raise self.exception
+        
+    def end_conveyor(self):
+        '''Ends conveyor'''
+        self.end_machine = True
+        self.switch_state(State.END)

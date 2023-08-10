@@ -71,14 +71,14 @@ class MPStation(Machine):
         else:
             self.stage = 1
 
-    def run(self, with_oven=True, as_thread=True):
+    def run(self, with_oven=True, with_saw=False, as_thread=True):
         '''Runs the Punching Maschine routine.
         
         :as_thread: Runs the function as a thread
         '''
         # call this function again as a thread
         if as_thread == True:
-            self.thread = threading.Thread(target=self.run, args=(with_oven, False), name=self.name)
+            self.thread = threading.Thread(target=self.run, args=(with_oven, with_saw, False), name=self.name)
             self.thread.start()
             return
         
@@ -142,15 +142,16 @@ class MPStation(Machine):
 
 
             self.table.join()
-            # rotate table to saw
-            self.switch_state(State.TO_SAW)
-            self.table.set_pwm(75)
-            self.table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_SAW")
 
+            if with_saw:
+                # rotate table to saw
+                self.switch_state(State.TO_SAW)
+                self.table.set_pwm(75)
+                self.table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_SAW")
 
-            # sawing
-            self.switch_state(State.SAWING)
-            Actuator(self.revpi, self.name + "_SAW", self.mainloop_name).run_for_time("", self.__TIME_SAW)
+                # sawing
+                self.switch_state(State.SAWING)
+                Actuator(self.revpi, self.name + "_SAW", self.mainloop_name).run_for_time("", self.__TIME_SAW)
 
 
             # move product to cb

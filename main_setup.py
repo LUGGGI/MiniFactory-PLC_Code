@@ -48,7 +48,6 @@ class MainLoop(Machine):
         self.config = config
         self.states = states
         self.machines: "dict[str, Machine]" = {}
-        self.ready_for_transport = "None"
         self.product_at: str = None
         self.waiting_for_state = None
 
@@ -79,13 +78,8 @@ class MainLoop(Machine):
             if machine.error_exception_in_machine:
                 self.switch_state(self.states.ERROR)
                 break
-            # look for ready_for_transport in machines and sets status to True
-            if machine.ready_for_transport:
-                machine.ready_for_transport = False
-                self.log.info(f"Ready for transport: {machine.name}")
-                self.ready_for_transport = machine.name
             # end machines 
-            if machine.end_machine and not machine.ready_for_transport and machine.name != self.product_at:
+            if machine.end_machine and not machine.name == self.product_at:
                 self.log.info(f"Ended: {machine.name}")
                 self.switch_status(machine.name, Status.FREE)
                 self.machines.pop(machine.name)
@@ -113,7 +107,6 @@ class MainLoop(Machine):
         status_dict = {
             "state": self.state.name if self.state else None,
             "product_at": self.product_at,
-            "ready_for_transport": self.ready_for_transport,
             "waiting_for_state": self.waiting_for_state.name if self.waiting_for_state else None
         }
         self.state_logger.update_machine(self.name, "self", status_dict)
@@ -135,6 +128,7 @@ class MainLoop(Machine):
             if wait:
                 input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
             self.log.critical(self.name + ": Switching state to: " + str(state.name))
+            state.value[2] == self.name
             self.state = state
         else:
             self.log.critical(f"{self.name}: Waiting for: {state}")
@@ -164,17 +158,6 @@ class MainLoop(Machine):
         self.state_logger.update_main_states(self.states)
         self.state_logger.update_file()
 
-    def is_ready_for_transport(self, machine_name):
-        '''Returns true if given machine is ready_for_transport.
-        
-        :machine_name: Name of machine that should be checked
-        '''
-        if self.ready_for_transport == machine_name:
-            self.ready_for_transport = False
-            return True
-        else:
-            return False
-        
     def get_machine(self, machine_name: str, machine_class, *args):
         '''Returns given machine, if not available initializes it.
         

@@ -40,8 +40,6 @@ class Machine:
         self.thread: threading.Thread = None
 
         self.end_machine = False
-        self.ready_for_next = False
-        self.ready_for_transport = False
         self.error_exception_in_machine = False
 
         self.stage = 0 # can count up the stages of a machine
@@ -108,6 +106,5 @@ class Machine:
             "state": self.state.name if self.state else None,
             "stage": self.stage,
             "end_machine": self.end_machine,
-            "ready_for_transport": self.ready_for_transport,
             "error_exception_in_machine": self.error_exception_in_machine,
         }

@@ -38,6 +38,7 @@ class PunchMach(Machine):
         '''
         super().__init__(revpi, name, mainloop_name)
         self.stage = 1
+        self.ready_for_transport = False
 
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Pun)")
