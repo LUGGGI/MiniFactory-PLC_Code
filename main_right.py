@@ -29,7 +29,8 @@ from grip_robot import GripRobot, Position
 from vac_robot import VacRobot
 from sort_line import SortLine
 from warehouse import Warehouse
-from main_setup import MainLoop, Setup, Status
+from mainloop import MainLoop, Status
+from setup import Setup
 
 class State(Enum):
     '''NAME = [ID, Status, Used_by]'''
@@ -543,24 +544,22 @@ if __name__ == "__main__":
     configs = list(filter(lambda x: x["start_when"].lower() != "no", configs))
 
     setup = Setup()
-    setup.main_loops: "list[MainRight]" = []
 
     if json_string["with_init"]:
-        setup.add_mainloop("Init", MainRight(setup.revpi, "Init", configs[-1]))
-        setup.run_factory(configs=[configs[-1]])
+        setup.main_loops.append(MainRight(setup.revpi, "Init", configs[-1]))
+        setup.run_factory()
         setup.main_loops.clear()
-        setup.threads.clear()
         configs.remove(configs[-1])
 
     for config in configs:
         if config["start_when"].lower() == "no":
             configs.remove(config)
             continue
-        setup.add_mainloop(config["name"], MainRight(setup.revpi, config["name"], config))
+        setup.main_loops.append(MainRight(setup.revpi, config["name"], config))
 
 
     try:
-        setup.run_factory(configs)
+        setup.run_factory()
     except Exception as error:
         log.exception(error)
 

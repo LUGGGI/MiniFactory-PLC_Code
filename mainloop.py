@@ -9,12 +9,7 @@ __copyright__ = "Lukas Beck"
 __license__ = "GPL"
 __version__ = "2023.07.24"
 
-from time import sleep
 from enum import Enum
-import threading
-from revpimodio2 import RevPiModIO
-
-from exit_handler import ExitHandler
 from logger import log
 from machine import Machine
 from state_logger import StateLogger
@@ -50,24 +45,20 @@ class MainLoop(Machine):
         self.machines: "dict[str, Machine]" = {}
         self.product_at: str = None
         self.waiting_for_state = None
+        self.running = False
 
         self.state_logger = StateLogger()
 
-    def run(self):
-        '''Starts the mainloop.'''
-        self.switch_state(self.config["start_at"], False)
-        self.log.info(f"{self.name}: Start Mainloop")
-        while(not self.error_exception_in_machine and not self.end_machine):
-            try:
-                self.mainloop()
-                sleep(0.02)
-            except Exception as error:
-                self.error_exception_in_machine = True
-                self.log.exception(error)
-                self.switch_state(self.states.ERROR)
 
-        self.machines.clear()
-        self.log.critical(f"END of Mainloop: {self.name}")
+    def update(self):
+        '''Updates the mainloop'''
+        try:
+            self.mainloop()
+        except Exception as error:
+            self.error_exception_in_machine = True
+            self.log.exception(error)
+            self.switch_state(self.states.ERROR)
+
 
     def mainloop_config(self):
         '''Config functionality'''
@@ -116,6 +107,7 @@ class MainLoop(Machine):
         '''Abstract function should never be called'''
         raise Exception("Abstract function called")
 
+
     def switch_state(self, state, wait=False):
         '''Switch to given state and save state start time.
         
@@ -134,6 +126,7 @@ class MainLoop(Machine):
             self.log.critical(f"{self.name}: Waiting for: {state}")
             self.switch_status(self.state, Status.WAITING)
             self.waiting_for_state = state
+
 
     def switch_status(self, state_name, status: Status):
         '''Switch status in states, if name switches all to a machine belonging states
@@ -158,6 +151,7 @@ class MainLoop(Machine):
         self.state_logger.update_main_states(self.states)
         self.state_logger.update_file()
 
+
     def get_machine(self, machine_name: str, machine_class, *args):
         '''Returns given machine, if not available initializes it.
         
@@ -171,6 +165,7 @@ class MainLoop(Machine):
             self.machines[machine_name] = machine
             self.switch_status(machine_name, Status.RUNNING)
         return machine
+    
     
     def end(self) -> False:
         '''Waits for any machines left running.'''
@@ -190,83 +185,3 @@ class MainLoop(Machine):
             # all machines have ended
             self.end_machine
             return True
-            
-
-class Setup():
-    '''Setup Mainloop'''
-    def __init__(self) -> None:
-        '''Init setup and setup RevpiModIO'''
-        # setup RevpiModIO
-        try:
-            self.revpi = RevPiModIO(autorefresh=True)
-        except:
-            # load simulation if not connected to factory
-            self.revpi = RevPiModIO(autorefresh=True, configrsc="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.rsc", procimg="C:/Users/LUGGGI/OneDrive - bwedu/Vorlesungen/Bachlor_Arbeit/Code/RevPi/RevPi82247.img")
-        
-        self.revpi.mainloop(blocking=False)
-        self.exit_handler = ExitHandler(self.revpi)
-        
-        self.stage = None
-        self.threads: "list[threading.Thread]" = []
-        self.main_loops: "list[MainLoop]" = []
-        self.state_logger = StateLogger()
-
-    def add_mainloop(self, name: str, mainloop: MainLoop):
-        '''Add a new config
-        
-        :name: Name of given mainloop
-        :mainloop: Mainloop object to add
-        '''
-
-        self.main_loops.append(mainloop)
-        self.threads.append(threading.Thread(target=mainloop.run, name=name))
-
-    def run_factory(self, configs: "list[dict]"):
-        '''Runs the factory and starts every mainloop
-        
-        :configs: list of configs, same order as mainloops where added
-        '''
-
-        # init state_logger
-        names_of_mainsloops = []
-        for main_loop in self.main_loops:
-            names_of_mainsloops.append(main_loop.name)
-        self.state_logger.init("states.json", names_of_mainsloops)
-
-
-        exception = False
-        running = True
-        while(running and not exception):
-            for main_loop in self.main_loops:
-                if main_loop.error_exception_in_machine:
-                    log.error(f"Error in mainloop {main_loop.name}")
-                    self.exit_handler.stop_factory()
-                    exception = True
-                    break
-
-            if self.exit_handler.was_called or exception:
-                for main_loop in self.main_loops:
-                    log.critical(f"Ending mainloop: {main_loop.name}")
-                    main_loop.end_machine = True
-                return
-
-            running = False
-            for config, thread in zip(configs, self.threads):
-                if config["finished"]:
-                    continue
-                if not config["running"] and (config["start_when"] == self.stage or config["start_when"] == "now"):
-                    log.critical(f"Start: {config['name']}")
-                    thread.start()
-                    config["running"] = True
-
-                if config["running"]:
-                    running = True
-                    if not thread.is_alive():
-                        config["running"] = False
-                        config["finished"] = True
-                        self.stage = config["name"]
-                        log.critical(f"Stop: {config['name']}")
-                        break
-            
-            self.state_logger.update_file()
-            sleep(0.01)

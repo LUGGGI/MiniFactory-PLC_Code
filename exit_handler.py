@@ -76,6 +76,8 @@ class ExitHandler:
                     exit_revpi.io[str(io)].value = 0
 
         exit_revpi.exit()
+        # handle error with logger when aborting
+        log.handlers.clear()
 
 
 # Start stop factory if called as script

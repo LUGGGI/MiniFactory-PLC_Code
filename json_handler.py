@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.11"
 
 import json
 
@@ -30,8 +30,6 @@ class JsonHandler():
             self.__check_variable(config, "with_PM", bool)
             self.__check_variable(config, "with_WH", bool)
             self.__check_variable(config, "color", str)
-            config["running"] = False
-            config["finished"] = False
 
             for state in states:
                 if state.name == config["start_at"]:
@@ -48,9 +46,7 @@ class JsonHandler():
                 "name": "Init", 
                 "start_when": "now",
                 "start_at": states.INIT,
-                "end_at": states.END,
-                "running": False,
-                "finished": False
+                "end_at": states.END
             }
             json_dict["lines"].append(init_config)
         
