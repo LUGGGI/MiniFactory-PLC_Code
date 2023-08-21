@@ -17,9 +17,10 @@ __license__ = "GPL"
 __version__ = "2023.07.24"
 
 from enum import Enum
+from time import time
 
 from logger import log
-from json_handler import JsonHandler
+from io_interface import IOInterface
 from actuator import Actuator
 from sensor import Sensor
 from conveyor import Conveyor
@@ -60,6 +61,7 @@ class State(Enum):
     END = [100, Status.FREE, "None"]
     ERROR = [999, Status.FREE, "None"]
     TEST = [1000, Status.FREE, "None"]
+    DUMMY = [1111, Status.FREE, "None"]
 
 
 class MainRight(MainLoop):
@@ -68,9 +70,9 @@ class MainRight(MainLoop):
     run_...(): Calls the different modules
     '''
     FACTORY = "right"
-    def __init__(self, revpi, name: str, config: dict):
+    def __init__(self, revpi, config: dict):
         '''Initializes MiniFactory control loop.'''
-        super().__init__(revpi, name, config, State)
+        super().__init__(revpi, config, State)
         
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Main)")
@@ -91,7 +93,7 @@ class MainRight(MainLoop):
             
         if self.state == State.INIT:
             if self.run_init():
-                self.switch_state(State.END, False)
+                self.switch_state(State.END, wait=False)
 
         elif self.state == State.GR1:
             if self.run_gr1():
@@ -290,7 +292,7 @@ class MainRight(MainLoop):
                 gr.move_to_position(Position(245, 65, 1600), ignore_moving_pos=True)
 
         # move from cb1 to pm
-        if self.state == State.GR2_CB1_TO_PM and State.PM.value[1] == Status.FREE:
+        if self.state == State.GR2_CB1_TO_PM:
             if gr.is_stage(2):
                 # move down, grip product, move up
                 gr.get_product(2100, sensor="CB1_SENS_END")
@@ -307,7 +309,7 @@ class MainRight(MainLoop):
             elif gr.is_stage(6):
                 # move up and end_machine
                 gr.move_to_position(Position(-1, -1, 1600))
-                gr.end_machine = True
+                gr.stage = 0
                 return True
 
         # move from cb1 to cb3    
@@ -329,26 +331,17 @@ class MainRight(MainLoop):
             
         # move from pm to cb3    
         elif self.state == State.GR2_PM_TO_CB3:
-            # init if new gr1, should not happen in normal operation
-            if gr.is_stage(0) and abs(Sensor(self.revpi, gr.name + "_ROTATION_ENCODER", self.mainloop_name).get_current_value() - 3860) > 40:
-                gr.init()
-            elif gr.is_stage(1):
-                # move to pm
-                gr.reset_claw()
-                gr.move_to_position(Position(3860, 78, 1400), ignore_moving_pos=True)
-
-            elif gr.is_stage(0) or gr.is_stage(2):
+            if gr.is_stage(1):
                 # move down, grip product, move up
-                gr.stage = 2
                 gr.get_product(2000, sensor="CB2_SENS_START")
-            elif gr.is_stage(3):
+            elif gr.is_stage(2):
                 self.product_at = gr.name
                 # move to cb3
                 gr.move_to_position(Position(2305, 40, 1550))
-            elif gr.is_stage(4) and State.CB3_TO_WH.value[1] == Status.FREE:
+            elif gr.is_stage(3) and State.CB3_TO_WH.value[1] == Status.FREE:
                 # release product
                 gr.release()
-            elif gr.is_stage(5):
+            elif gr.is_stage(4):
                 # move back to init
                 gr.init(to_end=True)
                 return True
@@ -538,30 +531,25 @@ class MainRight(MainLoop):
         
 
 if __name__ == "__main__":
-    json_string = JsonHandler().read("main_right.json", State)
-    configs: "list[dict]" = json_string["lines"]
 
-    configs = list(filter(lambda x: x["start_when"].lower() != "no", configs))
+    setup = Setup("main_right.json", "states.json", State)
+    setup.io_interface.update_configs_with_input()
 
-    setup = Setup()
+    while(True):
+        setup.loop_start_time = time()
+        
+        for config in setup.io_interface.new_configs:
+            # add mainloop if it doesn't exists
+            if setup.mainloops.get(config["name"]) == None:
+                setup.mainloops[config["name"]] = MainRight(setup.revpi, config)
+                log.warning(f"Added new Mainloop: {config['name']}")
+            # update config in existing mainloop
+            else:
+                setup.mainloops[config["name"]].config = config
+                log.warning(f"Updated Mainloop: {config['name']}")
+        setup.io_interface.new_configs.clear()
 
-    if json_string["with_init"]:
-        setup.main_loops.append(MainRight(setup.revpi, "Init", configs[-1]))
-        setup.run_factory()
-        setup.main_loops.clear()
-        configs.remove(configs[-1])
+        setup.update_factory()
 
-    for config in configs:
-        if config["start_when"].lower() == "no":
-            configs.remove(config)
-            continue
-        setup.main_loops.append(MainRight(setup.revpi, config["name"], config))
-
-
-    try:
-        setup.run_factory()
-    except Exception as error:
-        log.exception(error)
-
-    log.critical("End of program")
-    setup.revpi.exit()
+        if not setup.mainloops.__len__() > 0 or setup.exception:
+            break

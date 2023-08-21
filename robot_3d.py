@@ -8,12 +8,13 @@ __license__ = "GPL"
 __version__ = "2023.07.24"
 
 import threading
+from time import sleep
 from enum import Enum
 
 from logger import log
 from machine import Machine
 from sensor import Sensor
-from actuator import Actuator
+from actuator import Actuator, EncoderOverflowError
 
 class State(Enum):
     INIT = 0
@@ -251,15 +252,24 @@ class Robot3D(Machine):
         if position.vertical <= current_position.vertical:
             dir_ver = "UP"
 
-        # move to position
-        self.__motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.__MOVE_THRESHOLD_ROT, self.__encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
-        self.__motor_hor.move_axis(dir_hor, position.horizontal, current_position.horizontal, self.__MOVE_THRESHOLD_HOR, self.__encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
-        self.__motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.__MOVE_THRESHOLD_VER, self.__encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
+        try:
+            # move to position
+            self.__motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.__MOVE_THRESHOLD_ROT, self.__encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
+            self.__motor_hor.move_axis(dir_hor, position.horizontal, current_position.horizontal, self.__MOVE_THRESHOLD_HOR, self.__encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
+            self.__motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.__MOVE_THRESHOLD_VER, self.__encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
 
-        # wait for end of each move
-        self.__motor_rot.join()
-        self.__motor_hor.join()
-        self.__motor_ver.join()
+            # wait for end of each move
+            self.__motor_rot.join()
+            self.__motor_hor.join()
+            self.__motor_ver.join()
+        
+        except EncoderOverflowError as e:
+            log.error(e)
+            if position.horizontal != 0 or position.rotation != 0 or position.vertical != 0:
+                sleep(1)
+                self.move_all_axes(Position(0,0,0))
+            else:
+                raise
 
         self.log.info(f"{self.name} :Axes moved to: {position}")
 
@@ -273,3 +283,9 @@ class Robot3D(Machine):
     def reset_claw(self, as_thread=True):
         '''Reset gripper. Abstract function, see subclass'''
         pass
+
+
+pos1 = Position(1, 1, 1)
+
+if pos1 == Position(1, 1, 1):
+    print("true")

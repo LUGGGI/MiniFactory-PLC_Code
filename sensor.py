@@ -140,7 +140,7 @@ class Sensor():
             # sensor detected product
             self.log.info(f"{self.name} detection") 
         else:
-            raise(Exception(f"{self.name} no detection"))
+            raise(SensorTimeoutError(f"{self.name} no detection in time"))
 
 
     def wait_for_encoder(self, trigger_value: int, trigger_threshold: int, timeout_in_s=10) -> int:
@@ -155,7 +155,7 @@ class Sensor():
         '''
         old_value = self.get_current_value()
         if old_value > 10000:
-            raise(Exception(f"{self.name} :Encoder had overflow"))
+            raise(EncoderOverflowError(f"{self.name} :Encoder had overflow"))
         
         start_time = time.time()
         lower = True if trigger_value < old_value else False
@@ -169,7 +169,7 @@ class Sensor():
                         self.counter_offset += 2
                     new_value = old_value = self.get_current_value()
                 elif new_value > old_value:
-                    raise(Exception(f"{self.name} :Counter jumped values"))
+                    raise(ValueError(f"{self.name} :Counter jumped values"))
 
             if abs(new_value - trigger_value) <= trigger_threshold:
 
@@ -179,7 +179,7 @@ class Sensor():
             # wait for next cycle
             time.sleep(self.CYCLE_TIME)
             
-        raise(Exception(f"{self.name} :Timeout occurred"))
+        raise(SensorTimeoutError(f"{self.name} :Value {trigger_value} not reached in time"))
 
 
     def reset_encoder(self):
@@ -192,7 +192,7 @@ class Sensor():
                 self.log.info(f"Reset encoder: {self.name}")
                 self.counter_offset = 0
                 return
-        raise(Exception(f"{self.name} :ERROR while reset"))
+        raise(TimeoutError(f"{self.name} :Could not reset in time"))
 
 
 def event_det_at_sensor(io_name, __):
@@ -200,3 +200,13 @@ def event_det_at_sensor(io_name, __):
     log.info(f"{io_name} :Detection")
     global detection 
     detection = True    
+
+
+class EncoderOverflowError(ValueError):
+    '''Encoder had a 'negativ' value.'''
+
+class SensorTimeoutError(TimeoutError):
+    '''Timeout occurred while waiting for Sensor'''
+
+class NoDetectionError(ValueError):
+    '''No detection at Sensor'''

@@ -7,12 +7,11 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.15"
 
 from enum import Enum
 from logger import log
 from machine import Machine
-from state_logger import StateLogger
 
 class Status(Enum):
     NONE = 0
@@ -24,7 +23,7 @@ class Status(Enum):
 class MainLoop(Machine):
     '''Controls the MiniFactory.
     
-    run(): Starts the mainloop
+    update(): Updates the mainloop
     mainloop_config(): Config functionality
     mainloop(): Calls the different states
     switch_state(): Switches state to given state if not BLOCKED or RUNNING
@@ -33,12 +32,12 @@ class MainLoop(Machine):
     run_...(): Calls the different modules
     '''
 
-    def __init__(self, revpi, name: str, config: dict, states):
+    def __init__(self, revpi, config: dict, states):
         '''Initializes MiniFactory control loop.'''
-        super().__init__(revpi, name, name)
+        super().__init__(revpi, config["name"], config["name"])
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Set)")
+        self.log = log.getChild(f"{self.mainloop_name}")
 
         self.config = config
         self.states = states
@@ -46,8 +45,7 @@ class MainLoop(Machine):
         self.product_at: str = None
         self.waiting_for_state = None
         self.running = False
-
-        self.state_logger = StateLogger()
+        self.status_dict = {}
 
 
     def update(self):
@@ -63,8 +61,6 @@ class MainLoop(Machine):
     def mainloop_config(self):
         '''Config functionality'''
         for machine in self.machines.values():
-            # update status
-            self.state_logger.update_machine(self.mainloop_name, machine.name, machine.get_status_dict())
             # look for errors in the machines
             if machine.error_exception_in_machine:
                 self.switch_state(self.states.ERROR)
@@ -94,13 +90,12 @@ class MainLoop(Machine):
             self.end_machine = True
             return
         
-        # update mainloop status for state_logger
-        status_dict = {
+        # update mainloop status for status
+        self.status_dict = {
             "state": self.state.name if self.state else None,
             "product_at": self.product_at,
             "waiting_for_state": self.waiting_for_state.name if self.waiting_for_state else None
         }
-        self.state_logger.update_machine(self.name, "self", status_dict)
 
         
     def mainloop(self):
@@ -115,6 +110,7 @@ class MainLoop(Machine):
         :wait: waits for input bevor switching
         '''
         if self.state == self.config["end_at"] and state != self.states.END:
+            self.switch_status(self.state, Status.FREE)
             self.switch_state(self.states.END, wait)
         elif state.value[1] == Status.FREE or state.value[2] == self.name:
             if wait:
@@ -148,8 +144,6 @@ class MainLoop(Machine):
                     state.value[1] = status
                     # set the used_by tag
                     state.value[2] = name_tag
-        self.state_logger.update_main_states(self.states)
-        self.state_logger.update_file()
 
 
     def get_machine(self, machine_name: str, machine_class, *args):

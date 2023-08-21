@@ -12,7 +12,6 @@ from datetime import datetime
 
 from revpimodio2 import RevPiModIO
 from logger import log
-from state_logger import StateLogger
 
 class Machine:
     '''Parent class for all machine modules.
@@ -48,8 +47,6 @@ class Machine:
 
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Mach)")
-
-        self.state_logger = StateLogger()
 
 
     def get_run_time(self) -> int:

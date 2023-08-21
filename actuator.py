@@ -12,9 +12,7 @@ import time
 from revpimodio2 import RevPiModIO
 
 from logger import log
-from sensor import Sensor, SensorType
-
-detection = False
+from sensor import Sensor, SensorType, SensorTimeoutError, EncoderOverflowError, NoDetectionError
 
 class Actuator():
     '''Control for Actuators, can also call Sensors
@@ -135,7 +133,7 @@ class Actuator():
 
 
             if check_sensor and sensor.is_detected() == False:
-                raise(Exception(f"{check_sensor} :No detection"))
+                raise(NoDetectionError(f"{check_sensor} :No detection"))
             
         except Exception as e:
             if self.__thread:
@@ -178,8 +176,8 @@ class Actuator():
                     offset = -self.__PWM_DURATION if trigger_value > encoder.get_current_value() else self.__PWM_DURATION
                     encoder.wait_for_encoder(trigger_value+offset, self.__ENCODER_TRIGGER_THRESHOLD, timeout_in_s)
 
-                # run at 15% speed for PWM_WINDOW values    
-                self.set_pwm(15)
+                # run at 20% speed for PWM_WINDOW values    
+                self.set_pwm(20)
                 self.start(direction)                
             
             # run to trigger_value
@@ -294,10 +292,10 @@ class Actuator():
     def set_pwm(self, percentage: int):
         '''Set PWM value to percentage.
         
-        :percentage: speed of motor, (0..100) on is over 15
+        :percentage: speed of motor, (0..100) on is over 20
         '''
         if percentage < 0 or percentage > 100:
-            raise(Exception(f"{self.__pwm}: {percentage} :Out of range (0-100)"))
+            raise(ValueError(f"{self.__pwm}: {percentage} :Out of range (0-100)"))
         
         self.log.info(f"{self.__pwm} set to {percentage}%")
         self.__pwm_value = percentage

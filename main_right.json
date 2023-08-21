@@ -1,10 +1,11 @@
 {
+    "available": true,
     "factory": "right",
     "with_init": true,
-    "lines": [
+    "configs": [
         {
             "name": "Main1", 
-            "start_when": "now",
+            "start": true,
             "start_at": "GR1",
             "end_at": "END",
             "with_oven": true,
@@ -15,7 +16,7 @@
         },
         {
             "name": "Main2", 
-            "start_when": "now",
+            "start": false,
             "start_at": "MPS",
             "end_at": "WH_STORE",
             "with_oven": false,
@@ -26,7 +27,7 @@
         },
         {
             "name": "Main3", 
-            "start_when": "now",
+            "start": false,
             "start_at": "CB1",
             "end_at": "END",
             "with_oven": false,
@@ -37,7 +38,7 @@
         },
         {
             "name": "Main4", 
-            "start_when": "no",
+            "start": false,
             "start_at": "CB4",
             "end_at": "END",
             "with_oven": false,
@@ -46,5 +47,6 @@
             "with_WH": false,
             "color": "BLUE"
         }
-    ]
+    ],
+    "states": ["CB1", "CB3_TO_WH", "CB3_TO_CB4", "CB4", "CB5", "GR1", "GR2_CB1_TO_CB3", "GR2_CB1_TO_PM", "GR2_PM_TO_CB3", "GR3", "VG2", "MPS", "PM", "SL", "WH_STORE", "WH_RETRIEVE", "END"]
 }
