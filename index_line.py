@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 import threading
 from time import sleep
@@ -48,11 +48,7 @@ class IndexLine(Machine):
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Indx)")
 
-        self.log.debug("Created Index Line: " + self.name)
-    
-
-    def __del__(self):
-        self.log.debug("Destroyed Index Line: " + self.name)
+        self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
 
     def run(self, as_thread=True):

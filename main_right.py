@@ -14,13 +14,12 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 from enum import Enum
 from time import time
 
 from logger import log
-from io_interface import IOInterface
 from actuator import Actuator
 from sensor import Sensor
 from conveyor import Conveyor
@@ -280,7 +279,7 @@ class MainRight(MainLoop):
             return True
 
     def run_gr2(self) -> False:
-        gr: GripRobot = self.get_machine("GR2", GripRobot, Position(-1, -1, 1400))
+        gr: GripRobot = self.get_machine("GR2", GripRobot, Position(-1, -1, 1300))
 
         # move gr to cb1
         if self.state == State.CB1 or self.state == State.GR2_CB1_TO_PM or self.state == State.GR2_CB1_TO_CB3:
@@ -308,7 +307,7 @@ class MainRight(MainLoop):
                 gr.release()
             elif gr.is_stage(6):
                 # move up and end_machine
-                gr.move_to_position(Position(-1, -1, 1600))
+                gr.move_to_position(Position(-1, -1, 1500))
                 gr.stage = 0
                 return True
 
@@ -354,7 +353,7 @@ class MainRight(MainLoop):
         elif gr.is_stage(1):
             # move to cb4
             gr.reset_claw()
-            gr.move_to_position(Position(440, 43, 1600), ignore_moving_pos=True)
+            gr.move_to_position(Position(445, 43, 1600), ignore_moving_pos=True)
 
         # if product ready move it
         elif gr.is_stage(2) and self.state == State.GR3:
@@ -550,6 +549,8 @@ if __name__ == "__main__":
         setup.io_interface.new_configs.clear()
 
         setup.update_factory()
-
-        if not setup.mainloops.__len__() > 0 or setup.exception:
+        
+        if setup.exception:
+            break
+        if setup.mainloops.__len__() <= 0 and setup.io_interface.input_dict["exit_if_end"]:
             break

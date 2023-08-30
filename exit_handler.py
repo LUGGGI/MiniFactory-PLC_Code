@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 import threading
 from time import sleep
@@ -15,7 +15,7 @@ import signal
 from logger import log
 
 class ExitHandler:
-    '''Stops the factory, and handles CTRL+C
+    '''Stops the factory, and handles CTRL+C.
     
     stop_factory: Disables the API for factory and stops all Actuators
     '''
@@ -31,7 +31,7 @@ class ExitHandler:
 
 
     def stop_factory(self, *_):
-        '''Disables the API for factory and stops all Actuators'''
+        '''Disables the API for factory and stops all Actuators.'''
         # call this function again as a thread
         if self.was_called == False:
             self.was_called = True

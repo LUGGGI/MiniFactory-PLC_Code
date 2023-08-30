@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 import threading
 from time import sleep
@@ -31,13 +31,15 @@ class State(Enum):
 class MPStation(Machine):
     '''Controls the Multi Purpose Station.
 
+    init(): Move to init position.
     run(): Runs the Multi Purpose Station routine.
+    run_to_out(): Runs the Conveyor to move the product out.
     '''
     __TIME_OVEN = 2
     __TIME_SAW = 2
 
     def __init__(self, revpi, name: str, mainloop_name: str):
-        '''Initializes the Multi Purpose Station
+        '''Initializes the Multi Purpose Station.
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
@@ -49,14 +51,11 @@ class MPStation(Machine):
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Mps)")
 
-        self.log.debug("Created Multi Purpose Station: " + self.name)
-
-    def __del__(self):
-        self.log.debug("Destroyed Multi Purpose Station: " + self.name)
+        self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
 
     def init(self, as_thread=True):
-        '''Move to init position'''
+        '''Move to init position.'''
         if as_thread == True:
             self.thread = threading.Thread(target=self.init, args=(False,), name=self.name+"_INIT")
             self.thread.start()

@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 import threading
 from enum import Enum
@@ -94,11 +94,7 @@ class Warehouse(Machine):
 
         self.__color = "COLOR_UNKNOWN"
 
-        self.log.debug("Created Warehouse: " + self.name)
-
-
-    def __del__(self):
-        self.log.debug("Destroyed Warehouse: " + self.name)
+        self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
 
     def init(self, for_store=False, for_retrieve=False, to_end=False, as_thread=True):

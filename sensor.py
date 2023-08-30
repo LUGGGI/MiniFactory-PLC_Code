@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 import time
 from enum import Enum
@@ -24,15 +24,13 @@ class SensorType(Enum):
 class Sensor():
     '''Control for Senors
     
-    detect(): Returns value of Sensor
+    get_current_value(): Returns the current value of the sensor.
     start_monitor(): Start monitoring sensor for detection.
     remove_monitor(): Stop monitoring sensor.
-    is_detected(): Returns True if product was detected.
-    wait_for_detect(): Pauses thread until a detection occurs.
-    wait_for_encoder(): Pauses thread until the encoder/counter reached the trigger_value.
-    __positive_to_negativ(): Converts the upwards counting value to a from counter_start downwards counting value.
+    is_detected(): Returns True if product was detected. If True removes monitor.
+    wait_for_detect(): Waits for detection at sensor.
+    wait_for_encoder(): Waits for the encoder/counter to reach the trigger_value.
     reset_encoder(): Resets the encoder or counter to 0.
-    get_encoder_value(): Returns the current value of the encoder.
     '''
     CYCLE_TIME = 0.005 # s
 
@@ -69,7 +67,7 @@ class Sensor():
 
 
     def __del__(self):
-        self.log.debug(f"Destroyed Sensor({self.type.name}): {self.name}")
+        self.log.debug(f"Destroyed {type(self).__name__}({self.type.name}): {self.name}")
 
 
     def get_current_value(self):
@@ -113,7 +111,7 @@ class Sensor():
 
 
     def is_detected(self, edge=BOTH) -> bool:
-        '''Returns True if product was detected.
+        '''Returns True if product was detected. If True removes monitor.
         
         :edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2)
         '''
@@ -164,6 +162,7 @@ class Sensor():
             new_value = self.get_current_value()
 
             if self.type == SensorType.COUNTER:
+                # Handels counters, because they don't know the direction of the motor an offset is added if the motor is running backwards. This allows the use of counters as encoders
                 if new_value == old_value + 1:
                     if lower:
                         self.counter_offset += 2

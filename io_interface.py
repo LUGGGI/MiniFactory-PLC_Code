@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.21"
+__version__ = "2023.08.30"
 
 import json
 from copy import deepcopy
@@ -13,6 +13,12 @@ from copy import deepcopy
 from logger import log
 
 class IOInterface():
+    '''Handels json config read and program status update.
+    
+    update_configs_with_input(): Reads input file and appends the new configs to the configs list.
+    __check_if_config_already_exists(): Returns True if the given config already exist.
+    update_output(): Update program status.
+    '''
 
     def __init__(self, input_file, output_file, states) -> None:
         '''Init IOInterface.
@@ -28,7 +34,7 @@ class IOInterface():
         self.__output_file = output_file
         self.__states = states
 
-        self.__input_dict = {}
+        self.input_dict = {}
         self.__configs = []
         self.new_configs = []
 
@@ -54,8 +60,8 @@ class IOInterface():
         new_configs = list(filter(lambda x: self.__check_if_config_already_exists(x) == False, json_dict["configs"]))
 
         # update the input dict
-        if new_configs.__len__() > 0:
-            self.__input_dict = deepcopy(json_dict)
+        if new_configs.__len__() > 0 or self.input_dict != json_dict:
+            self.input_dict = deepcopy(json_dict)
 
         # inserts the correct states into the new configs
         for config in new_configs:
@@ -80,7 +86,7 @@ class IOInterface():
         
         :config: the config dictionary to check
         '''
-        for old_config in self.__input_dict.get("configs", {}):
+        for old_config in self.input_dict.get("configs", {}):
             if config == old_config:
                 return True
         return False
@@ -90,7 +96,7 @@ class IOInterface():
     ###############################################################################################
     
     def update_output(self, main_states: list, mainloops: dict):
-        '''Update main_states.
+        '''Update program status.
 
         :main_states: possible States of mainloop
         :mainloops: status data for all machines in all mainloops

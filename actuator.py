@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 import threading
 import time
@@ -19,12 +19,13 @@ class Actuator():
     
     run_to_sensor(): Run Actuator until product is detected.
     run_for_time(): Run Actuator for certain amount of time.
+    move_axis(): Moves an axis to the given trigger value.
     run_to_encoder_value(): Run Actuator until the trigger_value of encoder is reached.
     run_to_encoder_start(): Run Actuator to the encoder reference switch and resets the counter to 0.
-    move_axis(): Moves an axis to the given trigger value.
     start(): Start actuator.
     stop(): Stop actuator.
     set_pwm(): Set PWM to percentage.
+    join(): Joins the current thread and raises Exceptions.
     '''
     __ENCODER_TRIGGER_THRESHOLD = 40
     __COUNTER_TRIGGER_THRESHOLD = 0
@@ -33,7 +34,7 @@ class Actuator():
     __PWM_DURATION = 100
 
     def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str, pwm: str=None, type: str=None):
-        '''Initializes the Actuator
+        '''Initializes the Actuator.
         
         :revpi: RevPiModIO Object to control the motors and sensors
         :name: Exact name of the machine in PiCtory (everything bevor first '_')
@@ -54,11 +55,11 @@ class Actuator():
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Act)")
 
-        self.log.debug("Created Actuator: " + self.name + self.__type)
+        self.log.debug(f"Created: Actuator {self.name}{self.__type}")
 
 
     def __del__(self):
-        self.log.debug("Destroyed Actuator: " + self.name + self.__type)
+        self.log.debug(f"Destroyed {type(self).__name__}: {self.name}{self.__type}")
 
 
     def run_to_sensor(self, direction: str, stop_sensor: str, stop_delay_in_ms=0, timeout_in_s=10, as_thread=False):
@@ -143,6 +144,47 @@ class Actuator():
         finally:
             #stop actuator
             self.stop(direction)
+    
+
+    def move_axis(self, direction: str, trigger_value: int, current_value: int, move_threshold: int, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
+        '''Moves an axis to the given trigger value.
+        
+        :direction: Actuator direction, (last part of whole name)
+        :trigger_value: Encoder-Value at which the motor stops
+        :current_value: Current Encoder-Value to determine if move is necessary
+        :move_threshold: Value that has at min to be traveled to start the motor
+        :encoder: Sensor object
+        :ref_sw: Reference Switch at which the motor stops if it runs to the encoder start
+        :timeout_in_s: Time after which an exception is raised
+        :as_thread: Runs the function as a thread
+
+        -> Panics if timeout is reached (no detection happened)
+        '''
+        actuator = self.name + ( "_" + direction if direction != "" else "")
+        # call this function again as a thread
+        if as_thread == True:
+            self.__thread = threading.Thread(target=self.move_axis, args=(direction, trigger_value, current_value, move_threshold, encoder, ref_sw, timeout_in_s, False), name=actuator)
+            self.__thread.start()
+            return
+
+        try:
+            # if trigger_value (position) is -1 do not move that axis
+            if trigger_value == -1:
+                return
+            # if trigger value is 0 move to init position
+            elif trigger_value == 0:
+                self.run_to_encoder_start(direction, ref_sw, encoder, timeout_in_s, as_thread=False)
+            # if trigger value is the same as the current value don't move
+            elif abs(current_value - trigger_value) < move_threshold:
+                self.log.info(f"{self.name}_{direction} :Axis already at position")
+            # move to value
+            else:
+                self.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread=False)
+        except Exception as e:
+            if self.__thread:
+                self.exception = e
+            else:
+                raise
 
 
     def run_to_encoder_value(self, direction: str, encoder: Sensor, trigger_value: int, timeout_in_s=20, as_thread=False):
@@ -223,47 +265,6 @@ class Actuator():
                 raise
 
 
-    def move_axis(self, direction: str, trigger_value: int, current_value: int, move_threshold: int, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
-        '''Moves an axis to the given trigger value.
-        
-        :direction: Actuator direction, (last part of whole name)
-        :trigger_value: Encoder-Value at which the motor stops
-        :current_value: Current Encoder-Value to determine if move is necessary
-        :move_threshold: Value that has at min to be traveled to start the motor
-        :encoder: Sensor object
-        :ref_sw: Reference Switch at which the motor stops if it runs to the encoder start
-        :timeout_in_s: Time after which an exception is raised
-        :as_thread: Runs the function as a thread
-
-        -> Panics if timeout is reached (no detection happened)
-        '''
-        actuator = self.name + ( "_" + direction if direction != "" else "")
-        # call this function again as a thread
-        if as_thread == True:
-            self.__thread = threading.Thread(target=self.move_axis, args=(direction, trigger_value, current_value, move_threshold, encoder, ref_sw, timeout_in_s, False), name=actuator)
-            self.__thread.start()
-            return
-
-        try:
-            # if trigger_value (position) is -1 do not move that axis
-            if trigger_value == -1:
-                return
-            # if trigger value is 0 move to init position
-            elif trigger_value == 0:
-                self.run_to_encoder_start(direction, ref_sw, encoder, timeout_in_s, as_thread=False)
-            # if trigger value is the same as the current value don't move
-            elif abs(current_value - trigger_value) < move_threshold:
-                self.log.info(f"{self.name}_{direction} :Axis already at position")
-            # move to value
-            else:
-                self.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread=False)
-        except Exception as e:
-            if self.__thread:
-                self.exception = e
-            else:
-                raise
-
-
     def start(self, direction: str=""):
         '''Start Actuator.
         
@@ -302,7 +303,7 @@ class Actuator():
 
 
     def join(self):
-        '''Joins the current thread and raises Exceptions'''
+        '''Joins the current thread and raises Exceptions.'''
         self.__thread.join()
         if self.exception:
             raise self.exception

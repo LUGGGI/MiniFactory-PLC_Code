@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.15"
+__version__ = "2023.08.30"
 
 from enum import Enum
 from logger import log
@@ -48,10 +48,15 @@ class MainLoop(Machine):
         self.status_dict = {}
 
 
-    def update(self):
-        '''Updates the mainloop'''
+    def update(self, run: bool):
+        '''Updates the mainloop.
+        
+        :run: only run the mainloop if True
+        '''
         try:
-            self.mainloop()
+            self.mainloop_config()
+            if run:
+                self.mainloop()
         except Exception as error:
             self.error_exception_in_machine = True
             self.log.exception(error)

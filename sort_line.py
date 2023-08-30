@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 import threading
 from time import sleep
@@ -46,11 +46,7 @@ class SortLine(Machine):
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Sort)")
 
-        self.log.debug("Created Sorting Line: " + self.name)
-
-
-    def __del__(self):
-        self.log.debug("Destroyed Sorting Line: " + self.name)
+        self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
 
     def run(self, color: str=None, as_thread=True):

@@ -1,22 +1,73 @@
 {
     "available": true,
     "factory": "right",
-    "with_init": true,
+    "exit_if_end": false,
+    "run": true,
     "configs": [
         {
+            "name": "Init", 
+            "run": false,
+            "start_at": "INIT",
+            "end_at": "END"
+        },
+        {
             "name": "Main1", 
-            "start": true,
+            "run": true,
             "start_at": "GR1",
             "end_at": "END",
             "with_oven": true,
             "with_saw": false,
-            "with_PM": true,
-            "with_WH": true,
+            "with_PM": false,
+            "with_WH": false,
+            "color": "RED"
+        },
+        {
+            "name": "Main12", 
+            "run": false,
+            "start_at": "GR1",
+            "end_at": "END",
+            "with_oven": true,
+            "with_saw": false,
+            "with_PM": false,
+            "with_WH": false,
+            "color": "RED"
+        },
+        {
+            "name": "Main13", 
+            "run": false,
+            "start_at": "GR1",
+            "end_at": "END",
+            "with_oven": true,
+            "with_saw": false,
+            "with_PM": false,
+            "with_WH": false,
+            "color": "RED"
+        },
+        {
+            "name": "Main14", 
+            "run": false,
+            "start_at": "GR1",
+            "end_at": "END",
+            "with_oven": true,
+            "with_saw": false,
+            "with_PM": false,
+            "with_WH": false,
+            "color": "RED"
+        },
+        {
+            "name": "Main15", 
+            "run": false,
+            "start_at": "GR1",
+            "end_at": "END",
+            "with_oven": true,
+            "with_saw": false,
+            "with_PM": false,
+            "with_WH": false,
             "color": "RED"
         },
         {
             "name": "Main2", 
-            "start": false,
+            "run": false,
             "start_at": "MPS",
             "end_at": "WH_STORE",
             "with_oven": false,
@@ -27,7 +78,7 @@
         },
         {
             "name": "Main3", 
-            "start": false,
+            "run": false,
             "start_at": "CB1",
             "end_at": "END",
             "with_oven": false,
@@ -38,7 +89,7 @@
         },
         {
             "name": "Main4", 
-            "start": false,
+            "run": false,
             "start_at": "CB4",
             "end_at": "END",
             "with_oven": false,

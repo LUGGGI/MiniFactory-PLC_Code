@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 import threading
 
@@ -18,7 +18,7 @@ from robot_3d import Robot3D, Position, State
 class GripRobot(Robot3D):
     '''Controls the Gripper Robot
     
-    grip(): Grip Product..
+    grip(): Grip Product.
     release(): Release Product.
     reset_claw(): Reset claw to init position.
     '''
@@ -46,11 +46,7 @@ class GripRobot(Robot3D):
         self.__encoder_claw = Sensor(self.revpi, self.name + "_CLAW_COUNTER", self.mainloop_name, SensorType.COUNTER)
         self.__motor_claw = Actuator(self.revpi, self.name, self.mainloop_name, type="claw")
 
-        self.log.debug("Created Gripper Robot: " + self.name)
-
-
-    def __del__(self):
-        self.log.debug("Destroyed Gripper Robot: " + self.name)
+        self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
 
     def grip(self, as_thread=True):

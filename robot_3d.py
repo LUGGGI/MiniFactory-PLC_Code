@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 import threading
 from time import sleep
@@ -78,12 +78,6 @@ class Robot3D(Machine):
         self.__motor_hor = Actuator(self.revpi, self.name, self.mainloop_name, pwm=pwm_hor, type="horizontal")
         self.__motor_ver = Actuator(self.revpi, self.name, self.mainloop_name, pwm=pwm_ver, type="vertical")
 
-        self.log.debug("Created 3D Robot: " + self.name)
-
-
-    def __del__(self):
-        self.log.debug("Destroyed 3D Robot: " + self.name)
-
 
     def init(self, to_end=False, as_thread=True):
         '''Move to init position.
@@ -142,13 +136,13 @@ class Robot3D(Machine):
             self.grip(as_thread = False)
 
             # move back up and continue if gripping worked
-            self.__motor_ver.start("UP")
-            self.__encoder_ver.wait_for_encoder(start_vertical_position, self.__motor_ver._Actuator__PWM_TRIGGER_THRESHOLD)
-            # self.move_all_axes(Position(-1, -1, start_vertical_position))
+            # self.__motor_ver.start("UP")
+            # self.__encoder_ver.wait_for_encoder(start_vertical_position, self.__motor_ver._Actuator__PWM_TRIGGER_THRESHOLD)
+            self.move_all_axes(Position(-1, -1, start_vertical_position))
 
             # check if product still at sensor, if true try to grip again
             if sensor and Sensor(self.revpi, sensor, self.mainloop_name).get_current_value() == True:
-                self.__motor_ver.stop("UP")
+                # self.__motor_ver.stop("UP")
                 self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num+1}")
                 self.reset_claw(as_thread=False)
                 if try_num == max_tries-1:

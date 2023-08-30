@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.24"
+__version__ = "2023.08.30"
 
 from time import sleep, time
 from revpimodio2 import RevPiModIO
@@ -19,7 +19,11 @@ from mainloop import MainLoop
 
 
 class Setup():
-    '''Setup Mainloop'''
+    '''Setup Mainloop.
+    
+    update_factory(): Updates the factory and starts every mainloop.
+    save_status(): Gets the mainloop states and the status dictionaries of all machines in all active mainloops. Puts them into output.
+    '''
     LOOP_TIME = 0.02 # in seconds
     
     def __init__(self, input_file, output_file, states) -> None:
@@ -53,40 +57,44 @@ class Setup():
 
     def update_factory(self):
         '''Updates the factory and starts every mainloop.'''
-
-        # check for error in mainloops
-        mainloop: MainLoop
-        for mainloop in self.mainloops.values():
-            # run an iteration if the mainloop
-            if mainloop.running:
-                mainloop.update()
-            # start the mainloop
-            elif mainloop.config["start"] == True:
-                log.critical(f"Start: {mainloop.name}")
-                mainloop.switch_state(mainloop.config["start_at"], False)
-                mainloop.running = True
-            
-            # end the mainloop
-            if mainloop.end_machine:
-                self.stage = mainloop.name
-                log.critical(f"Stop: {mainloop.name}")
-                self.mainloops.remove(mainloop)
-                break
-            
-            # handel exception in mainloop
-            if mainloop.error_exception_in_machine:
-                log.error(f"Error in mainloop {mainloop.name}")
-                self.exit_handler.stop_factory()
-                self.exception = True
-                break
-
-            # end all mainloops if error occurred
-            if self.exit_handler.was_called or self.exception:
-                for mainloop in self.mainloops:
-                    log.critical(f"Ending mainloop: {mainloop.name}")
-                    mainloop.end_machine = True
+        try:
+            # check for error in mainloops
+            mainloop: MainLoop
+            for mainloop in self.mainloops.values():
+                # run an iteration if the mainloop
+                if mainloop.running:
+                    mainloop.update(self.io_interface.input_dict["run"])
+                # start the mainloop
+                elif mainloop.config["run"] == True and (self.mainloops.get("Init") == None or self.mainloops.get("Init").running == False):
+                    log.critical(f"Start: {mainloop.name}")
+                    mainloop.switch_state(mainloop.config["start_at"], False)
+                    mainloop.running = True
+                    mainloop.update(self.io_interface.input_dict["run"])
+                
+                # end the mainloop
+                if mainloop.end_machine:
+                    self.stage = mainloop.name
+                    log.critical(f"Stop: {mainloop.name}")
+                    self.mainloops.pop(mainloop.name)
+                    break
+                
+                # handel exception in mainloop
+                if mainloop.error_exception_in_machine:
+                    log.error(f"Error in mainloop {mainloop.name}")
+                    self.exit_handler.stop_factory()
                     self.exception = True
-                return
+                    break
+
+                # end all mainloops if error occurred
+                if self.exit_handler.was_called or self.exception:
+                    for mainloop in self.mainloops:
+                        log.critical(f"Ending mainloop: {mainloop.name}")
+                        mainloop.end_machine = True
+                        self.exception = True
+                    return
+        except Exception as e:
+            log.exception(e)
+            self.exception = True
             
             
         self.save_status()
@@ -96,12 +104,14 @@ class Setup():
             self.last_config_update_time = time()
 
         loop_run_time = time() - self.loop_start_time
-        log.debug(f"Loop run time: {loop_run_time}")
-        sleep(self.LOOP_TIME - loop_run_time if loop_run_time < self.LOOP_TIME else 0)
+        if loop_run_time < self.LOOP_TIME:
+            sleep(self.LOOP_TIME - loop_run_time)
+        else:
+            log.debug(f"Long Loop run time: {(loop_run_time*1000).__round__()}ms")
 
 
     def save_status(self):
-        '''Gets the mainloop states and the status dictionaries of all machines in all active mainloops. Puts them into output'''
+        '''Gets the mainloop states and the status dictionaries of all machines in all active mainloops. Puts them into output.'''
 
         main_states = []
         mainloops = {}
@@ -113,7 +123,7 @@ class Setup():
         # get the status dictionaries of all machines in all active mainloops
         mainloop: MainLoop
         for mainloop in self.mainloops.values():
-            if mainloop.config["start"] == False:
+            if mainloop.config["run"] == False:
                 continue
             dictionary = {"self": mainloop.status_dict}
             for machine in mainloop.machines.values():

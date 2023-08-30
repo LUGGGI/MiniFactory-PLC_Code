@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.07.12"
+__version__ = "2023.08.30"
 
 import threading
 from enum import Enum
@@ -43,10 +43,8 @@ class PunchMach(Machine):
         global log
         self.log = log.getChild(f"{self.mainloop_name}(Pun)")
 
-        self.log.debug("Created Punching Machine: " + self.name)
+        self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
-    def __del__(self):
-        self.log.debug("Destroyed Punching Machine: " + self.name)
 
     def run(self, out_stop_sensor: str, as_thread=True):
         '''Runs the Punching Maschine routine.
