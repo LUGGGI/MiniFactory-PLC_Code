@@ -89,7 +89,8 @@ class MainLoop(Machine):
             return
 
         if self.state == self.states.END:
-            self.states.END.value[1] = Status.FREE
+            self.product_at = None
+            self.switch_status(self.states.END, Status.FREE)
             if not self.end():
                 return
             self.end_machine = True
@@ -121,8 +122,9 @@ class MainLoop(Machine):
             if wait:
                 input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
             self.log.critical(self.name + ": Switching state to: " + str(state.name))
-            state.value[2] == self.name
             self.state = state
+            if state != self.states.END or state != self.states.WAITING:
+                self.switch_status(state, Status.RUNNING)
         else:
             self.log.critical(f"{self.name}: Waiting for: {state}")
             self.switch_status(self.state, Status.WAITING)

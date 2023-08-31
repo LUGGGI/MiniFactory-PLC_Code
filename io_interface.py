@@ -35,7 +35,6 @@ class IOInterface():
         self.__states = states
 
         self.input_dict = {}
-        self.__configs = []
         self.new_configs = []
 
         self.__output_dict = {}
@@ -65,6 +64,12 @@ class IOInterface():
 
         # inserts the correct states into the new configs
         for config in new_configs:
+            if config["start_at"].lower() == "start":
+                config["start_at"] = "GR1"
+            if config["start_at"].lower() == "storage":
+                config["start_at"] = "WH_RETRIEVE"
+            if config["end_at"].lower() == "store":
+                config["end_at"] = "WH_STORE"
             for state in self.__states:
                 if state.name == config["start_at"]:
                     config["start_at"] = state
@@ -77,8 +82,7 @@ class IOInterface():
         
         
         # add the new configs to the configs list 
-        self.new_configs = new_configs   
-        self.__configs.extend(new_configs)
+        self.new_configs = new_configs
 
 
     def __check_if_config_already_exists(self, config) -> bool:
@@ -113,6 +117,8 @@ class IOInterface():
         if output_dict == self.__output_dict:
             return
 
+        self.__update_num += 1
+        output_dict["update_num"] = self.__update_num
         self.__output_dict = output_dict
         
         try:
@@ -121,5 +127,3 @@ class IOInterface():
                 json.dump(self.__output_dict, fp, indent=4)
         except Exception as e:
             self.log.exception(e)
-        self.__update_num += 1
-

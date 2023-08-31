@@ -72,7 +72,7 @@ class Setup():
                     mainloop.update(self.io_interface.input_dict["run"])
                 
                 # end the mainloop
-                if mainloop.end_machine:
+                if mainloop.end_machine or mainloop.config["run"] == False:
                     self.stage = mainloop.name
                     log.critical(f"Stop: {mainloop.name}")
                     self.mainloops.pop(mainloop.name)
