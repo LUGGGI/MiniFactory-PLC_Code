@@ -540,32 +540,6 @@ class MainRight(MainLoop):
         
 
 if __name__ == "__main__":
-
-    setup = Setup("main_right.json", "states.json", State)
-    setup.io_interface.update_configs_with_input()
-
-    while(True):
-        setup.loop_start_time = time()
-        
-        for config in setup.io_interface.new_configs:
-            # add mainloop if it doesn't exists
-            if setup.mainloops.get(config["name"]) == None:
-                if config["run"] == False:
-                    continue
-                setup.mainloops[config["name"]] = MainRight(setup.revpi, config)
-                log.warning(f"Added new Mainloop: {config['name']}")
-            # update config in existing mainloop
-            else:
-                setup.mainloops[config["name"]].config = config
-                log.warning(f"Updated Mainloop: {config['name']}")
-        setup.io_interface.new_configs.clear()
-
-        setup.update_factory()
-        
-        if setup.exception:
-            break
-        if setup.mainloops.__len__() <= 0 and setup.io_interface.input_dict["exit_if_end"]:
-            break
-    
-    log.critical("End of program")
-    setup.revpi.exit()
+    # Start and run the factory
+    setup = Setup("main_right.json", "states.json", State, MainRight)
+    setup.run_factory()
