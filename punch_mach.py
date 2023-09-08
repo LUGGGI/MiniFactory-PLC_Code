@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 import threading
 from enum import Enum
@@ -37,7 +37,7 @@ class PunchMach(Machine):
         :mainloop_name: name of current mainloop
         '''
         super().__init__(revpi, name, mainloop_name)
-        self.stage = 1
+        self.position = 1
         self.ready_for_transport = False
 
         global log
@@ -92,6 +92,6 @@ class PunchMach(Machine):
             self.switch_state(State.ERROR)
             self.log.exception(error)
         else:
-            self.stage += 1
+            self.position += 1
             # self.end_machine = True # only if not called in the same functions as other cb
             self.switch_state(State.END)

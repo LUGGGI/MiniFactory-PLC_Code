@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 import threading
 from time import sleep
@@ -63,7 +63,7 @@ class VacRobot(Robot3D):
             self.switch_state(State.ERROR)
             self.log.exception(error)
         else:
-            self.stage += 1
+            self.position += 1
 
     def release(self, as_thread=True):
         '''Release product.
@@ -83,4 +83,4 @@ class VacRobot(Robot3D):
             self.switch_state(State.ERROR)
             self.log.exception(error)
         else:
-            self.stage += 1
+            self.position += 1

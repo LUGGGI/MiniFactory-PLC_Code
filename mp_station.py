@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 import threading
 from time import sleep
@@ -68,7 +68,7 @@ class MPStation(Machine):
             self.switch_state(State.ERROR)
             self.log.exception(error)
         else:
-            self.stage = 1
+            self.position = 1
 
     def run(self, with_oven=True, with_saw=False, as_thread=True):
         '''Runs the Punching Maschine routine.
@@ -172,7 +172,7 @@ class MPStation(Machine):
             self.switch_state(State.ERROR)
             self.log.exception(error)
         else:
-            self.stage += 1
+            self.position += 1
 
     def run_to_out(self, as_thread=True):
         '''Runs the Conveyor to move the product out.
@@ -198,5 +198,5 @@ class MPStation(Machine):
             self.log.exception(error)
         else:
             self.end_machine = True
-            self.stage += 1
+            self.position += 1
             self.switch_state(State.END)

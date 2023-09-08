@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 import threading
 from time import sleep
@@ -39,7 +39,7 @@ class SortLine(Machine):
         :mainloop_name: name of current mainloop
         '''
         super().__init__(revpi, name, mainloop_name)
-        self.stage = 1
+        self.position = 1
         self.color = "WHITE"
         self.start_next_machine = False
 
@@ -111,5 +111,5 @@ class SortLine(Machine):
             self.log.exception(error)
         else:
             self.log.warning(f"{self.name} :Product sorted into: {self.color}")
-            self.stage += 1
+            self.position += 1
             self.switch_state(State.END)

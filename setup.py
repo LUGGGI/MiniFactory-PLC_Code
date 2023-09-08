@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 from time import sleep, time
 from revpimodio2 import RevPiModIO
@@ -15,7 +15,7 @@ from revpimodio2 import RevPiModIO
 from exit_handler import ExitHandler
 from io_interface import IOInterface
 from logger import log
-from mainloop import MainLoop
+from mainline import MainLine
 
 
 class Setup():
@@ -32,6 +32,7 @@ class Setup():
         :input_file: config json file where the mainloops are configured
         :output_file: json file where the states are logged
         :states: possible States of mainloop
+        :mainloop_class: the class of the given Mainloop
         '''
         # setup RevpiModIO
         try:
@@ -45,7 +46,6 @@ class Setup():
         self.states = states
         self.mainloop_class = mainloop_class
         
-        self.stage = None
         self.exception = False
         self.loop_start_time: float = 0
         self.last_config_update_time: float = 0
@@ -58,25 +58,29 @@ class Setup():
 
     def run_factory(self):
         '''Starts the factory, adds and updates the mainloops'''
-        self.io_interface.update_configs_with_input()
 
         while(True):
             self.loop_start_time = time()
 
-            for config in self.io_interface.new_configs:
-                # add mainloop if it doesn't exists
-                if self.mainloops.get(config["name"]) == None:
-                    if config["run"] == False:
-                        continue
-                    self.mainloops[config["name"]] = self.mainloop_class(self.revpi, config)
-                    log.warning(f"Added new Mainloop: {config['name']}")
-                # update config in existing mainloop
-                else:
-                    self.mainloops[config["name"]].config = config
-                    log.warning(f"Updated Mainloop: {config['name']}")
-            self.io_interface.new_configs.clear()
-
             try:
+                # update the config
+                if time() > self.last_config_update_time + 1:
+                    self.io_interface.update_configs_with_input()
+                    self.last_config_update_time = time()
+
+                    for config in self.io_interface.new_configs:
+                        # add mainloop if it doesn't exists
+                        if self.mainloops.get(config["name"]) == None:
+                            if config["run"] == False:
+                                continue
+                            self.mainloops[config["name"]] = self.mainloop_class(self.revpi, config)
+                            log.warning(f"Added new Mainloop: {config['name']}")
+                        # update config in existing mainloop
+                        else:
+                            self.mainloops[config["name"]].config = config
+                            log.warning(f"Updated Mainloop: {config['name']}")
+                    self.io_interface.new_configs.clear()
+            
                 self.__update_factory()
             except Exception as e:
                 log.exception(e)
@@ -90,12 +94,7 @@ class Setup():
                 break
             if self.mainloops.__len__() <= 0 and self.io_interface.input_dict["exit_if_end"]:
                 break
-            
-            
-            # update the config
-            if time() > self.last_config_update_time + 5:
-                self.io_interface.update_configs_with_input()
-                self.last_config_update_time = time()
+
 
             # wait the remaining runtime
             loop_run_time = time() - self.loop_start_time
@@ -111,7 +110,7 @@ class Setup():
     def __update_factory(self):
         '''Updates the factory and starts every mainloop.'''
         # check for error in mainloops
-        mainloop: MainLoop
+        mainloop: MainLine
         for mainloop in self.mainloops.values():
             # run an iteration if the mainloop
             if mainloop.running:
@@ -125,7 +124,6 @@ class Setup():
             
             # end the mainloop
             if mainloop.end_machine or mainloop.config["run"] == False:
-                self.stage = mainloop.name
                 log.critical(f"Stop: {mainloop.name}")
                 self.mainloops.pop(mainloop.name)
                 break
@@ -137,13 +135,13 @@ class Setup():
                 self.exception = True
                 break
 
-            # end all mainloops if error occurred
-            if self.exit_handler.was_called or self.exception:
-                for mainloop in self.mainloops:
-                    log.critical(f"Ending mainloop: {mainloop.name}")
-                    mainloop.end_machine = True
-                    self.exception = True
-                return
+        # end all mainloops if error occurred
+        if self.exit_handler.was_called or self.exception:
+            for mainloop in self.mainloops:
+                log.critical(f"Ending mainloop: {mainloop.name}")
+                mainloop.end_machine = True
+                self.exception = True
+            return
 
 
     def __save_status(self):
@@ -157,7 +155,7 @@ class Setup():
             main_states.append(state)
         
         # get the status dictionaries of all machines in all active mainloops
-        mainloop: MainLoop
+        mainloop: MainLine
         for mainloop in self.mainloops.values():
             if mainloop.config["run"] == False:
                 continue

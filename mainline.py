@@ -1,5 +1,5 @@
 '''
-Main Loop config for MiniFactory project
+Parent Class for production lines on MiniFactory project
 '''
 
 __author__ = "Lukas Beck"
@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 from enum import Enum
 from logger import log
@@ -20,11 +20,11 @@ class Status(Enum):
     BLOCKED = 3
     WAITING = 4
 
-class MainLoop(Machine):
+class MainLine(Machine):
     '''Controls the MiniFactory.
     
     update(): Updates the mainloop
-    mainloop_config(): Config functionality
+    line_config(): Config functionality
     mainloop(): Calls the different states
     switch_state(): Switches state to given state if not BLOCKED or RUNNING
     switch_status(): Switch status in states
@@ -54,7 +54,7 @@ class MainLoop(Machine):
         :run: only run the mainloop if True
         '''
         try:
-            self.mainloop_config()
+            self.line_config()
             if run:
                 self.mainloop()
         except Exception as error:
@@ -63,7 +63,7 @@ class MainLoop(Machine):
             self.switch_state(self.states.ERROR)
 
 
-    def mainloop_config(self):
+    def line_config(self):
         '''Config functionality'''
         for machine in self.machines.values():
             # look for errors in the machines
@@ -178,9 +178,9 @@ class MainLoop(Machine):
                 if not machine.end_machine and not machine.name == "Main":
                     # wait for running machines
                     machine_running = True
-                    if machine.stage != 100:
+                    if machine.position != 100:
                         self.log.info(f"Waiting for machine to end: {machine.name}")
-                        machine.stage = 100
+                        machine.position = 100
             if machine_running:
                 return False
             # all machines have ended

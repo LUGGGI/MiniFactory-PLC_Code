@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 import threading
 from enum import Enum
@@ -111,7 +111,7 @@ class Warehouse(Machine):
             return
         
         self.switch_state(State.INIT)
-        current_stage = self.stage
+        current_position = self.position
         try:
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
             self.move_to_position(0, 0)
@@ -146,7 +146,7 @@ class Warehouse(Machine):
                 self.switch_state(State.END)
             else:
                 self.log.warning(f"{self.name}: Initialized")
-                self.stage = current_stage + 1
+                self.position = current_position + 1
 
 
     def store_product(self, position: POSITIONS=None, color: str=None, as_thread=True):
@@ -227,7 +227,7 @@ class Warehouse(Machine):
             self.log.exception(error)
         else:
             self.log.warning(f"{self.name} :{color}-product stored at position: [hor:{hor},ver:{ver}]; {position}")
-            self.stage += 1
+            self.position += 1
 
 
     def retrieve_product(self, position: tuple=None, color: str=None, as_thread=True):
@@ -312,7 +312,7 @@ class Warehouse(Machine):
             self.log.exception(error)
         else:
             self.log.warning(f"{self.name} :{color}-product retrieved from position: [hor:{hor+1},ver:{ver+1}]; {position}")
-            self.stage += 1
+            self.position += 1
 
 
     def move_to_position(self, horizontal: int, vertical: int):

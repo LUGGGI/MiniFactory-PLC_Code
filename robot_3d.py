@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 import threading
 from time import sleep
@@ -107,7 +107,7 @@ class Robot3D(Machine):
                 self.switch_state(State.END)
             else:
                 self.log.warning(f"{self.name}: Initialized")
-                self.stage += 1
+                self.position += 1
 
 
     def get_product(self, vertical_position: int, sensor: str=None, as_thread=True):
@@ -124,7 +124,7 @@ class Robot3D(Machine):
             return
 
         self.switch_state(State.GET_PRODUCT)
-        current_stage = self.stage
+        current_position = self.position
         # start position
         start_vertical_position = self.__encoder_ver.get_current_value()
         max_tries = 3
@@ -153,7 +153,7 @@ class Robot3D(Machine):
 
             break
 
-        self.stage = current_stage + 1
+        self.position = current_position + 1
 
 
     def move_to_position(self, position: Position, ignore_moving_pos=False, as_thread=True) -> True:
@@ -216,7 +216,7 @@ class Robot3D(Machine):
             self.log.exception(error)
         else:
             self.log.warning(f"{self.name} :Position reached: {end_position}")
-            self.stage += 1
+            self.position += 1
 
 
     def move_all_axes(self, position: Position):

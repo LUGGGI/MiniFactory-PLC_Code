@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 import threading
 from time import sleep
@@ -141,5 +141,5 @@ class IndexLine(Machine):
             self.log.exception(error)
         else:  
             self.end_machine = True
-            self.stage += 1
+            self.position += 1
             self.switch_state(State.END)

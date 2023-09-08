@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 import threading
 from enum import Enum
@@ -38,7 +38,7 @@ class Conveyor(Machine):
         :mainloop_name: name of current mainloop
         '''
         super().__init__(revpi, name, mainloop_name)
-        self.stage = 1
+        self.position = 1
         self.exception = None
 
         global log
@@ -86,7 +86,7 @@ class Conveyor(Machine):
                 self.log.exception(error)
         else:
             self.log.warning(f"{self.name} :Reached: {stop_sensor}")
-            self.stage += 1
+            self.position += 1
             if end_machine:
                 self.end_conveyor()
 
@@ -126,7 +126,7 @@ class Conveyor(Machine):
                 self.log.exception(error)
         else:
             self.log.warning(f"{self.name} :Reached value: {trigger_value} at {counter}")
-            self.stage += 1
+            self.position += 1
             if end_machine:
                 self.end_conveyor()
                 

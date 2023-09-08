@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.08"
 
 import threading
 from datetime import datetime
@@ -19,7 +19,7 @@ class Machine:
     get_run_time(): Get run time of machine
     get_state_time(): Get run time of state
     switch_state(): Switch to given state
-    is_stage(): Returns True if no thread is running and given stage is current stage.
+    is_position(): Returns True if no thread is running and given position is current position.
     '''
 
     def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str):
@@ -41,7 +41,7 @@ class Machine:
         self.end_machine = False
         self.error_exception_in_machine = False
 
-        self.stage = 0 # can count up the stages of a machine
+        self.position = 0 # can count up the positions of a machine
 
         self.state = None
 
@@ -83,10 +83,10 @@ class Machine:
         self.log.warning(self.name + ": Switching state to: " + str(state.name))
 
     
-    def is_stage(self, stage: int) -> bool:
-        '''Returns True if no thread is running and given stage is current stage.
+    def is_position(self, postion: int) -> bool:
+        '''Returns True if no thread is running and given position is current position.
         
-        :stage: stage at which it should return True
+        :position: position at which it should return True
         '''
         try:
             # False, if current thread is active
@@ -94,8 +94,8 @@ class Machine:
                 return False
         except AttributeError:
             pass
-        # False, if given stage is not current stage
-        if stage != self.stage:
+        # False, if given position is not current position
+        if postion != self.position:
             return False
 
         return True
@@ -105,7 +105,7 @@ class Machine:
         '''Returns a dict of a statuses'''
         return {
             "state": self.state.name if self.state else None,
-            "stage": self.stage,
+            "position": self.position,
             "end_machine": self.end_machine,
             "error_exception_in_machine": self.error_exception_in_machine,
         }
