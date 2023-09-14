@@ -94,16 +94,12 @@ class Actuator():
             sensor.wait_for_detect(timeout_in_s=timeout_in_s)
             time.sleep(stop_delay_in_ms/1000)
             
-            #stop actuator
-            self.stop(direction)
         except Exception as e:
+            self.exception = e
+            raise
+        finally:
             #stop actuator
             self.stop(direction)
-            if self.__thread:
-                self.exception = e
-            else:
-                raise
-
 
     def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None, as_thread=False):
         '''Run Actuator for certain amount of time.
@@ -137,10 +133,8 @@ class Actuator():
                 raise(NoDetectionError(f"{check_sensor} :No detection"))
             
         except Exception as e:
-            if self.__thread:
-                self.exception = e
-            else:
-                raise
+            self.exception = e
+            raise
         finally:
             #stop actuator
             self.stop(direction)
@@ -181,10 +175,8 @@ class Actuator():
             else:
                 self.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread=False)
         except Exception as e:
-            if self.__thread:
-                self.exception = e
-            else:
-                raise
+            self.exception = e
+            raise
 
 
     def run_to_encoder_value(self, direction: str, encoder: Sensor, trigger_value: int, timeout_in_s=20, as_thread=False):
@@ -226,10 +218,8 @@ class Actuator():
             self.log.info(f"{actuator} stopped at {encoder.wait_for_encoder(trigger_value, trigger_threshold, timeout_in_s)}")
 
         except Exception as e:
-            if self.__thread:
-                self.exception = e
-            else:
-                raise
+            self.exception = e
+            raise
         finally:
             #stop actuator
             self.stop(direction)
@@ -259,10 +249,8 @@ class Actuator():
             encoder.reset_encoder()
 
         except Exception as e:
-            if self.__thread:
-                self.exception = e
-            else:
-                raise
+            self.exception = e
+            raise
 
 
     def start(self, direction: str=""):
