@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.14"
 
 import threading
 import time
@@ -17,15 +17,31 @@ from sensor import Sensor, SensorType, SensorTimeoutError, EncoderOverflowError,
 class Actuator():
     '''Control for Actuators, can also call Sensors
     
-    run_to_sensor(): Run Actuator until product is detected.
-    run_for_time(): Run Actuator for certain amount of time.
-    move_axis(): Moves an axis to the given trigger value.
-    run_to_encoder_value(): Run Actuator until the trigger_value of encoder is reached.
-    run_to_encoder_start(): Run Actuator to the encoder reference switch and resets the counter to 0.
-    start(): Start actuator.
-    stop(): Stop actuator.
-    set_pwm(): Set PWM to percentage.
-    join(): Joins the current thread and raises Exceptions.
+    Methodes:
+        run_to_sensor(): Run Actuator until product is detected.
+        run_for_time(): Run Actuator for certain amount of time.
+        move_axis(): Moves an axis to the given trigger value.
+        run_to_encoder_value(): Run Actuator until the trigger_value of encoder is reached.
+        run_to_encoder_start(): Run Actuator to the encoder reference switch and resets the counter to 0.
+        start(): Start actuator.
+        stop(): Stop actuator.
+        set_pwm(): Set PWM to percentage.
+        join(): Joins the current thread and raises Exceptions.
+    Attributes:
+        __ENCODER_TRIGGER_THRESHOLD (int): Range around trigger value where trigger happens for encoder.
+        __COUNTER_TRIGGER_THRESHOLD (int): Range around trigger value where trigger happens for counter.
+        __PWM_TRIGGER_THRESHOLD (int): Range around trigger value where trigger happens while actuator is slowed down.
+        __PWM_WINDOW (int): Range around the trigger value where the actuator is slowed down from the start.
+        __PWM_DURATION (int): Range around the trigger value where the actuator is slowed down.
+        __revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+        name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
+        mainloop_name (str): Name of current mainloop.
+        __pwm (str): Name of PWM-pin, Slows motor down, bevor reaching the value.
+        __type (str): Specifier for motor name.
+        __thread (Thread): Thread object if a function is called as thread.
+        exception (Exception): Exception if exception was raised.
+        __pwm_value (int): Value for pwm, the percentage of the speed.
+        log (Logger): Log object to print to log.
     '''
     __ENCODER_TRIGGER_THRESHOLD = 40
     __COUNTER_TRIGGER_THRESHOLD = 0
@@ -34,13 +50,14 @@ class Actuator():
     __PWM_DURATION = 100
 
     def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str, pwm: str=None, type: str=None):
-        '''Initializes the Actuator.
+        '''Control for Actuators, can also call Sensors.
         
-        :revpi: RevPiModIO Object to control the motors and sensors
-        :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :mainloop_name: name of current mainloop
-        :pwm: Name of PWM-pin, Slows motor down, bevor reaching the value
-        :type: specifier for motor name
+        Args:
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            name: Exact name of the machine in PiCtory (everything bevor first '_').
+            mainloop_name: Name of current mainloop.
+            pwm: Name of PWM-pin, Slows motor down, bevor reaching the value.
+            type (str): Specifier for motor name.
         '''
         self.__revpi = revpi
         self.name = name
@@ -65,11 +82,14 @@ class Actuator():
     def run_to_sensor(self, direction: str, stop_sensor: str, stop_delay_in_ms=0, timeout_in_s=10, as_thread=False):
         '''Run Actuator until product is detected by a Sensor, panics if nothing was detected.
         
-        :direction: Actuator direction, (last part of whole name)
-        :stop_sensor: Stops Actuator if detection occurs at this Sensor
-        :stop_delay_in_ms: Runs the Actuator this much longer after detection
-        :timeout_in_s: Time after which an exception is raised
-        :as_thread: Runs the function as a thread
+        Args:
+            direction (str): Actuator direction, (last part of whole name).
+            stop_sensor (str): Stops Actuator if detection occurs at this Sensor.
+            stop_delay_in_ms (int): Runs the Actuator this much longer after detection.
+            timeout_in_s (int): Time after which an exception is raised.
+            as_thread (bool): Runs the function as a thread.
+        Raises:
+            SensorTimeoutError: Timeout is reached (no detection happened).
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         # call this function again as a thread
@@ -104,10 +124,13 @@ class Actuator():
     def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None, as_thread=False):
         '''Run Actuator for certain amount of time.
         
-        :direction: Actuator direction, (last part of whole name)
-        :wait_time_in_s: Time after which the actuator stops
-        :check_sensor: If given, checks if detection occurs if not ->panics
-        :as_thread: Runs the function as a thread
+        Args:
+            direction (str): Actuator direction, (last part of whole name).
+            wait_time_in_s (int): Time after which the actuator stops.
+            check_sensor (str): If given, checks if detection occurred.
+            as_thread (bool): Runs the function as a thread.
+        Raises:
+            NoDetectionError: No detection at check_sensor.
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         # call this function again as a thread
@@ -143,16 +166,19 @@ class Actuator():
     def move_axis(self, direction: str, trigger_value: int, current_value: int, move_threshold: int, encoder: Sensor, ref_sw: str, timeout_in_s=10, as_thread=False):
         '''Moves an axis to the given trigger value.
         
-        :direction: Actuator direction, (last part of whole name)
-        :trigger_value: Encoder-Value at which the motor stops
-        :current_value: Current Encoder-Value to determine if move is necessary
-        :move_threshold: Value that has at min to be traveled to start the motor
-        :encoder: Sensor object
-        :ref_sw: Reference Switch at which the motor stops if it runs to the encoder start
-        :timeout_in_s: Time after which an exception is raised
-        :as_thread: Runs the function as a thread
-
-        -> Panics if timeout is reached (no detection happened)
+        Args:
+            direction (str): Actuator direction, (last part of whole name).
+            trigger_value (int): Encoder-Value at which the motor stops.
+            current_value (int): Current Encoder-Value to determine if move is necessary.
+            move_threshold (int): Value that has at min to be traveled to start the motor.
+            encoder (Sensor): Sensor object for the used encoder.
+            ref_sw (str): Reference Switch at which the motor stops if it runs to the encoder start.
+            timeout_in_s (int): Time after which an exception is raised.
+            as_thread (bool): Runs the function as a thread.
+        Raises:
+            SensorTimeoutError: Timeout is reached (no detection happened).
+            EncoderOverflowError: Encoder value negativ.
+            ValueError: Counter jumped values.
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         # call this function again as a thread
@@ -181,12 +207,16 @@ class Actuator():
 
     def run_to_encoder_value(self, direction: str, encoder: Sensor, trigger_value: int, timeout_in_s=20, as_thread=False):
         '''Run Actuator until the trigger_value of encoder is reached.
-
-        :direction: Actuator direction, (last part of whole name)
-        :encoder: Sensor object that is checked with trigger_value
-        :trigger_value: Value at which to stop Actuator
-        :timeout_in_s: Time after which an exception is raised
-        :as_thread: Runs the function as a thread
+        Args:
+            direction (str): Actuator direction, (last part of whole name).
+            encoder (Sensor): Sensor object for the used encoder.
+            trigger_value (int): Encoder-Value at which the motor stops.
+            timeout_in_s (int): Time after which an exception is raised.
+            as_thread (bool): Runs the function as a thread.
+        Raises:
+            SensorTimeoutError: Timeout is reached (no detection happened).
+            EncoderOverflowError: Encoder value negativ.
+            ValueError: Counter jumped values.
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         # call this function again as a thread
@@ -227,25 +257,28 @@ class Actuator():
                 self.set_pwm(100)
 
 
-    def run_to_encoder_start(self, direction: str, stop_sensor: str, encoder: Sensor, timeout_in_s=10, as_thread=False):
+    def run_to_encoder_start(self, direction: str, ref_sw: str, encoder: Sensor, timeout_in_s=10, as_thread=False):
         '''Run Actuator to the encoder reference switch and resets the encoder to 0.
         
-        :direction: Actuator direction, (last part of whole name)
-        :stop_sensor: Reference switch: stops Actuator if detection occurs at this Sensor
-        :encoder: Sensor object that is checked with trigger_value
-        :timeout_in_s: Time after which an exception is raised
-        :as_thread: Runs the function as a thread
+        Args:
+            direction (str): Actuator direction, (last part of whole name).
+            ref_sw (str): Reference Switch at which the motor stops if it runs to the encoder start.
+            encoder (Sensor): Sensor object for the used encoder.
+            timeout_in_s (int): Time after which an exception is raised.
+            as_thread (bool): Runs the function as a thread.
+        Raises:
+            SensorTimeoutError: Timeout is reached (no detection happened).
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         # call this function again as a thread
         if as_thread == True:
-            self.__thread = threading.Thread(target=self.run_to_encoder_start, args=(direction, stop_sensor, encoder, timeout_in_s, False), name=actuator)
+            self.__thread = threading.Thread(target=self.run_to_encoder_start, args=(direction, ref_sw, encoder, timeout_in_s, False), name=actuator)
             self.__thread.start()
             return
 
         self.log.info(f"{actuator} run to encoder start")
         try:
-            self.run_to_sensor(direction, stop_sensor, timeout_in_s=timeout_in_s)
+            self.run_to_sensor(direction, ref_sw, timeout_in_s=timeout_in_s)
             encoder.reset_encoder()
 
         except Exception as e:
@@ -256,7 +289,8 @@ class Actuator():
     def start(self, direction: str=""):
         '''Start Actuator.
         
-        :direction: Motor direction, (last part of whole name)
+        Args:
+            direction (str): Actuator direction, (last part of whole name).
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         if self.__pwm:
@@ -269,7 +303,8 @@ class Actuator():
     def stop(self, direction: str=""):
         '''Stop Actuator.
         
-        :direction: Motor direction, (last part of whole name)
+        Args:
+            direction (str): Actuator direction, (last part of whole name).
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
         self.log.info(f"{actuator} stop")
@@ -281,7 +316,10 @@ class Actuator():
     def set_pwm(self, percentage: int):
         '''Set PWM value to percentage.
         
-        :percentage: speed of motor, (0..100) on is over 20
+        Args:
+            percentage (int): speed of motor, (0..100) on is over 20.
+        Raises:
+            ValueError: Percentage out of range (0-100)
         '''
         if percentage < 0 or percentage > 100:
             raise(ValueError(f"{self.__pwm}: {percentage} :Out of range (0-100)"))

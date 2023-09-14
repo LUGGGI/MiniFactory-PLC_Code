@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.14"
 
 import time
 from enum import Enum
@@ -22,26 +22,36 @@ class SensorType(Enum):
     COUNTER = 3
 
 class Sensor():
-    '''Control for Senors
+    '''Control-methods for Senors.
     
-    get_current_value(): Returns the current value of the sensor.
-    start_monitor(): Start monitoring sensor for detection.
-    remove_monitor(): Stop monitoring sensor.
-    is_detected(): Returns True if product was detected. If True removes monitor.
-    wait_for_detect(): Waits for detection at sensor.
-    wait_for_encoder(): Waits for the encoder/counter to reach the trigger_value.
-    reset_encoder(): Resets the encoder or counter to 0.
+    Methodes:
+        get_current_value(): Returns the current value of the sensor.
+        start_monitor(): Start monitoring sensor for detection.
+        remove_monitor(): Stop monitoring sensor.
+        is_detected(): Returns True if product was detected. If True removes monitor.
+        wait_for_detect(): Waits for detection at sensor.
+        wait_for_encoder(): Waits for the encoder/counter to reach the trigger_value.
+        reset_encoder(): Resets the encoder or counter to 0.
+    Attributes:
+        CYCLE_TIME (int): how often encoder/counter ar checked for new values.
+        __revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+        name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
+        mainloop_name (str): Name of current mainloop.
+        type (SensorType): Type of the sensor.
+        counter_offset (int): Offset for counter so that counter can be used like encoder.
+        log (Logger): Log object to print to log.
     '''
     CYCLE_TIME = 0.005 # s
 
 
     def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str, type: SensorType=None):
-        '''Initializes the Sensor
+        '''Control for Sensors.
         
-        :revpi: RevPiModIO Object to control the motors and sensors
-        :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :mainloop_name: name of current mainloop
-        :type: Type of the sensor, if empty type is determined from name
+        Args:
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            mainloop_name (str): Name of current mainloop.
+            type (SensorType): Type of the sensor, if empty type is determined from name.
         '''
         self.__revpi = revpi
         self.name = name
@@ -71,9 +81,12 @@ class Sensor():
 
 
     def get_current_value(self):
-        '''Returns the current value of the sensor.
+        '''Get the current value of the sensor.
         
-        Returns True if detection at LIGHT_BARRIER or REF_SWITCH
+        Returns:
+            Value depending on SensorType.
+            True if detection at LIGHT_BARRIER or REF_SWITCH.
+            Int value of ENCODER or COUNTER.
         '''
         if self.type == SensorType.ENCODER:
             return int(self.__revpi.io[self.name].value)
@@ -92,7 +105,8 @@ class Sensor():
     def start_monitor(self, edge=BOTH):
         '''Start monitoring sensor for detection.
         
-        :edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2)
+        Args:
+            edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2).
         '''
         try:
             self.__revpi.io[self.name].reg_event(event_det_at_sensor, edge=edge)
@@ -103,7 +117,8 @@ class Sensor():
     def remove_monitor(self, edge=BOTH):
         '''Stop monitoring sensor.
         
-        :edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2)
+        Args:
+            edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2).
         '''
         self.__revpi.io[self.name].unreg_event(event_det_at_sensor, edge=edge)
         global detection
@@ -111,9 +126,12 @@ class Sensor():
 
 
     def is_detected(self, edge=BOTH) -> bool:
-        '''Returns True if product was detected. If True removes monitor.
-        
-        :edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2)
+        '''Check if product was detected. If True removes monitor.
+
+        Args:
+            edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2).
+        Returns:
+            True if product was detected, else false.
         '''
         if detection:
             self.remove_monitor(edge)
@@ -125,10 +143,11 @@ class Sensor():
     def wait_for_detect(self, edge=BOTH, timeout_in_s=10):
         '''Waits for detection at sensor.
         
-        :edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2)
-        :timeout_in_s: Time after which an exception is raised
-
-        -> Panics if timeout is reached (no detection happened)
+        Args:
+            edge: trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2).
+            timeout_in_s (int): Time after which an exception is raised.
+        Raises: 
+            SensorTimeoutError: Timeout is reached (no detection happened)
         '''
         if self.get_current_value() == True:
             self.log.info(f"{self.name} already detected")
@@ -144,12 +163,16 @@ class Sensor():
     def wait_for_encoder(self, trigger_value: int, trigger_threshold: int, timeout_in_s=10) -> int:
         '''Waits for the encoder/counter to reach the trigger_value.
         
-        :trigger_value: The value the motor would end up if it started from reverence switch
-        :trigger_threshold:  The value around the trigger_value where a trigger can happen
-        :timeout_in_s: Time after which an exception is raised
-        
-        -> Returns reached encoder_value
-        -> Panics if timeout is reached (no detection happened) or encoder value negativ
+        Args:
+            trigger_value (int): The value the motor would end up if it started from reverence switch.
+            trigger_threshold (int):  The value around the trigger_value where a trigger can happen.
+            timeout_in_s (int): Time after which an exception is raised.
+        Returns:
+            Reached encoder_value
+        Raises:
+            SensorTimeoutError: Timeout is reached (no detection happened).
+            EncoderOverflowError: Encoder value negativ.
+            ValueError: Counter jumped values.
         '''
         old_value = self.get_current_value()
         if old_value > 10000:
@@ -182,7 +205,11 @@ class Sensor():
 
 
     def reset_encoder(self):
-        '''Resets the encoder or counter to 0.'''
+        '''Resets the encoder or counter to 0.
+        
+        Raises:
+            TimeoutError: Encoder/counter could not be reset in time")
+        '''
         for i in range(15):
             self.__revpi.io[self.name].reset()
             # wait until the actuator has stopped
@@ -191,7 +218,7 @@ class Sensor():
                 self.log.info(f"Reset encoder: {self.name}")
                 self.counter_offset = 0
                 return
-        raise(TimeoutError(f"{self.name} :Could not reset in time"))
+        raise(TimeoutError(f"{self.name} :Could not be reset in time"))
 
 
 def event_det_at_sensor(io_name, __):
@@ -205,7 +232,7 @@ class EncoderOverflowError(ValueError):
     '''Encoder had a 'negativ' value.'''
 
 class SensorTimeoutError(TimeoutError):
-    '''Timeout occurred while waiting for Sensor'''
+    '''Timeout occurred while waiting for Sensor.'''
 
 class NoDetectionError(ValueError):
-    '''No detection at Sensor'''
+    '''No detection at Sensor.'''
