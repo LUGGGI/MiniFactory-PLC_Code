@@ -97,7 +97,7 @@ class IOInterface():
                 if type(config["start_at"]) != str and type(config["end_at"]) != str:
                     break
             else:
-                raise LookupError(f"Config {config['name']} could not be parsed for {state}")
+                raise LookupError(f"Config {config['name']} could not be parsed.")
         
         
         # add the new configs to the configs list 

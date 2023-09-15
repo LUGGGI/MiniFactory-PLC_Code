@@ -65,6 +65,7 @@ class Robot3D(Machine):
         __MOVE_THRESHOLD_ROT (int): Only moves the rotation axis if movement is more.
         __MOVE_THRESHOLD_HOR (int): Only moves the horizontal axis if movement is more.
         __MOVE_THRESHOLD_VER (int): Only moves the vertical axis if movement is more.
+        __MAX_PICKUP_TRIES (int): Max tries the robot can use to pickup a product.
         __moving_position (Position): Position where the axes should be to allow save moving.
         __encoder_rot (Sensor): Encoder for rotation axis.
         __encoder_hor (Sensor): Encoder for horizontal axis.
@@ -80,6 +81,7 @@ class Robot3D(Machine):
     __MOVE_THRESHOLD_ROT = 40
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
+    __MAX_PICKUP_TRIES = 3
 
     def __init__(self, revpi, name: str, line_name: str, moving_position: Position):
         '''Initializes the 3D Robot
@@ -131,7 +133,7 @@ class Robot3D(Machine):
             self.__move_all_axes(Position(-1,0,0))
             self.__move_all_axes(Position(0,-1,-1))
 
-        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
@@ -163,45 +165,49 @@ class Robot3D(Machine):
             return
         try: 
             self.switch_state(State.GET_PRODUCT)
-            current_position = self.position
+            current_program_position = self.position
             # start position
             start_vertical_position = self.__encoder_ver.get_current_value()
-            max_tries = 3
-            for try_num in range(max_tries):
-                if self.error_exception_in_machine:
+            try_num = 1
+            while(True):
+                if self.error_exception_in_machine or self.problem_in_machine:
                     break
-
+                
+                # move down to product
                 self.__move_all_axes(Position(-1, -1, vertical_position))
                 self.grip(as_thread = False)
-
-                # move back up and continue if gripping worked
+                # move back up
                 self.__move_all_axes(Position(-1, -1, start_vertical_position))
 
-                # check if product still at sensor, if true try to grip again
+                # check if product still at sensor, if so try to grip again
                 if sensor and Sensor(self.revpi, sensor, self.line_name).get_current_value() == True:
-                    self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num+1}")
+                    self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num}")
                     self.reset_claw(as_thread=False)
-                    if try_num == max_tries-1:
-                        self.log.error(f"{self.name} :Product still at Sensor, grip failed, resetting position")
-                        # get current position
-                        current_position = Position(
-                            self.__encoder_rot.get_current_value(),
-                            self.__encoder_hor.get_current_value(),
-                            start_vertical_position
-                        )
-                        # reset robot position and try again
-                        self.init(as_thread=False)
-                        self.move_to_position(current_position, as_thread=False)
+                else:
+                    # product was gripped
+                    break
 
-                    elif try_num >= max_tries-1:
-                        raise GetProductError(f"{self.name} :Product still at Sensor, grip failed")
-                    continue
+                # try one list time with complete robot reset.
+                if try_num == self.__MAX_PICKUP_TRIES:
+                    self.log.error(f"{self.name} :Product still at Sensor, grip failed, resetting position")
+                    # get current position
+                    current_position = Position(
+                        self.__encoder_rot.get_current_value(),
+                        self.__encoder_hor.get_current_value(),
+                        start_vertical_position
+                    )
+                    # reset robot position and try again
+                    self.init(as_thread=False)
+                    self.move_to_position(current_position, as_thread=False)
+                # pickup failed
+                elif try_num >= self.__MAX_PICKUP_TRIES:
+                    raise GetProductError(f"{self.name} :Product still at Sensor, grip failed")
 
-                break
-
-            self.position = current_position + 1
+                try_num += 1
+                
+            self.position = current_program_position + 1
         
-        except SensorTimeoutError or ValueError or EncoderOverflowError or GetProductError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError, GetProductError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
@@ -266,7 +272,7 @@ class Robot3D(Machine):
             self.switch_state(State.TO_DESTINATION)
             self.__move_all_axes(position)
         
-        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)

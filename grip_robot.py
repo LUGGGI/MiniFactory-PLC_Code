@@ -71,7 +71,7 @@ class GripRobot(Robot3D):
             self.switch_state(State.GRIPPING)
             self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, self.GRIPPER_CLOSED, timeout_in_s=5)
 
-        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
@@ -98,7 +98,7 @@ class GripRobot(Robot3D):
             self.switch_state(State.RELEASE)
             self.__motor_claw.run_to_encoder_value("OPEN", self.__encoder_claw, self.GRIPPER_OPENED, timeout_in_s=5)
 
-        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
@@ -125,7 +125,7 @@ class GripRobot(Robot3D):
             self.__motor_claw.run_to_encoder_start("OPEN", self.name + "_REF_SW_CLAW", self.__encoder_claw)
             self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, self.GRIPPER_OPENED)
         
-        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)

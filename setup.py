@@ -37,7 +37,7 @@ class Setup():
         exit_handler (ExitHandler): Object for Exit Handler.
         io_interface (IOInterface): Object for IO Interface.
     '''
-    LOOP_TIME = 1.02 # in seconds
+    LOOP_TIME = 0.02 # in seconds
     
     def __init__(self, input_file, output_file, states, line_class):
         '''Init setup and setup of RevpiModIO.
@@ -158,7 +158,7 @@ class Setup():
 
         # end all lines if error occurred
         if self.exit_handler.was_called or self.exception:
-            for line in self.lines:
+            for line in self.lines.values():
                 log.critical(f"Ending line: {line.name}")
                 line.end_machine = True
                 self.exception = True

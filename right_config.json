@@ -10,48 +10,100 @@
             "end_at": "END"
         },
         {
+            "name": "Main", 
+            "run": true,
+            "start_at": "storage",
+            "end_at": "END",
+            "with_oven": false,
+            "with_saw": false,
+            "with_PM": false,
+            "with_WH": true,
+            "color": "RED"
+        }
+    ],
+    "configs2": [
+        {
+            "name": "Init", 
+            "run": true,
+            "start_at": "INIT",
+            "end_at": "END"
+        },
+        {
+            "name": "Main0", 
+            "run": true,
+            "start_at": "CB1",
+            "end_at": "END",
+            "with_oven": true,
+            "with_saw": true,
+            "with_PM": false,
+            "with_WH": false,
+            "color": "BLUE"
+        },
+        {
             "name": "Main1", 
             "run": true,
             "start_at": "start",
             "end_at": "END",
             "with_oven": true,
             "with_saw": true,
-            "with_PM": true,
+            "with_PM": false,
             "with_WH": true,
             "color": "RED"
         },
         {
             "name": "Main2", 
-            "run": false,
-            "start_at": "CB1",
+            "run": true,
+            "start_at": "start",
             "end_at": "storage",
             "with_oven": true,
+            "with_saw": false,
+            "with_PM": true,
+            "with_WH": true,
+            "color": "RED"
+        },
+        {
+            "name": "Main3", 
+            "run": true,
+            "start_at": "start",
+            "end_at": "END",
+            "with_oven": false,
+            "with_saw": false,
+            "with_PM": false,
+            "with_WH": false,
+            "color": "BLUE"
+        },
+        {
+            "name": "Main4", 
+            "run": true,
+            "start_at": "storage",
+            "end_at": "END",
+            "with_oven": false,
             "with_saw": false,
             "with_PM": false,
             "with_WH": true,
             "color": "RED"
         },
         {
-            "name": "Main3", 
-            "run": false,
-            "start_at": "CB1",
+            "name": "Main5", 
+            "run": true,
+            "start_at": "storage",
             "end_at": "END",
             "with_oven": false,
             "with_saw": false,
-            "with_PM": true,
-            "with_WH": false,
+            "with_PM": false,
+            "with_WH": true,
             "color": "BLUE"
         },
         {
-            "name": "Main4", 
-            "run": false,
-            "start_at": "CB4",
+            "name": "Main6", 
+            "run": true,
+            "start_at": "storage",
             "end_at": "END",
             "with_oven": false,
             "with_saw": false,
-            "with_PM": true,
-            "with_WH": false,
-            "color": "BLUE"
+            "with_PM": false,
+            "with_WH": true,
+            "color": "WHITE"
         }
     ],
     "states": ["CB1", "CB3_TO_WH", "CB3_TO_CB4", "CB4", "CB5", "GR1", "GR2_CB1_TO_CB3", "GR2_CB1_TO_PM", "GR2_PM_TO_CB3", "GR3", "VG2", "MPS", "PM", "SL", "WH_STORE", "WH_RETRIEVE", "END", "start", "storage"]

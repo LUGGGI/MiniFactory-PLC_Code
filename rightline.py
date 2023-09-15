@@ -19,7 +19,6 @@ __version__ = "2023.09.15"
 from enum import Enum
 
 from logger import log
-from actuator import Actuator
 from sensor import Sensor
 from conveyor import Conveyor
 from punch_mach import PunchMach
@@ -255,7 +254,7 @@ class RightLine(MainLine):
             # get product from plate
             gr.GRIPPER_OPENED = 5
             gr.reset_claw()
-            gr.move_to_position(Position(2245, 67, 3450))
+            gr.move_to_position(Position(2235, 67, 3450))
         elif gr.is_position(2):
             # grip product
             gr.grip()
@@ -308,39 +307,32 @@ class RightLine(MainLine):
                 return True
             return
 
-        # move from cb1 to cb3    
+        # get from cb1   
         if self.state == State.GR2_CB1_TO_CB3:
             if gr.is_position(2):
                 # move down, grip product, move up
                 gr.get_product(2100, sensor="CB1_SENS_END")
-            elif gr.is_position(3):
-                self.product_at = gr.name
-                # move to cb3
-                gr.move_to_position(Position(2305, 40, 1550))
-            elif gr.is_position(4) and State.CB3_TO_WH.value[1] == Status.FREE:
-                # release product
-                gr.release()
-            elif gr.is_position(5):
-                # move back to init
-                gr.init(to_end=True)
-                return True
-            return
 
+        # move to pm
         if self.state == State.PM or self.state == State.GR2_PM_TO_CB3:
             if gr.is_position(1):
                 # move to cb2
                 gr.reset_claw()
                 gr.move_to_position(Position(3860, 78, 1300), ignore_moving_pos=True)
-        # move from pm to cb3    
+        # get from pm
         if self.state == State.GR2_PM_TO_CB3:
             if gr.is_position(2):
                 # move down, grip product, move up
                 gr.get_product(2000, sensor="CB2_SENS_START")
-            elif gr.is_position(3):
+
+        if self.state == State.GR2_CB1_TO_CB3 or self.state == State.GR2_PM_TO_CB3:
+            if gr.is_position(3):
                 self.product_at = gr.name
                 # move to cb3
                 gr.move_to_position(Position(2305, 40, 1550))
             elif gr.is_position(4) and State.CB3_TO_WH.value[1] == Status.FREE:
+                if self.config.get("with_WH") and State.WH_STORE.value[1] != Status.FREE:
+                    return
                 # release product
                 gr.release()
             elif gr.is_position(5):
@@ -356,7 +348,7 @@ class RightLine(MainLine):
         elif gr.is_position(1):
             # move to cb4
             gr.reset_claw()
-            gr.move_to_position(Position(445, 43, 1600), ignore_moving_pos=True)
+            gr.move_to_position(Position(450, 43, 1600), ignore_moving_pos=True)
 
         # if product ready move it
         elif gr.is_position(2) and self.state == State.GR3:
@@ -475,7 +467,7 @@ class RightLine(MainLine):
         elif vg.is_position(3):
             self.product_at = vg.name
             # move to wh
-            vg.move_to_position(Position(1785, 1080, 400))
+            vg.move_to_position(Position(1780, 1080, 400))
 
         # wait for warehouse to have a carrier
         elif vg.is_position(4) and wh.ready_for_product == True:
@@ -516,22 +508,29 @@ class RightLine(MainLine):
             wh.retrieve_product(color=self.config["color"])
         if vg.is_position(1):
             # move to wh if new vg1
-            vg.move_to_position(Position(1785, 1080, 400), ignore_moving_pos=True)
-        elif vg.is_position(2) and wh.is_position(2):
+            vg.move_to_position(Position(1780, 1080, 400), ignore_moving_pos=True)
+        elif vg.is_position(2) and (wh.is_position(2) or wh.is_position(3)):
             # move down, grip product, move up
             vg.get_product(700)
         elif vg.is_position(3):
             self.product_at = vg.name
             # move to cb3
-            vg.move_to_position(Position(97, 815, 1150))
-
-        # return wh to init position
-        elif wh.is_position(2) and self.product_at != wh.name:
+            vg.move_to_position(Position(97, 815, 950))
             wh.init(to_end=False)
 
-        elif vg.is_position(4):
+        elif vg.is_position(4) and State.CB3_TO_CB4.value[1] == Status.FREE:
+            # move down
+            vg.move_to_position(Position(-1, -1, 1150))
+        elif vg.is_position(5):
             # release product
             vg.release()
+        elif vg.is_position(6):
+            if Sensor(self.revpi, "CB3_SENS_END", self.line_name).get_current_value() == False:
+                vg.log.warning(f"{vg.name} :Product still at WH, trying again")
+                vg.position = 0
+            else:
+                vg.position += 1
+        elif vg.is_position(7):        
             # move back to init
             vg.init(to_end=True)
             wh.end_machine = True

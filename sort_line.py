@@ -12,8 +12,8 @@ from time import sleep
 from enum import Enum
 
 from logger import log
-from sensor import Sensor, SensorTimeoutError, EncoderOverflowError
 from machine import Machine
+from sensor import Sensor, SensorTimeoutError, EncoderOverflowError, NoDetectionError
 from actuator import Actuator
 from conveyor import Conveyor
 
@@ -110,9 +110,9 @@ class SortLine(Machine):
             sleep(1)
             if Sensor(self.revpi, f"{self.name}_SENS_{self.color}", self.line_name).get_current_value() == False:
                 # no detection at sensor
-                raise(Exception(f"{self.name} :Product not in right bay"))
+                raise(NoDetectionError(f"{self.name} :Product not in right bay"))
 
-        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError, NoDetectionError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)

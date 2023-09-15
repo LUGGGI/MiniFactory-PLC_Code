@@ -86,10 +86,12 @@ class MainLine(Machine):
         for machine in self.machines.values():
             # look for errors in the machines
             if machine.error_exception_in_machine:
+                self.error_exception_in_machine = True
                 self.switch_state(self.states.ERROR)
-                break
+                return False
             if machine.problem_in_machine and not self.problem_in_machine:
                 self.problem_in_machine = True
+                self.switch_state(self.states.ERROR)
                 return False
             # end machines 
             if machine.end_machine and not machine.name == self.product_at:
@@ -104,10 +106,6 @@ class MainLine(Machine):
                 self.log.critical(f"Continuing to: {self.waiting_for_state}")
                 self.switch_state(self.waiting_for_state)
                 self.waiting_for_state = None
-
-        if self.state == self.states.ERROR:
-            self.error_exception_in_machine = True
-            return False
 
         if self.state == self.states.END:
             self.product_at = None

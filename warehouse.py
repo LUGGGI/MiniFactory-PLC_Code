@@ -154,7 +154,7 @@ class Warehouse(Machine):
                     self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
                     self.store_product(color="Carrier", as_thread=False)
 
-        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
@@ -244,7 +244,7 @@ class Warehouse(Machine):
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
-        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
@@ -332,7 +332,7 @@ class Warehouse(Machine):
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
             
-        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
