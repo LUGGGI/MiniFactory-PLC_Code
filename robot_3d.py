@@ -5,16 +5,15 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 import threading
-from time import sleep
 from enum import Enum
 
 from logger import log
 from machine import Machine
 from sensor import Sensor
-from actuator import Actuator, EncoderOverflowError
+from actuator import Actuator, EncoderOverflowError, SensorTimeoutError
 
 class State(Enum):
     INIT = 0
@@ -94,9 +93,13 @@ class Robot3D(Machine):
         self.switch_state(State.INIT)
         try:
             # move to init position
-            self.move_all_axes(Position(-1,0,0))
-            self.move_all_axes(Position(0,-1,-1))
+            self.__move_all_axes(Position(-1,0,0))
+            self.__move_all_axes(Position(0,-1,-1))
 
+        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -122,38 +125,54 @@ class Robot3D(Machine):
             self.thread = threading.Thread(target=self.get_product, args=(vertical_position, sensor, False), name=self.name)
             self.thread.start()
             return
+        try: 
+            self.switch_state(State.GET_PRODUCT)
+            current_position = self.position
+            # start position
+            start_vertical_position = self.__encoder_ver.get_current_value()
+            max_tries = 3
+            for try_num in range(max_tries):
+                if self.error_exception_in_machine:
+                    break
 
-        self.switch_state(State.GET_PRODUCT)
-        current_position = self.position
-        # start position
-        start_vertical_position = self.__encoder_ver.get_current_value()
-        max_tries = 3
-        for try_num in range(max_tries):
-            if self.error_exception_in_machine:
+                self.__move_all_axes(Position(-1, -1, vertical_position))
+                self.grip(as_thread = False)
+
+                # move back up and continue if gripping worked
+                self.__move_all_axes(Position(-1, -1, start_vertical_position))
+
+                # check if product still at sensor, if true try to grip again
+                if sensor and Sensor(self.revpi, sensor, self.mainloop_name).get_current_value() == True:
+                    self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num+1}")
+                    self.reset_claw(as_thread=False)
+                    if try_num == max_tries-1:
+                        self.log.error(f"{self.name} :Product still at Sensor, grip failed, resetting position")
+                        # get current position
+                        current_position = Position(
+                            self.__encoder_rot.get_current_value(),
+                            self.__encoder_hor.get_current_value(),
+                            start_vertical_position
+                        )
+                        # reset robot position and try again
+                        self.init(as_thread=False)
+                        self.move_to_position(current_position, as_thread=False)
+
+                    elif try_num >= max_tries-1:
+                        raise GetProductError(f"{self.name} :Product still at Sensor, grip failed")
+                    continue
+
                 break
 
-            self.move_all_axes(Position(-1, -1, vertical_position))
-            self.grip(as_thread = False)
-
-            # move back up and continue if gripping worked
-            # self.__motor_ver.start("UP")
-            # self.__encoder_ver.wait_for_encoder(start_vertical_position, self.__motor_ver._Actuator__PWM_TRIGGER_THRESHOLD)
-            self.move_all_axes(Position(-1, -1, start_vertical_position))
-
-            # check if product still at sensor, if true try to grip again
-            if sensor and Sensor(self.revpi, sensor, self.mainloop_name).get_current_value() == True:
-                # self.__motor_ver.stop("UP")
-                self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num+1}")
-                self.reset_claw(as_thread=False)
-                if try_num == max_tries-1:
-                    self.log.error(f"{self.name} :Product still at Sensor, grip failed")
-                    self.error_exception_in_machine = True
-                    self.switch_state(State.ERROR)
-                continue
-
-            break
-
-        self.position = current_position + 1
+            self.position = current_position + 1
+        
+        except SensorTimeoutError or ValueError or EncoderOverflowError or GetProductError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
+        except Exception as error:
+            self.error_exception_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
 
 
     def move_to_position(self, position: Position, ignore_moving_pos=False, as_thread=True) -> True:
@@ -182,9 +201,9 @@ class Robot3D(Machine):
                 self.switch_state(State.TO_MOVING_POS)
                 if self.__encoder_ver.get_current_value() <= self.__moving_position.vertical:
                     # if robot is higher than moving postion rotate directly
-                    self.move_all_axes(Position(position.rotation, self.__moving_position.horizontal, self.__moving_position.vertical))
+                    self.__move_all_axes(Position(position.rotation, self.__moving_position.horizontal, self.__moving_position.vertical))
                 else:
-                    self.move_all_axes(self.__moving_position)
+                    self.__move_all_axes(self.__moving_position)
 
                 # move non moving position axes
                 self.switch_state(State.MOVING)
@@ -204,12 +223,16 @@ class Robot3D(Machine):
                     position.vertical = -1
                 else:
                     vertical = -1
-                self.move_all_axes(Position(rotation, horizontal, vertical))
+                self.__move_all_axes(Position(rotation, horizontal, vertical))
 
             # move to destination
             self.switch_state(State.TO_DESTINATION)
-            self.move_all_axes(position)
-
+            self.__move_all_axes(position)
+        
+        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -219,12 +242,15 @@ class Robot3D(Machine):
             self.position += 1
 
 
-    def move_all_axes(self, position: Position):
+    def __move_all_axes(self, position: Position):
         '''Makes linear move to given position, set a axis to -1 to not move that axis.
 
-        :position: (rotation, horizontal, vertical): int
-
-        -> Panics if axes movements did not complete
+        Args:
+            position (Position): (rotation, horizontal, vertical): int
+        Raises:
+            SensorTimeoutError: Timeout is reached (no detection happened).
+            ValueError: Counter jumped values.
+            EncoderOverflowError: Encoder hat overflow, because value went lower than 0.
         '''
         self.log.info(f"{self.name} :Moving axes to: {position}")
 
@@ -246,24 +272,15 @@ class Robot3D(Machine):
         if position.vertical <= current_position.vertical:
             dir_ver = "UP"
 
-        try:
-            # move to position
-            self.__motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.__MOVE_THRESHOLD_ROT, self.__encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
-            self.__motor_hor.move_axis(dir_hor, position.horizontal, current_position.horizontal, self.__MOVE_THRESHOLD_HOR, self.__encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
-            self.__motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.__MOVE_THRESHOLD_VER, self.__encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
+        # move to position
+        self.__motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.__MOVE_THRESHOLD_ROT, self.__encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
+        self.__motor_hor.move_axis(dir_hor, position.horizontal, current_position.horizontal, self.__MOVE_THRESHOLD_HOR, self.__encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
+        self.__motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.__MOVE_THRESHOLD_VER, self.__encoder_ver, self.name + "_REF_SW_VERTICAL", as_thread=True)
 
-            # wait for end of each move
-            self.__motor_rot.join()
-            self.__motor_hor.join()
-            self.__motor_ver.join()
-        
-        except EncoderOverflowError as e:
-            log.error(e)
-            if position.horizontal != 0 or position.rotation != 0 or position.vertical != 0:
-                sleep(1)
-                self.move_all_axes(Position(0,0,0))
-            else:
-                raise
+        # wait for end of each move
+        self.__motor_rot.join()
+        self.__motor_hor.join()
+        self.__motor_ver.join()
 
         self.log.info(f"{self.name} :Axes moved to: {position}")
 
@@ -278,8 +295,5 @@ class Robot3D(Machine):
         '''Reset gripper. Abstract function, see subclass'''
         pass
 
-
-pos1 = Position(1, 1, 1)
-
-if pos1 == Position(1, 1, 1):
-    print("true")
+class GetProductError(SystemError):
+    '''Robot could not grip Product'''

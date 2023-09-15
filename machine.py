@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 import threading
 from datetime import datetime
@@ -40,6 +40,7 @@ class Machine:
 
         self.end_machine = False
         self.error_exception_in_machine = False
+        self.problem_in_machine = False
 
         self.position = 0 # can count up the positions of a machine
 
@@ -108,4 +109,5 @@ class Machine:
             "position": self.position,
             "end_machine": self.end_machine,
             "error_exception_in_machine": self.error_exception_in_machine,
+            "problem_in_machine": self.problem_in_machine
         }

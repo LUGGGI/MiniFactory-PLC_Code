@@ -5,14 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 import threading
 from enum import Enum
 
 from logger import log
 from machine import Machine
-from actuator import Actuator
+from actuator import Actuator, SensorTimeoutError
 from conveyor import Conveyor
 
 class State(Enum):
@@ -64,16 +64,16 @@ class PunchMach(Machine):
 
             self.switch_state(State.CB_TO_PUNCH)
             # raise puncher
-            puncher.run_to_sensor("UP", stop_sensor="PM_REF_SW_TOP", as_thread=True)
+            puncher.run_to_sensor("UP", stop_sensor="PM_REF_SW_TOP", timeout_in_s=5, as_thread=True)
             # Move product from inner conveyor belt to puncher
             cb_punch.run_to_stop_sensor("FWD", stop_sensor="PM_SENS_PM", as_thread=False)
 
             puncher.join()
             self.switch_state(State.PUNCHING)
             self.log.info("Punching product")
-            puncher.run_to_sensor("DOWN", stop_sensor="PM_REF_SW_BOTTOM")
+            puncher.run_to_sensor("DOWN", stop_sensor="PM_REF_SW_BOTTOM", timeout_in_s=5)
             # raise puncher
-            puncher.run_to_sensor("UP", stop_sensor="PM_REF_SW_TOP", as_thread=True)
+            puncher.run_to_sensor("UP", stop_sensor="PM_REF_SW_TOP", timeout_in_s=5, as_thread=True)
 
             self.switch_state(State.CB_TO_OUT)
 
@@ -87,6 +87,10 @@ class PunchMach(Machine):
             del puncher
             del cb_punch
 
+        except SensorTimeoutError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)

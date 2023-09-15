@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 import threading
 from time import sleep
@@ -13,7 +13,7 @@ from enum import Enum
 
 from logger import log
 from machine import Machine
-from sensor import Sensor
+from sensor import Sensor, SensorTimeoutError
 from actuator import Actuator
 from conveyor import Conveyor
 
@@ -71,7 +71,7 @@ class IndexLine(Machine):
             cb_start = Conveyor(self.revpi, self.name + "_CB_START", self.mainloop_name)
 
             # move pusher to back
-            pusher_in.run_to_sensor("BWD", self.name + "_REF_SW_PUSH1_BACK", as_thread=True) 
+            pusher_in.run_to_sensor("BWD", self.name + "_REF_SW_PUSH1_BACK", timeout_in_s=5, as_thread=True) 
             # move product to pusher_in
             cb_start.run_to_stop_sensor("", self.name + "_REF_SW_PUSH1_FRONT", as_thread=True)
             # wait for product to be detected by sensor 
@@ -81,11 +81,11 @@ class IndexLine(Machine):
             pusher_in.join()
             cb_start.join()
             del cb_start
-            pusher_in.run_to_sensor("FWD", self.name + "_REF_SW_PUSH1_FRONT", as_thread=True) 
+            pusher_in.run_to_sensor("FWD", self.name + "_REF_SW_PUSH1_FRONT", timeout_in_s=5, as_thread=True) 
             cb_mill.run_to_stop_sensor("", self.name + "_SENS_MILL", as_thread=False)
             # move pusher back to back
             pusher_in.join()
-            pusher_in.run_to_sensor("BWD", self.name + "_REF_SW_PUSH1_BACK", as_thread=True)
+            pusher_in.run_to_sensor("BWD", self.name + "_REF_SW_PUSH1_BACK", timeout_in_s=5, as_thread=True)
             
 
             # Milling
@@ -118,22 +118,26 @@ class IndexLine(Machine):
             cb_end = Conveyor(self.revpi, self.name + "_CB_END", self.mainloop_name)
 
             # move pusher to back
-            pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", as_thread=True)
+            pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", timeout_in_s=5, as_thread=True)
             # move product to pusher_out
             cb_drill.run_to_stop_sensor("", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True)
             sleep(1) # wait for product to be in front of pusher
             # push product to out
             pusher_out.join()
-            pusher_out.run_to_sensor("FWD", self.name + "_REF_SW_PUSH2_FRONT", as_thread=True) 
+            pusher_out.run_to_sensor("FWD", self.name + "_REF_SW_PUSH2_FRONT", timeout_in_s=5, as_thread=True) 
             cb_end.run_to_stop_sensor("", self.name + "_SENS_END", stop_delay_in_ms=1000, as_thread=False)
             del cb_end
             # move pusher back to back
-            pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", as_thread=True) 
+            pusher_out.run_to_sensor("BWD", self.name + "_REF_SW_PUSH2_BACK", timeout_in_s=5, as_thread=True) 
 
             cb_drill.join()
             pusher_out.join()
             del cb_drill
             del pusher_out
+        except SensorTimeoutError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
 
         except Exception as error:
             self.error_exception_in_machine = True

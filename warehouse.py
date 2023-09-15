@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 import threading
 from enum import Enum
@@ -13,7 +13,7 @@ import json
 
 from logger import log
 from machine import Machine
-from sensor import Sensor
+from sensor import Sensor, SensorTimeoutError, EncoderOverflowError
 from actuator import Actuator
 from conveyor import Conveyor
 
@@ -114,7 +114,7 @@ class Warehouse(Machine):
         current_position = self.position
         try:
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
-            self.move_to_position(0, 0)
+            self.__move_to_position(0, 0)
 
             if for_store:
                 # get empty carrier if non is available
@@ -124,7 +124,7 @@ class Warehouse(Machine):
                 # move arm to cb
                 self.switch_state(State.MOVING_TO_CB)
                 Actuator(self.revpi, self.name + "_CB_BWD", self.mainloop_name).run_for_time("", 0.5)
-                self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
+                self.__move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
                 self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
             elif for_retrieve:
                 # if carrier at cb, move it into storage
@@ -132,10 +132,14 @@ class Warehouse(Machine):
                     # move arm to cb
                     self.switch_state(State.MOVING_TO_CB)
                     Actuator(self.revpi, self.name + "_CB_BWD", self.mainloop_name).run_for_time("", 0.5)
-                    self.move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
+                    self.__move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
                     self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
                     self.store_product(color="Carrier", as_thread=False)
 
+        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -194,17 +198,17 @@ class Warehouse(Machine):
 
             # get product from cb
             self.switch_state(State.GETTING_PRODUCT)
-            self.move_to_position(-1, self.__POS_CB_VERTICAL - 150)
+            self.__move_to_position(-1, self.__POS_CB_VERTICAL - 150)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
 
             # move crane to given rack
             self.switch_state(State.MOVING_TO_RACK)
-            self.move_to_position(horizontal, vertical - 100)
+            self.__move_to_position(horizontal, vertical - 100)
 
             # store product in rack
             self.switch_state(State.SETTING_PRODUCT)
             self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
-            self.move_to_position(-1, vertical)
+            self.__move_to_position(-1, vertical)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
             
             # save Product to file
@@ -221,6 +225,10 @@ class Warehouse(Machine):
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
+        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -268,23 +276,23 @@ class Warehouse(Machine):
             # move to given rack
             self.switch_state(State.MOVING_TO_RACK)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
-            self.move_to_position(horizontal, vertical)
+            self.__move_to_position(horizontal, vertical)
 
             # get product from rack
             self.switch_state(State.GETTING_PRODUCT)
             self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
-            self.move_to_position(-1, vertical - 100)
+            self.__move_to_position(-1, vertical - 100)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
 
             # move to cb
             self.switch_state(State.MOVING_TO_CB)
-            self.move_to_position(0, self.__POS_CB_VERTICAL - 100)
-            self.move_to_position(self.__POS_CB_HORIZONTAL, -1)
+            self.__move_to_position(0, self.__POS_CB_VERTICAL - 100)
+            self.__move_to_position(self.__POS_CB_HORIZONTAL, -1)
 
             # put product on cb
             self.switch_state(State.SETTING_PRODUCT)
             self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
-            self.move_to_position(-1, self.__POS_CB_VERTICAL)
+            self.__move_to_position(-1, self.__POS_CB_VERTICAL)
 
             # move product to outside
             self.switch_state(State.CB_BWD)
@@ -303,9 +311,11 @@ class Warehouse(Machine):
             json_obj[self.__factory][hor][ver] = "Empty"
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
-
             
-
+        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -315,13 +325,16 @@ class Warehouse(Machine):
             self.position += 1
 
 
-    def move_to_position(self, horizontal: int, vertical: int):
+    def __move_to_position(self, horizontal: int, vertical: int):
         '''Moves Crane given coordinates, set a coordinate to -1 to not move that axis.
 
         :horizontal: horizontal coordinate
         :vertical: vertical coordinate
 
-        -> Panics if axes movements did not complete
+        Raises:
+            SensorTimeoutError: Timeout is reached (no detection happened).
+            EncoderOverflowError: Encoder value negativ.
+            ValueError: Counter jumped values.
         '''
         self.log.info("Moving Crane to position: " + str(f"(hor:{horizontal},ver:{vertical})"))
 

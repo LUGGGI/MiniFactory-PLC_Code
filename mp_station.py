@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 import threading
 from time import sleep
@@ -13,7 +13,7 @@ from enum import Enum, auto
 
 from logger import log
 from machine import Machine
-from actuator import Actuator
+from actuator import Actuator, SensorTimeoutError
 from conveyor import Conveyor
 
 class State(Enum):
@@ -63,6 +63,11 @@ class MPStation(Machine):
         try:
             self.switch_state(State.INIT)
             Actuator(self.revpi, self.name + "_VG", self.mainloop_name).run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE")
+
+        except SensorTimeoutError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -167,6 +172,10 @@ class MPStation(Machine):
             self.switch_state(State.CB)
             Conveyor(self.revpi, self.name + "_CB", self.mainloop_name).run_to_stop_sensor("FWD", "MPS_SENS_CB", as_thread=False)
 
+        except SensorTimeoutError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -192,6 +201,10 @@ class MPStation(Machine):
             self.table.join()
             del self.table
 
+        except SensorTimeoutError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)

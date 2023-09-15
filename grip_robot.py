@@ -5,13 +5,13 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 import threading
 
 from logger import log
 from sensor import Sensor, SensorType
-from actuator import Actuator
+from actuator import Actuator, SensorTimeoutError, EncoderOverflowError
 from robot_3d import Robot3D, Position, State
 
 
@@ -62,6 +62,11 @@ class GripRobot(Robot3D):
         try:
             self.switch_state(State.GRIPPING)
             self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, self.GRIPPER_CLOSED, timeout_in_s=5)
+
+        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -83,6 +88,11 @@ class GripRobot(Robot3D):
         try:
             self.switch_state(State.RELEASE)
             self.__motor_claw.run_to_encoder_value("OPEN", self.__encoder_claw, self.GRIPPER_OPENED, timeout_in_s=5)
+
+        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
@@ -104,7 +114,11 @@ class GripRobot(Robot3D):
         try:
             self.__motor_claw.run_to_encoder_start("OPEN", self.name + "_REF_SW_CLAW", self.__encoder_claw)
             self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, self.GRIPPER_OPENED)
-
+        
+        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)

@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 from time import sleep, time
 from revpimodio2 import RevPiModIO
@@ -24,7 +24,7 @@ class Setup():
     update_factory(): Updates the factory and starts every mainloop.
     save_status(): Gets the mainloop states and the status dictionaries of all machines in all active mainloops. Puts them into output.
     '''
-    LOOP_TIME = 0.02 # in seconds
+    LOOP_TIME = 1.02 # in seconds
     
     def __init__(self, input_file, output_file, states, mainloop_class) -> None:
         '''Init setup and setup RevpiModIO
@@ -92,7 +92,7 @@ class Setup():
             # exit the factory if error occurred or end has ben reached
             if self.exception:
                 break
-            if self.mainloops.__len__() <= 0 and self.io_interface.input_dict["exit_if_end"]:
+            if self.mainloops.__len__() <= 0 and self.io_interface.factory_end:
                 break
 
 
@@ -112,21 +112,19 @@ class Setup():
         # check for error in mainloops
         mainloop: MainLine
         for mainloop in self.mainloops.values():
-            # run an iteration if the mainloop
-            if mainloop.running:
-                mainloop.update(self.io_interface.input_dict["run"])
-            # start the mainloop
-            elif mainloop.config["run"] == True and (self.mainloops.get("Init") == None or self.mainloops.get("Init").running == False):
-                log.critical(f"Start: {mainloop.name}")
-                mainloop.switch_state(mainloop.config["start_at"], False)
-                mainloop.running = True
-                mainloop.update(self.io_interface.input_dict["run"])
-            
             # end the mainloop
             if mainloop.end_machine or mainloop.config["run"] == False:
                 log.critical(f"Stop: {mainloop.name}")
                 self.mainloops.pop(mainloop.name)
                 break
+
+            if mainloop.problem_in_machine:
+                if self.io_interface.factory_run == False:
+                    mainloop.state = self.states.END
+                    return
+                else:
+                    log.error(f"Problem in mainloop {mainloop.name}")
+                    self.io_interface.factory_run = False
             
             # handel exception in mainloop
             if mainloop.error_exception_in_machine:
@@ -134,6 +132,16 @@ class Setup():
                 self.exit_handler.stop_factory()
                 self.exception = True
                 break
+            
+            # run an iteration if the mainloop
+            if mainloop.running:
+                mainloop.update(self.io_interface.factory_run)
+            # start the mainloop
+            elif mainloop.config["run"] == True and (self.mainloops.get("Init") == None or self.mainloops.get("Init").running == False):
+                log.critical(f"Start: {mainloop.name}")
+                mainloop.switch_state(mainloop.config["start_at"], False)
+                mainloop.running = True
+                mainloop.update(self.io_interface.factory_run)
 
         # end all mainloops if error occurred
         if self.exit_handler.was_called or self.exception:
@@ -148,11 +156,16 @@ class Setup():
         '''Gets the mainloop states and the status dictionaries of all machines in all active mainloops. Puts them into output.'''
 
         main_states = []
+        factory_status = {}
         mainloops = {}
         
         # get the mainloop states
         for state in self.states:
             main_states.append(state)
+
+        # get factory status
+        factory_status["running"] = self.io_interface.factory_run
+        factory_status["exit_if_end"] = self.io_interface.factory_end
         
         # get the status dictionaries of all machines in all active mainloops
         mainloop: MainLine
@@ -165,4 +178,4 @@ class Setup():
             mainloops[mainloop.name] = dictionary
 
 
-        self.io_interface.update_output(main_states, mainloops)
+        self.io_interface.update_output(main_states, factory_status, mainloops)

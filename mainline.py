@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 from enum import Enum
 from logger import log
@@ -54,8 +54,7 @@ class MainLine(Machine):
         :run: only run the mainloop if True
         '''
         try:
-            self.line_config()
-            if run:
+            if self.line_config() and run:
                 self.mainloop()
         except Exception as error:
             self.error_exception_in_machine = True
@@ -63,13 +62,19 @@ class MainLine(Machine):
             self.switch_state(self.states.ERROR)
 
 
-    def line_config(self):
-        '''Config functionality'''
+    def line_config(self) -> bool:
+        '''Config functionality.
+        
+        -> Returns False if error occurred else returns True
+        '''
         for machine in self.machines.values():
             # look for errors in the machines
             if machine.error_exception_in_machine:
                 self.switch_state(self.states.ERROR)
                 break
+            if machine.problem_in_machine and not self.problem_in_machine:
+                self.problem_in_machine = True
+                return False
             # end machines 
             if machine.end_machine and not machine.name == self.product_at:
                 self.log.info(f"Ended: {machine.name}")
@@ -86,22 +91,29 @@ class MainLine(Machine):
 
         if self.state == self.states.ERROR:
             self.error_exception_in_machine = True
-            return
+            return False
 
         if self.state == self.states.END:
             self.product_at = None
             self.switch_status(self.states.END, Status.FREE)
-            if not self.end():
-                return
+            if not self.end() and not self.problem_in_machine:
+                return True
             self.end_machine = True
-            return
+            for state in self.states:
+                if state.value[2] == self.name:
+                    self.switch_status(state, Status.FREE)
+
+            return False
         
         # update mainloop status for status
         self.status_dict = {
             "state": self.state.name if self.state else None,
             "product_at": self.product_at,
-            "waiting_for_state": self.waiting_for_state.name if self.waiting_for_state else None
+            "waiting_for_state": self.waiting_for_state.name if self.waiting_for_state else None,
+            "error_exception_in_machine": self.error_exception_in_machine,
+            "problem_in_machine": self.problem_in_machine
         }
+        return True
 
         
     def mainloop(self):

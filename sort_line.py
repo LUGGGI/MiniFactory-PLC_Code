@@ -5,14 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 import threading
 from time import sleep
 from enum import Enum
 
 from logger import log
-from sensor import Sensor
+from sensor import Sensor, SensorTimeoutError, EncoderOverflowError
 from machine import Machine
 from actuator import Actuator
 from conveyor import Conveyor
@@ -105,6 +105,10 @@ class SortLine(Machine):
                 # no detection at sensor
                 raise(Exception(f"{self.name} :Product not in right bay"))
 
+        except SensorTimeoutError or ValueError or EncoderOverflowError as error:
+            self.problem_in_machine = True
+            self.switch_state(State.ERROR)
+            self.log.exception(error)
         except Exception as error:
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)

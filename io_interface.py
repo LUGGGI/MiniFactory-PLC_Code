@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.15"
 
 import json
 from copy import deepcopy
@@ -36,6 +36,8 @@ class IOInterface():
 
         self.input_dict = {}
         self.new_configs = []
+        self.factory_run = False
+        self.factory_end = False
 
         self.__output_dict = {}
         self.__update_num = 0
@@ -58,9 +60,14 @@ class IOInterface():
         # get all the new configs
         new_configs = list(filter(lambda x: self.__check_if_config_already_exists(x) == False, json_dict["configs"]))
 
-        # update the input dict
+        # update the input dict if new data is available
         if new_configs.__len__() > 0 or self.input_dict != json_dict:
             self.input_dict = deepcopy(json_dict)
+        else:
+            return
+
+        self.factory_end = self.input_dict["exit_if_end"]
+        self.factory_run = self.input_dict["run"]
 
         # inserts the correct states into the new configs
         for config in new_configs:
@@ -99,10 +106,11 @@ class IOInterface():
     # Methodes for output
     ###############################################################################################
     
-    def update_output(self, main_states: list, mainloops: dict):
+    def update_output(self, main_states: list, factory_status: dict, mainloops: dict):
         '''Update program status.
 
         :main_states: possible States of mainloop
+        :factory_status: status of whole factory
         :mainloops: status data for all machines in all mainloops
         '''
         output_dict = {"update_num": self.__update_num}
@@ -112,6 +120,7 @@ class IOInterface():
             state = f"{state.name:>14}, {state.value[1].name:<8}, {state.value[2]}"
             output_dict["states"].append(state)
 
+        output_dict.update(factory_status)
         output_dict.update(mainloops)
 
         if output_dict == self.__output_dict:
