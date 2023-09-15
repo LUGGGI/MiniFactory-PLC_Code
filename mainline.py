@@ -23,21 +23,32 @@ class Status(Enum):
 class MainLine(Machine):
     '''Controls the MiniFactory.
     
-    update(): Updates the mainloop
-    line_config(): Config functionality
-    mainloop(): Calls the different states
-    switch_state(): Switches state to given state if not BLOCKED or RUNNING
-    switch_status(): Switch status in states
-    end(): Waits for any machines left running.
-    run_...(): Calls the different modules
+    Methodes:
+        update(): Updates the mainloop
+        line_config(): Config functionality
+        mainloop(): Calls the different states
+        switch_state(): Switches state to given state if not BLOCKED or RUNNING
+        switch_status(): Switch status in states
+        end(): Waits for any machines left running.
+    Attributes:
+        config (dict): Config for the line.
+        states (State): States from Subclass.
+        machines (dict): All active machines.
+        product_at (bool): Name of machine where product is at. 
+        waiting_for_state (State): If line is waiting for machine, holds the state of that machine.
+        running (bool): True if line is currently running.
+        status_dict (dict): Status of line.
     '''
 
     def __init__(self, revpi, config: dict, states):
-        '''Initializes MiniFactory control loop.'''
+        '''Initializes MiniFactory control loop.
+        
+        Args:
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            config (dict): Config for the line.
+            states (State): States from Subclass.
+        '''
         super().__init__(revpi, config["name"], config["name"])
-
-        global log
-        self.log = log.getChild(f"{self.mainloop_name}")
 
         self.config = config
         self.states = states
@@ -47,11 +58,15 @@ class MainLine(Machine):
         self.running = False
         self.status_dict = {}
 
+        global log
+        self.log = log.getChild(f"{self.mainloop_name}")
+
 
     def update(self, run: bool):
         '''Updates the mainloop.
         
-        :run: only run the mainloop if True
+        Args:
+            run: Only run the mainloop if True.
         '''
         try:
             if self.line_config() and run:
@@ -65,7 +80,8 @@ class MainLine(Machine):
     def line_config(self) -> bool:
         '''Config functionality.
         
-        -> Returns False if error occurred else returns True
+        Returns:
+            False if error occurred else returns True.
         '''
         for machine in self.machines.values():
             # look for errors in the machines
@@ -124,8 +140,9 @@ class MainLine(Machine):
     def switch_state(self, state, wait=False):
         '''Switch to given state and save state start time.
         
-        :state: state Enum to switch to
-        :wait: waits for input bevor switching
+        Args:
+            state (State): State Enum to switch to.
+            wait (bool): Calls for input bevor switching.
         '''
         if self.state == self.config["end_at"] and state != self.states.END:
             self.switch_status(self.state, Status.FREE)
@@ -144,10 +161,11 @@ class MainLine(Machine):
 
 
     def switch_status(self, state_name, status: Status):
-        '''Switch status in states, if name switches all to a machine belonging states
+        '''Switch status in states, if name switches all to a machine belonging states.
         
-        :state: can be a State Enum or a string of to switching state
-        :status: Status that the state should be switched to
+        Args:
+            state (State | str): Can be a State Enum or a string of to switching state.
+            status (Status): Status that the state should be switched to.
         '''
         # get the used_by tag
         name_tag = "None" if status == Status.FREE else self.name
@@ -165,12 +183,15 @@ class MainLine(Machine):
                     state.value[2] = name_tag
 
 
-    def get_machine(self, machine_name: str, machine_class, *args):
+    def get_machine(self, machine_name: str, machine_class, *args) -> Machine:
         '''Returns given machine, if not available initializes it.
         
-        :machine_name: Name of machine that should be returned
-        :machine_class: Class of the machine
-        :*args: additional arguments passed to machine
+        Args:
+            machine_name (str): Name of machine that should be returned.
+            machine_class (Mainloop): Class of the machine.
+            *args: additional arguments passed to machine.
+        Returns:
+            Machine: machine object for given machine.
         '''
         machine = self.machines.get(machine_name)
         if machine == None:
@@ -181,7 +202,11 @@ class MainLine(Machine):
     
     
     def end(self) -> False:
-        '''Waits for any machines left running.'''
+        '''Waits for any machines left running.
+        
+        Returns:
+            bool: True if all machine have endet else False.
+        '''
         machine_running = False
         while(True):
             # check if there any machines left running

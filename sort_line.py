@@ -28,15 +28,20 @@ class State(Enum):
 class SortLine(Machine):
     '''Controls the Sorting Line
 
-    run(): Runs the Sorting Line routine.
+    Methodes:
+        run(): Runs the Sorting Line routine.
+    Attributes:
+        color (str): Color of product.
+        start_next_machine(bool): Is set to True if next machine should be started.
     '''
 
     def __init__(self, revpi, name: str, mainloop_name: str):
-        '''Initializes the Sorting Line
+        '''Initializes the Sorting Line.
         
-        :revpi: RevPiModIO Object to control the motors and sensors
-        :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :mainloop_name: name of current mainloop
+        Args:
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            mainloop_name (str): Name of current mainloop.
         '''
         super().__init__(revpi, name, mainloop_name)
         self.position = 1
@@ -52,7 +57,9 @@ class SortLine(Machine):
     def run(self, color: str=None, as_thread=True):
         '''Runs the Sorting Line routine.
         
-        :as_thread: Runs the function as a thread
+        Args:
+            color (str): Color of product.
+            as_thread (bool): Runs the function as a thread.
         '''      
         if as_thread == True:
             self.thread = threading.Thread(target=self.run, args=(color, False), name=self.name)

@@ -1,5 +1,5 @@
 '''
-Main Loop config for MiniFactory project
+Factory setup for MiniFactory project
 '''
 
 __author__ = "Lukas Beck"
@@ -19,20 +19,34 @@ from mainline import MainLine
 
 
 class Setup():
-    '''Setup Mainloop.
+    '''Setup for Factory.
     
-    update_factory(): Updates the factory and starts every mainloop.
-    save_status(): Gets the mainloop states and the status dictionaries of all machines in all active mainloops. Puts them into output.
+    Methodes:
+        run_factory(): Starts the factory, adds and updates the lines.
+        __update_factory(): Updates the factory and starts every line.
+        __save_status(): Puts the states, factory status and line status into output.
+    Attributes:
+        LOOP_TIME (int): How often a new iteration is started (in seconds).
+        revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+        states (State): All possible States of the line.
+        line_class (Mainline): Class of the current line.
+        exception (bool): True if exception in factory.
+        loop_start_time (float): Current loop start time.
+        last_config_update_time (float): Time of last config update.
+        lines (dict): All Line objects currently active.
+        exit_handler (ExitHandler): Object for Exit Handler.
+        io_interface (IOInterface): Object for IO Interface.
     '''
     LOOP_TIME = 1.02 # in seconds
     
-    def __init__(self, input_file, output_file, states, mainloop_class) -> None:
-        '''Init setup and setup RevpiModIO
+    def __init__(self, input_file, output_file, states, line_class):
+        '''Init setup and setup of RevpiModIO.
         
-        :input_file: config json file where the mainloops are configured
-        :output_file: json file where the states are logged
-        :states: possible States of mainloop
-        :mainloop_class: the class of the given Mainloop
+        Args:
+            input_file (str): Config json file path where the lines are configured.
+            output_file (str): Json file path where the states are logged.
+            states (State): All possible States of the line.
+            line_class (Mainline): Class of the current line.
         '''
         # setup RevpiModIO
         try:
@@ -44,20 +58,20 @@ class Setup():
         self.revpi.mainloop(blocking=False)
 
         self.states = states
-        self.mainloop_class = mainloop_class
+        self.line_class = line_class
         
         self.exception = False
         self.loop_start_time: float = 0
         self.last_config_update_time: float = 0
 
-        self.mainloops: dict = {}
+        self.lines: dict = {}
 
         self.exit_handler = ExitHandler(self.revpi)
         self.io_interface = IOInterface(input_file, output_file, states)
 
 
     def run_factory(self):
-        '''Starts the factory, adds and updates the mainloops'''
+        '''Starts the factory, adds and updates the mainloops.'''
 
         while(True):
             self.loop_start_time = time()
@@ -70,14 +84,14 @@ class Setup():
 
                     for config in self.io_interface.new_configs:
                         # add mainloop if it doesn't exists
-                        if self.mainloops.get(config["name"]) == None:
+                        if self.lines.get(config["name"]) == None:
                             if config["run"] == False:
                                 continue
-                            self.mainloops[config["name"]] = self.mainloop_class(self.revpi, config)
+                            self.lines[config["name"]] = self.line_class(self.revpi, config)
                             log.warning(f"Added new Mainloop: {config['name']}")
                         # update config in existing mainloop
                         else:
-                            self.mainloops[config["name"]].config = config
+                            self.lines[config["name"]].config = config
                             log.warning(f"Updated Mainloop: {config['name']}")
                     self.io_interface.new_configs.clear()
             
@@ -92,7 +106,7 @@ class Setup():
             # exit the factory if error occurred or end has ben reached
             if self.exception:
                 break
-            if self.mainloops.__len__() <= 0 and self.io_interface.factory_end:
+            if self.lines.__len__() <= 0 and self.io_interface.factory_end:
                 break
 
 
@@ -111,11 +125,11 @@ class Setup():
         '''Updates the factory and starts every mainloop.'''
         # check for error in mainloops
         mainloop: MainLine
-        for mainloop in self.mainloops.values():
+        for mainloop in self.lines.values():
             # end the mainloop
             if mainloop.end_machine or mainloop.config["run"] == False:
                 log.critical(f"Stop: {mainloop.name}")
-                self.mainloops.pop(mainloop.name)
+                self.lines.pop(mainloop.name)
                 break
 
             if mainloop.problem_in_machine:
@@ -137,7 +151,7 @@ class Setup():
             if mainloop.running:
                 mainloop.update(self.io_interface.factory_run)
             # start the mainloop
-            elif mainloop.config["run"] == True and (self.mainloops.get("Init") == None or self.mainloops.get("Init").running == False):
+            elif mainloop.config["run"] == True and (self.lines.get("Init") == None or self.lines.get("Init").running == False):
                 log.critical(f"Start: {mainloop.name}")
                 mainloop.switch_state(mainloop.config["start_at"], False)
                 mainloop.running = True
@@ -145,7 +159,7 @@ class Setup():
 
         # end all mainloops if error occurred
         if self.exit_handler.was_called or self.exception:
-            for mainloop in self.mainloops:
+            for mainloop in self.lines:
                 log.critical(f"Ending mainloop: {mainloop.name}")
                 mainloop.end_machine = True
                 self.exception = True
@@ -153,11 +167,11 @@ class Setup():
 
 
     def __save_status(self):
-        '''Gets the mainloop states and the status dictionaries of all machines in all active mainloops. Puts them into output.'''
+        '''Puts the states, factory status and line status into output.'''
 
         main_states = []
         factory_status = {}
-        mainloops = {}
+        lines = {}
         
         # get the mainloop states
         for state in self.states:
@@ -169,13 +183,13 @@ class Setup():
         
         # get the status dictionaries of all machines in all active mainloops
         mainloop: MainLine
-        for mainloop in self.mainloops.values():
+        for mainloop in self.lines.values():
             if mainloop.config["run"] == False:
                 continue
             dictionary = {"self": mainloop.status_dict}
             for machine in mainloop.machines.values():
                 dictionary[machine.name] = machine.get_status_dict()
-            mainloops[mainloop.name] = dictionary
+            lines[mainloop.name] = dictionary
 
 
-        self.io_interface.update_output(main_states, factory_status, mainloops)
+        self.io_interface.update_output(main_states, factory_status, lines)

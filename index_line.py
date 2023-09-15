@@ -28,19 +28,25 @@ class State(Enum):
     ERROR = 999
 
 class IndexLine(Machine):
-    '''Controls the Index Line
+    '''Controls the Index Line.
 
-    run(): Runs the Index Line routine.
+    Methodes:
+        run(): Runs the Index Line routine.
+    Attributes:
+        __TIME_MILLING (int): Time that the mill should be active.
+        __TIME_DRILLING (int): Time that the drill should be active.
+        start_next_machine(bool): Is set to True if next machine should be started.
     '''
     __TIME_MILLING = 1
     __TIME_DRILLING = 1
 
     def __init__(self, revpi, name: str, mainloop_name: str):
-        '''Initializes the Index Line
+        '''Initializes the Index Line.
         
-        :revpi: RevPiModIO Object to control the motors and sensors
-        :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :mainloop_name: name of current mainloop
+        Args:
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
+            mainloop_name (str): Name of current mainloop.
         '''
         super().__init__(revpi, name, mainloop_name)
         
@@ -54,7 +60,8 @@ class IndexLine(Machine):
     def run(self, as_thread=True):
         '''Runs the Index Line routine.
         
-        :as_thread: Runs the function as a thread
+        Args:
+            as_thread (bool): Runs the function as a thread.
         '''      
         if as_thread == True:
             self.thread = threading.Thread(target=self.run, args=(False,), name=self.name)

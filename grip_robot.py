@@ -16,20 +16,27 @@ from robot_3d import Robot3D, Position, State
 
 
 class GripRobot(Robot3D):
-    '''Controls the Gripper Robot
+    '''Controls the Gripper Robot.
     
-    grip(): Grip Product.
-    release(): Release Product.
-    reset_claw(): Reset claw to init position.
+    Methodes:
+        grip(): Grip Product.
+        release(): Release Product.
+        reset_claw(): Reset claw to init position.
+    Attributes:
+        GRIPPER_CLOSED (int): Value at which the gripper is closed.
+        GRIPPER_OPENED (int): Value at which the gripper is opened.
+        __encoder_claw (Sensor): Encoder (counter) for claw.
+        __motor_claw (Actuator): Motor for claw.
     '''
 
     def __init__(self, revpi, name: str, mainloop_name: str, moving_position: Position):
         '''Initializes the Gripper Robot.
         
-        :revpi: RevPiModIO Object to control the motors and sensors
-        :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :mainloop_name: name of current mainloop
-        :moving_position: Positions that the axes should be to allow save moving
+        Args:
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            name: Exact name of the machine in PiCtory (everything bevor first '_').
+            mainloop_name: Name of current mainloop.
+            moving_position (Position): Position at which the axes should be to allow save moving.
         '''
         super().__init__(revpi, name, mainloop_name, moving_position)
         self.GRIPPER_CLOSED = 13
@@ -52,7 +59,8 @@ class GripRobot(Robot3D):
     def grip(self, as_thread=True):
         '''Grip Product.
         
-        :as_thread: Runs the function as a thread
+        Args:
+            as_thread (bool): Runs the function as a thread.
         '''
         if as_thread:
             self.thread = threading.Thread(target=self.grip, args=(False,), name=self.name)
@@ -78,7 +86,8 @@ class GripRobot(Robot3D):
     def release(self, as_thread=True):
         '''Release product.
         
-        :as_thread: Runs the function as a thread
+        Args:
+            as_thread (bool): Runs the function as a thread.
         '''
         if as_thread:
             self.thread = threading.Thread(target=self.release, args=(False,), name=self.name)
@@ -104,7 +113,8 @@ class GripRobot(Robot3D):
     def reset_claw(self, as_thread=True):
         '''Reset claw to init position.
         
-        :as_thread: Runs the function as a thread
+        Args:
+            as_thread (bool): Runs the function as a thread.
         '''
         if as_thread:
             self.thread = threading.Thread(target=self.reset_claw, args=(False,), name=self.name)

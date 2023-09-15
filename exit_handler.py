@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.08.30"
+__version__ = "2023.09.15"
 
 import threading
 from time import sleep
@@ -17,16 +17,22 @@ from logger import log
 class ExitHandler:
     '''Stops the factory, and handles CTRL+C.
     
-    stop_factory: Disables the API for factory and stops all Actuators
+    Methodes:
+        stop_factory: Disables the API for factory and stops all Actuators.
+    Attributes:
+        revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+        was_called (bool): Is set to true if exit handler was called.    
     '''
     def __init__(self, revpi: RevPiModIO) -> None:
         '''Initializes the ExitHandler
         
-        :revpi: RevPiModIO Object to control the motors and sensors
+        Args:
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors
         '''
         self.revpi = revpi
         self.was_called = False
 
+        # detect CTRL+C
         signal.signal(signal.SIGINT, self.stop_factory)
 
 

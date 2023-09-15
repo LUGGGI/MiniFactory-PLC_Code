@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 import threading
 from enum import Enum
@@ -24,15 +24,17 @@ class State(Enum):
 
 
 class Conveyor(Machine):
-    '''Controls a conveyor. If conveyor isn't run with end_machine=True, the flag has to be set manually
+    '''Controls a conveyor. If conveyor isn't run with end_machine=True, the flag has to be set manually.
     
     Methodes:
         run_to_stop_sensor(): Runs the Conveyor until the product has reached the stop sensor
         run_to_counter_value(): Runs the Conveyor until the trigger_value of encoder is reached
+    Attributes:
+        exception (Exception): Holds exception if exception was raised.
     '''
 
     def __init__(self, revpi, name: str, mainloop_name: str):
-        '''Controls a conveyor.
+        '''Initializes Conveyor.
         
         Args
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.

@@ -15,21 +15,30 @@ from logger import log
 class IOInterface():
     '''Handels json config read and program status update.
     
-    update_configs_with_input(): Reads input file and appends the new configs to the configs list.
-    __check_if_config_already_exists(): Returns True if the given config already exist.
-    update_output(): Update program status.
+    Methodes:
+        update_configs_with_input(): Reads input file and appends the new configs to the configs list.
+        __check_if_config_already_exists(): Returns True if the given config already exist.
+        update_output(): Update program status.
+    Attributes:
+        __input_file (str): Config json file where the mainloops are configured.
+        __output_file (str): Json file where the states are logged.
+        __states (State): Possible States of mainloop.
+        input_dict (dict): Current input.
+        new_configs (list): New line configs.
+        factory_run (bool): If False the factory stops.
+        factory_end (bool): If False than the factory will not end if every line is finished.
+        __output_dict (dict): Current output.
+        __update_num (inz): Counts the number of output updates.
     '''
 
-    def __init__(self, input_file, output_file, states) -> None:
+    def __init__(self, input_file, output_file, states):
         '''Init IOInterface.
         
-        :input_file: config json file where the mainloops are configured
-        :output_file: json file where the states are logged
-        :states: possible States of mainloop
+        Args:
+            input_file (str): Config json file where the mainloops are configured.
+            output_file (str): Json file where the states are logged.
+            states (State): Possible States of mainloop.
         '''
-        global log
-        self.log = log.getChild(f"IO_Com")
-
         self.__input_file = input_file
         self.__output_file = output_file
         self.__states = states
@@ -41,6 +50,9 @@ class IOInterface():
 
         self.__output_dict = {}
         self.__update_num = 0
+
+        global log
+        self.log = log.getChild(f"IO_Com")
 
 
     # Methodes for input
@@ -92,10 +104,13 @@ class IOInterface():
         self.new_configs = new_configs
 
 
-    def __check_if_config_already_exists(self, config) -> bool:
+    def __check_if_config_already_exists(self, config: dict) -> bool:
         '''Returns True if the given config already exist.
         
-        :config: the config dictionary to check
+        Args:
+            config (dict): Config dictionary to check.
+        Returns:
+            bool: True if config is equal to excising config, else False.
         '''
         for old_config in self.input_dict.get("configs", {}):
             if config == old_config:
@@ -109,9 +124,10 @@ class IOInterface():
     def update_output(self, main_states: list, factory_status: dict, mainloops: dict):
         '''Update program status.
 
-        :main_states: possible States of mainloop
-        :factory_status: status of whole factory
-        :mainloops: status data for all machines in all mainloops
+        Args:
+            main_states (list): Possible States of mainloop.
+            factory_status (dict): Status of whole factory.
+            mainloops (dict): Status data for all machines in all mainloops.
         '''
         output_dict = {"update_num": self.__update_num}
 

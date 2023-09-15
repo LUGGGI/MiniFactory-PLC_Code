@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.08"
+__version__ = "2023.09.15"
 
 from enum import Enum
 
@@ -64,9 +64,9 @@ class State(Enum):
 class RightLine(MainLine):
     '''State loop and functions for right Factory
     
-    run_...(): Calls the different modules
+    Methodes:
+        run_...(): Calls the different modules
     '''
-    FACTORY = "right"
     def __init__(self, revpi, config: dict):
         '''Initializes MiniFactory control loop.'''
         super().__init__(revpi, config, State)
@@ -458,7 +458,7 @@ class RightLine(MainLine):
             return True
 
     def run_wh_store(self) -> False:
-        wh: Warehouse = self.get_machine("WH", Warehouse, self.FACTORY)
+        wh: Warehouse = self.get_machine("WH", Warehouse)
         vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 200))
         if wh.is_position(0):
             wh.init(for_store=True)
@@ -504,7 +504,7 @@ class RightLine(MainLine):
             return True
 
     def run_wh_retrieve(self) -> False:
-        wh: Warehouse = self.get_machine("WH", Warehouse, self.FACTORY)
+        wh: Warehouse = self.get_machine("WH", Warehouse)
         vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 200))
         if wh.is_position(0):
             wh.init(for_retrieve=True)

@@ -39,7 +39,7 @@ class Actuator():
         __pwm (str): Name of PWM-pin, Slows motor down, bevor reaching the value.
         __type (str): Specifier for motor name.
         __thread (Thread): Thread object if a function is called as thread.
-        exception (Exception): Exception if exception was raised.
+        exception (Exception): Holdes exception if exception was raised.
         __pwm_value (int): Value for pwm, the percentage of the speed.
         log (Logger): Log object to print to log.
     '''
@@ -50,7 +50,7 @@ class Actuator():
     __PWM_DURATION = 100
 
     def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str, pwm: str=None, type: str=None):
-        '''Control for Actuators, can also call Sensors.
+        '''Initializes Actuator.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
@@ -329,7 +329,11 @@ class Actuator():
 
 
     def join(self):
-        '''Joins the current thread and raises Exceptions.'''
+        '''Joins the current thread and raises Exceptions.
+        
+        Raises:
+            Exception: Exceptions that a thrown in thread function.
+        '''
         self.__thread.join()
         if self.exception:
             raise self.exception

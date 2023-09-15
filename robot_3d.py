@@ -27,21 +27,55 @@ class State(Enum):
     ERROR = 999
 
 class Position:
-    '''Holds a int value for each axis'''
-    def __init__(self, rotation: int, horizontal: int, vertical: int) -> None:
+    '''Holds a int value for each axis.
+    
+    Attributes:
+        rotation (int): Rotation position.
+        horizontal (int): Horizontal position.
+        vertical (int): Vertical position.
+    '''
+    def __init__(self, rotation: int, horizontal: int, vertical: int):
+        '''Save given positions.
+        
+        Args:
+            rotation (int): Rotation position.
+            horizontal (int): Horizontal position.
+            vertical (int): Vertical position.
+        '''
         self.rotation = rotation
         self.horizontal = horizontal
         self.vertical = vertical
 
     def __str__(self) -> str:
+        '''Get formatted string of positions.
+        
+        Returns:
+            str: Formatted string of positions.
+        '''
         return f"(r:{self.rotation if self.rotation != -1 else '-'}, h:{self.horizontal if self.horizontal != -1 else '-'}, v:{self.vertical if self.vertical != -1 else '-'})"  
 
 class Robot3D(Machine):
     '''Controls the 3D Robot.
     
-    init(): Move to init position.
-    move_to_position(): Moves to given position.
-    move_all_axes(): Makes linear move to give position.
+    Methodes:
+        init(): Move to init position.
+        move_to_position(): Moves to given position.
+        move_all_axes(): Makes linear move to give position.
+    Attributes:
+        __MOVE_THRESHOLD_ROT (int): Only moves the rotation axis if movement is more.
+        __MOVE_THRESHOLD_HOR (int): Only moves the horizontal axis if movement is more.
+        __MOVE_THRESHOLD_VER (int): Only moves the vertical axis if movement is more.
+        __moving_position (Position): Position where the axes should be to allow save moving.
+        __encoder_rot (Sensor): Encoder for rotation axis.
+        __encoder_hor (Sensor): Encoder for horizontal axis.
+        __encoder_ver (Sensor): Encoder for vertical axis.
+        pwm_rot (str): PWM name for rotation axis.
+        pwm_hor (str): PWM name for horizontal axis.
+        pwm_ver (str): PWM name for vertical axis.
+        __motor_rot (Actuator): Motor for rotation axis.
+        __motor_hor (Actuator): Motor for horizontal axis.
+        __motor_ver (Actuator): Motor for vertical axis.
+
     '''
     __MOVE_THRESHOLD_ROT = 40
     __MOVE_THRESHOLD_HOR = 40
@@ -50,10 +84,11 @@ class Robot3D(Machine):
     def __init__(self, revpi, name: str, mainloop_name: str, moving_position: Position):
         '''Initializes the 3D Robot
         
-        :revpi: RevPiModIO Object to control the motors and sensors
-        :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :mainloop_name: name of current mainloop
-        :moving_position: Positions that the axes should be to allow save moving
+        Args:
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            mainloop_name (str): Name of current mainloop.
+            moving_position (Position): Position where the axes should be to allow save moving.
         '''
         super().__init__(revpi, name, mainloop_name)
 
@@ -80,9 +115,9 @@ class Robot3D(Machine):
 
     def init(self, to_end=False, as_thread=True):
         '''Move to init position.
-        
-        :to_end: set end_machine to True after completion of init
-        :as_thread: Runs the function as a thread
+        Args:
+            to_end (bool): If True ends machine after completion of init.
+            as_thread (bool): Runs the function as a thread.
         '''
         # call this function again as a thread
         if as_thread:
@@ -116,9 +151,10 @@ class Robot3D(Machine):
     def get_product(self, vertical_position: int, sensor: str=None, as_thread=True):
         '''Moves to position without moving position, grips product and moves back up to original position.
 
-        :vertical_position: vertical value to move to to grip
-        :sensor: Sensor that will be checked for detection while moving up
-        :as_thread: Runs the function as a thread
+        Args:
+            vertical_position (int): Vertical value to move to to grip.
+            sensor (str): Sensor that will be checked for detection while moving up.
+            as_thread (bool): Runs the function as a thread.
         '''
         # call this function again as a thread
         if as_thread:
@@ -178,9 +214,10 @@ class Robot3D(Machine):
     def move_to_position(self, position: Position, ignore_moving_pos=False, as_thread=True) -> True:
         '''Moves Robot to given position.
 
-        :position: (rotation, horizontal, vertical): int
-        :ignore_moving_pos: Robot won't move to moving Position
-        :as_thread: Runs the function as a thread
+        Args:
+            position (Position): to move to (rotation, horizontal, vertical): int.
+            ignore_moving_pos (bool): If True robot won't move to moving Position.
+            as_thread (bool): Runs the function as a thread.
         '''
         # call this function again as a thread
         if as_thread:
@@ -246,7 +283,7 @@ class Robot3D(Machine):
         '''Makes linear move to given position, set a axis to -1 to not move that axis.
 
         Args:
-            position (Position): (rotation, horizontal, vertical): int
+            position (Position): to move to (rotation, horizontal, vertical): int.
         Raises:
             SensorTimeoutError: Timeout is reached (no detection happened).
             ValueError: Counter jumped values.
@@ -286,14 +323,26 @@ class Robot3D(Machine):
 
 
     def grip(self, as_thread=True):
-        '''Grip product. Abstract function, see subclass'''
+        '''Grip product. Abstract function, see subclass.
+        
+        Args:
+            as_thread (bool): Runs the function as a thread.
+        '''
         pass
     def release(self, as_thread=True):
-        '''Release product. Abstract function, see subclass'''
+        '''Release product. Abstract function, see subclass.
+        
+        Args:
+            as_thread (bool): Runs the function as a thread.
+        '''
         pass
     def reset_claw(self, as_thread=True):
-        '''Reset gripper. Abstract function, see subclass'''
+        '''Reset gripper. Abstract function, see subclass.
+        
+        Args:
+            as_thread (bool): Runs the function as a thread.
+        '''
         pass
 
 class GetProductError(SystemError):
-    '''Robot could not grip Product'''
+    '''Robot could not grip Product.'''

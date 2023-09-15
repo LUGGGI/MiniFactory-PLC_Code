@@ -50,31 +50,44 @@ POSITIONS: "list[list[tuple]]" = [
 class Warehouse(Machine):
     '''Controls the Warehouse
     
-    store_product(): Stores a product at given position.
-    retrieve_product(): Retrieves a product from given position.
-    move_to_position(): Moves Crane given coordinates.
-    move_axis(): Moves one axis to the given trigger value.
+    Methodes:
+        init(): Move to init Position
+        store_product(): Stores a product at given position.
+        retrieve_product(): Retrieves a product from given position.
+        __move_to_position(): Moves Crane given coordinates.
+    Attributes:
+        __POS_CB_HORIZONTAL (int): Horizontal position of conveyor belt.
+        __POS_CB_VERTICAL (int): Vertical position of conveyor belt.
+        __MOVE_THRESHOLD_HOR (int): Only moves the horizontal axis if movement is more.
+        __MOVE_THRESHOLD_VER (int): Only moves the vertical axis if movement is more.
+        __JSON_FILE (str): File path to the file that saves the inventory.
+        ready_for_product (bool): True if a carrier is at input for store.
+        __ref_sw_arm_front (str): Referenz switch name for arm in extended state.
+        __ref_sw_arm_back (str): Referenz switch name for arm in retracted state.
+        __cb (Conveyor): Conveyor object for in-/output conveyor.
+        __encoder_hor (Sensor): Encoder for horizontal axis.
+        __encoder_ver (Sensor): Encoder for vertical axis.
+        __motor_loading (Actuator): Motor for arm front-back axis.
+        __motor_hor (Actuator): Motor for horizontal axis.
+        __motor_ver (Actuator): Motor for vertical axis.
+        __color (str): Color of product.
     '''
     __POS_CB_HORIZONTAL = 85
     __POS_CB_VERTICAL = 1450
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
-    __JSON_FILE = "wh_content.json"
+    __JSON_FILE = "right_wh_content.json"
 
-    def __init__(self, revpi, name: str, mainloop_name: str, factory: str):
-        '''Initializes the Warehouse
+    def __init__(self, revpi, name: str, mainloop_name: str):
+        '''Initializes the Warehouse.
         
-        :revpi: RevPiModIO Object to control the motors and sensors
-        :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :mainloop_name: name of current mainloop
-        :factory: left / right to use the correct config
+        Args:
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            mainloop_name (str): Name of current mainloop.
         '''
         super().__init__(revpi, name, mainloop_name)
 
-        global log
-        self.log = log.getChild(f"{self.mainloop_name}(Ware)")
-
-        self.__factory = factory
         self.ready_for_product = False
 
         self.__ref_sw_arm_front = self.name + "_REF_SW_ARM_FRONT"
@@ -94,15 +107,20 @@ class Warehouse(Machine):
 
         self.__color = "COLOR_UNKNOWN"
 
+        global log
+        self.log = log.getChild(f"{self.mainloop_name}(Ware)")
+
         self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
 
     def init(self, for_store=False, for_retrieve=False, to_end=False, as_thread=True):
         '''Move to init position.
         
-        :to_cb: moves to cb after completion of init
-        :to_end: set end_machine to True after completion of init
-        :as_thread: Runs the function as a thread
+        Args:
+            for_store (bool): Moves a carrier to input/output.
+            for_retrieve (bool): Removes carrier from input/output.
+            to_end (bool): If True ends machine after completion of init.
+            as_thread (bool): Runs the function as a thread.
         '''
         # call this function again as a thread
         if as_thread:
@@ -156,9 +174,10 @@ class Warehouse(Machine):
     def store_product(self, position: POSITIONS=None, color: str=None, as_thread=True):
         '''Stores a product at given position.
 
-        :position: a position of a shelf defined in POSITIONS
-        :color: Color of the wanted Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier)
-        :as_thread: Runs the function as a thread
+        Args:
+            position (POSITIONS): Position of a shelf defined in POSITIONS, can be None.
+            color (str): Color of the Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier).
+            as_thread (bool): Runs the function as a thread.
         '''
         # call this function again as a thread
         if as_thread:
@@ -173,9 +192,9 @@ class Warehouse(Machine):
                 raise(Exception("No Product to store found"))
             
             if position == None:
-                # find wanted color
+                # find Empty bay
                 with open(Warehouse.__JSON_FILE, "r") as fp:
-                    positions = json.load(fp)[self.__factory]
+                    positions = json.load(fp)["content"]
 
                 # find the nearest empty bay
                 for hor in range(3):
@@ -221,7 +240,7 @@ class Warehouse(Machine):
                 break
             with open(Warehouse.__JSON_FILE, "r") as fp:
                 json_obj = json.load(fp)
-            json_obj[self.__factory][hor][ver] = color
+            json_obj["content"][hor][ver] = color
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
@@ -238,12 +257,13 @@ class Warehouse(Machine):
             self.position += 1
 
 
-    def retrieve_product(self, position: tuple=None, color: str=None, as_thread=True):
+    def retrieve_product(self, position: POSITIONS=None, color: str=None, as_thread=True):
         '''Retrieves a product from given position.
 
-        :position: a position of a shelf defined in POSITIONS
-        :color: Color of the wanted Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier)
-        :as_thread: Runs the function as a thread
+        Args:
+            position (POSITIONS): Position of a shelf defined in POSITIONS, can be None.
+            color (str): Color of the wanted Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier).
+            as_thread (bool): Runs the function as a thread.
         '''
         # call this function again as a thread
         if as_thread:
@@ -257,7 +277,7 @@ class Warehouse(Machine):
             if position == None:
                 # find wanted color
                 with open(Warehouse.__JSON_FILE, "r") as fp:
-                    positions = json.load(fp)[self.__factory]
+                    positions = json.load(fp)["content"]
 
                 # find the nearest empty bay
                 for hor in range(3):
@@ -308,7 +328,7 @@ class Warehouse(Machine):
                 break
             with open(Warehouse.__JSON_FILE, "r") as fp:
                 json_obj = json.load(fp)
-            json_obj[self.__factory][hor][ver] = "Empty"
+            json_obj["content"][hor][ver] = "Empty"
             with open(self.__JSON_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
             
@@ -328,8 +348,9 @@ class Warehouse(Machine):
     def __move_to_position(self, horizontal: int, vertical: int):
         '''Moves Crane given coordinates, set a coordinate to -1 to not move that axis.
 
-        :horizontal: horizontal coordinate
-        :vertical: vertical coordinate
+        Args:
+            horizontal (int): Horizontal coordinate to move to.
+            vertical (int): Vertical coordinate to move to.
 
         Raises:
             SensorTimeoutError: Timeout is reached (no detection happened).

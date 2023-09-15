@@ -31,9 +31,14 @@ class State(Enum):
 class MPStation(Machine):
     '''Controls the Multi Purpose Station.
 
-    init(): Move to init position.
-    run(): Runs the Multi Purpose Station routine.
-    run_to_out(): Runs the Conveyor to move the product out.
+    Methodes:
+        init(): Move to init position.
+        run(): Runs the Multi Purpose Station routine.
+        run_to_out(): Runs the Conveyor to move the product out.
+    Attributes:
+        __TIME_OVEN (int): Time that the oven should be active.
+        __TIME_SAW (int): Time that the saw should be active.
+        table (Actuator): Actuator object for the table.
     '''
     __TIME_OVEN = 2
     __TIME_SAW = 2
@@ -41,9 +46,10 @@ class MPStation(Machine):
     def __init__(self, revpi, name: str, mainloop_name: str):
         '''Initializes the Multi Purpose Station.
         
-        :revpi: RevPiModIO Object to control the motors and sensors
-        :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :mainloop_name: name of current mainloop
+        Args
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            mainloop_name (str): Name of current mainloop.
         '''
         super().__init__(revpi, name, mainloop_name)
         self.table = Actuator(self.revpi, self.name + "_TABLE", self.mainloop_name, self.name + "_TABLE_PWM")
@@ -55,7 +61,11 @@ class MPStation(Machine):
 
 
     def init(self, as_thread=True):
-        '''Move to init position.'''
+        '''Move to init position.
+        
+        Args:
+            as_thread (bool): Runs the function as a thread.
+        '''
         if as_thread == True:
             self.thread = threading.Thread(target=self.init, args=(False,), name=self.name+"_INIT")
             self.thread.start()
@@ -78,7 +88,10 @@ class MPStation(Machine):
     def run(self, with_oven=True, with_saw=False, as_thread=True):
         '''Runs the Punching Maschine routine.
         
-        :as_thread: Runs the function as a thread
+        Args:
+            with_oven (bool): Product goes through oven
+            with_saw (bool): Product goes through saw
+            as_thread (bool): Runs the function as a thread.
         '''
         # call this function again as a thread
         if as_thread == True:
@@ -186,7 +199,8 @@ class MPStation(Machine):
     def run_to_out(self, as_thread=True):
         '''Runs the Conveyor to move the product out.
         
-        :as_thread: Runs the function as a thread
+        Args:
+            as_thread (bool): Runs the function as a thread.
         '''
         # call this function again as a thread
         if as_thread == True:

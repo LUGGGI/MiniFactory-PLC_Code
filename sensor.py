@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.14"
+__version__ = "2023.09.15"
 
 import time
 from enum import Enum
@@ -45,7 +45,7 @@ class Sensor():
 
 
     def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str, type: SensorType=None):
-        '''Control for Sensors.
+        '''Initializes Sensor.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.

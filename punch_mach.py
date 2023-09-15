@@ -26,15 +26,19 @@ class State(Enum):
 class PunchMach(Machine):
     '''Controls the Punching Maschine.
     
-    run(): Runs the Punching Maschine routine.
+    Methodes:
+        run(): Runs the Punching Maschine routine.
+    Attributes:
+        ready_for_transport (bool): If True then the next machine can transport the product.
     '''
 
     def __init__(self, revpi, name: str, mainloop_name: str):
         '''Initializes the Punching Maschine.
         
-        :revpi: RevPiModIO Object to control the motors and sensors
-        :name: Exact name of the machine in PiCtory (everything bevor first '_')
-        :mainloop_name: name of current mainloop
+        Args
+            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
+            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            mainloop_name (str): Name of current mainloop.
         '''
         super().__init__(revpi, name, mainloop_name)
         self.position = 1
@@ -49,8 +53,9 @@ class PunchMach(Machine):
     def run(self, out_stop_sensor: str, as_thread=True):
         '''Runs the Punching Maschine routine.
         
-        :out_stop_sensor: Sensor at which the cb stops when outputting
-        :as_thread: Runs the function as a thread
+        Args:
+            out_stop_sensor (str): Sensor at which the cb stops when outputting.
+            as_thread (bool): Runs the function as a thread.
         '''
         if as_thread == True:
             self.thread = threading.Thread(target=self.run, args=(out_stop_sensor, False), name=self.name)
