@@ -20,9 +20,9 @@ class IOInterface():
         __check_if_config_already_exists(): Returns True if the given config already exist.
         update_output(): Update program status.
     Attributes:
-        __input_file (str): Config json file where the mainloops are configured.
+        __input_file (str): Config json file where the lines are configured.
         __output_file (str): Json file where the states are logged.
-        __states (State): Possible States of mainloop.
+        __states (State): Possible States of line.
         input_dict (dict): Current input.
         new_configs (list): New line configs.
         factory_run (bool): If False the factory stops.
@@ -35,9 +35,9 @@ class IOInterface():
         '''Init IOInterface.
         
         Args:
-            input_file (str): Config json file where the mainloops are configured.
+            input_file (str): Config json file where the lines are configured.
             output_file (str): Json file where the states are logged.
-            states (State): Possible States of mainloop.
+            states (State): Possible States of line.
         '''
         self.__input_file = input_file
         self.__output_file = output_file
@@ -87,7 +87,7 @@ class IOInterface():
                 config["start_at"] = "GR1"
             if config["start_at"].lower() == "storage":
                 config["start_at"] = "WH_RETRIEVE"
-            if config["end_at"].lower() == "store":
+            if config["end_at"].lower() == "storage":
                 config["end_at"] = "WH_STORE"
             for state in self.__states:
                 if state.name == config["start_at"]:
@@ -121,13 +121,13 @@ class IOInterface():
     # Methodes for output
     ###############################################################################################
     
-    def update_output(self, main_states: list, factory_status: dict, mainloops: dict):
+    def update_output(self, main_states: list, factory_status: dict, lines: dict):
         '''Update program status.
 
         Args:
-            main_states (list): Possible States of mainloop.
+            main_states (list): Possible States of line.
             factory_status (dict): Status of whole factory.
-            mainloops (dict): Status data for all machines in all mainloops.
+            lines (dict): Status data for all machines in all lines.
         '''
         output_dict = {"update_num": self.__update_num}
 
@@ -137,7 +137,7 @@ class IOInterface():
             output_dict["states"].append(state)
 
         output_dict.update(factory_status)
-        output_dict.update(mainloops)
+        output_dict.update(lines)
 
         if output_dict == self.__output_dict:
             return

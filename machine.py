@@ -25,7 +25,7 @@ class Machine:
     Attributes:
         revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
         name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
-        mainloop_name (str): Name of current mainloop.
+        line_name (str): Name of current line.
         thread (Thread): Thread object if a function is called as thread.
         __time_start (float): Time of machine start.
         __state_time_start (float): Time of current state start.
@@ -37,17 +37,17 @@ class Machine:
         log (Logger): Log object to print to log.
     '''
 
-    def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str):
+    def __init__(self, revpi: RevPiModIO, name: str, line_name: str):
         '''Parent class for all machine modules.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
-            mainloop_name (str): Name of current mainloop.
+            line_name (str): Name of current line.
         '''
         self.revpi = revpi
         self.name = name
-        self.mainloop_name = mainloop_name
+        self.line_name = line_name
 
         self.__time_start = time()
         self.__state_time_start = time()
@@ -62,7 +62,7 @@ class Machine:
         self.state = None
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Mach)")
+        self.log = log.getChild(f"{self.line_name}(Mach)")
 
     
     def __del__(self):

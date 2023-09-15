@@ -43,19 +43,19 @@ class MPStation(Machine):
     __TIME_OVEN = 2
     __TIME_SAW = 2
 
-    def __init__(self, revpi, name: str, mainloop_name: str):
+    def __init__(self, revpi, name: str, line_name: str):
         '''Initializes the Multi Purpose Station.
         
         Args
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name (str): Name of current mainloop.
+            line_name (str): Name of current line.
         '''
-        super().__init__(revpi, name, mainloop_name)
-        self.table = Actuator(self.revpi, self.name + "_TABLE", self.mainloop_name, self.name + "_TABLE_PWM")
+        super().__init__(revpi, name, line_name)
+        self.table = Actuator(self.revpi, self.name + "_TABLE", self.line_name, self.name + "_TABLE_PWM")
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Mps)")
+        self.log = log.getChild(f"{self.line_name}(Mps)")
 
         self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
@@ -72,7 +72,7 @@ class MPStation(Machine):
             return
         try:
             self.switch_state(State.INIT)
-            Actuator(self.revpi, self.name + "_VG", self.mainloop_name).run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE")
+            Actuator(self.revpi, self.name + "_VG", self.line_name).run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE")
 
         except SensorTimeoutError as error:
             self.problem_in_machine = True
@@ -101,15 +101,15 @@ class MPStation(Machine):
         
         self.switch_state(State.START)
         try:
-            compressor = Actuator(self.revpi, self.name + "_COMPRESSOR", self.mainloop_name)
-            vg_motor = Actuator(self.revpi, self.name + "_VG", self.mainloop_name)
+            compressor = Actuator(self.revpi, self.name + "_COMPRESSOR", self.line_name)
+            vg_motor = Actuator(self.revpi, self.name + "_VG", self.line_name)
             vg_motor.run_to_sensor("TO_OVEN", self.name + "_REF_SW_VG_OVEN", as_thread=True) # move vg to oven
 
             if with_oven:
                 # Move oven tray into oven and close door
                 self.switch_state(State.OVEN)
-                tray = Actuator(self.revpi, self.name + "_OVEN_TRAY", self.mainloop_name)
-                oven_door_valve = Actuator(self.revpi, self.name + "_VALVE_OVEN_DOOR", self.mainloop_name)
+                tray = Actuator(self.revpi, self.name + "_OVEN_TRAY", self.line_name)
+                oven_door_valve = Actuator(self.revpi, self.name + "_VALVE_OVEN_DOOR", self.line_name)
 
                 compressor.run_for_time("", 0.5, as_thread=True)
                 oven_door_valve.start() # open door
@@ -117,7 +117,7 @@ class MPStation(Machine):
                 tray.run_to_sensor("IN", self.name + "_REF_SW_OVEN_TRAY_IN") # move tray in
                 oven_door_valve.stop() # close door
                 compressor.join()
-                Actuator(self.revpi, self.name + "_LIGHT_OVEN", self.mainloop_name).run_for_time("", self.__TIME_OVEN) # turn light on for time
+                Actuator(self.revpi, self.name + "_LIGHT_OVEN", self.line_name).run_for_time("", self.__TIME_OVEN) # turn light on for time
                 compressor.run_for_time("", 0.5, as_thread=True)
                 oven_door_valve.start() # open door
                 tray.run_to_sensor("OUT", self.name + "_REF_SW_OVEN_TRAY_OUT") # move tray out
@@ -131,8 +131,8 @@ class MPStation(Machine):
 
             # move product to table with vacuum gripper
             self.switch_state(State.TO_TABLE)
-            vg_valve = Actuator(self.revpi, self.name + "_VALVE_VG_VACUUM", self.mainloop_name)
-            vg_lower_valve = Actuator(self.revpi, self.name + "_VALVE_VG_LOWER", self.mainloop_name)
+            vg_valve = Actuator(self.revpi, self.name + "_VALVE_VG_VACUUM", self.line_name)
+            vg_lower_valve = Actuator(self.revpi, self.name + "_VALVE_VG_LOWER", self.line_name)
 
             self.table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table to vg
 
@@ -168,14 +168,14 @@ class MPStation(Machine):
 
                 # sawing
                 self.switch_state(State.SAWING)
-                Actuator(self.revpi, self.name + "_SAW", self.mainloop_name).run_for_time("", self.__TIME_SAW)
+                Actuator(self.revpi, self.name + "_SAW", self.line_name).run_for_time("", self.__TIME_SAW)
 
 
             # move product to cb
             self.switch_state(State.TO_CB)
             self.table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_CB") # rotate table to cb
             compressor.run_for_time("", 0.5, as_thread=True)
-            Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON", self.mainloop_name).run_for_time("", 0.5)
+            Actuator(self.revpi, self.name + "_VALVE_TABLE_PISTON", self.line_name).run_for_time("", 0.5)
             compressor.join()
             del compressor
             self.table.run_to_sensor("CCW", self.name + "_REF_SW_TABLE_VG", as_thread=True) # move table back to vg
@@ -183,7 +183,7 @@ class MPStation(Machine):
 
             # run cb
             self.switch_state(State.CB)
-            Conveyor(self.revpi, self.name + "_CB", self.mainloop_name).run_to_stop_sensor("FWD", "MPS_SENS_CB", as_thread=False)
+            Conveyor(self.revpi, self.name + "_CB", self.line_name).run_to_stop_sensor("FWD", "MPS_SENS_CB", as_thread=False)
 
         except SensorTimeoutError as error:
             self.problem_in_machine = True
@@ -210,7 +210,7 @@ class MPStation(Machine):
         
         try:
             self.switch_state(State.CB)
-            Conveyor(self.revpi, self.name + "_CB", self.mainloop_name).run_to_stop_sensor("FWD", "CB1_SENS_START", as_thread=False)
+            Conveyor(self.revpi, self.name + "_CB", self.line_name).run_to_stop_sensor("FWD", "CB1_SENS_START", as_thread=False)
             
             self.table.join()
             del self.table

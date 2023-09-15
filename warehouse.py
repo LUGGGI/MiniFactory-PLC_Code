@@ -78,15 +78,15 @@ class Warehouse(Machine):
     __MOVE_THRESHOLD_VER = 40
     __JSON_FILE = "right_wh_content.json"
 
-    def __init__(self, revpi, name: str, mainloop_name: str):
+    def __init__(self, revpi, name: str, line_name: str):
         '''Initializes the Warehouse.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name (str): Name of current mainloop.
+            line_name (str): Name of current line.
         '''
-        super().__init__(revpi, name, mainloop_name)
+        super().__init__(revpi, name, line_name)
 
         self.ready_for_product = False
 
@@ -94,21 +94,21 @@ class Warehouse(Machine):
         self.__ref_sw_arm_back = self.name + "_REF_SW_ARM_BACK"
 
         # get conveyor
-        self.__cb = Conveyor(self.revpi, self.name + "_CB", self.mainloop_name)
+        self.__cb = Conveyor(self.revpi, self.name + "_CB", self.line_name)
 
         # get encoder
-        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER", self.mainloop_name)
-        self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER", self.mainloop_name)
+        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER", self.line_name)
+        self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER", self.line_name)
 
         # get motors
-        self.__motor_loading = Actuator(self.revpi, self.name + "_ARM", self.mainloop_name, type="loading")
-        self.__motor_hor = Actuator(self.revpi, self.name + "_CRANE", self.mainloop_name, type="horizontal")
-        self.__motor_ver = Actuator(self.revpi, self.name + "_ARM", self.mainloop_name, type="vertical")
+        self.__motor_loading = Actuator(self.revpi, self.name + "_ARM", self.line_name, type="loading")
+        self.__motor_hor = Actuator(self.revpi, self.name + "_CRANE", self.line_name, type="horizontal")
+        self.__motor_ver = Actuator(self.revpi, self.name + "_ARM", self.line_name, type="vertical")
 
         self.__color = "COLOR_UNKNOWN"
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Ware)")
+        self.log = log.getChild(f"{self.line_name}(Ware)")
 
         self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
@@ -136,20 +136,20 @@ class Warehouse(Machine):
 
             if for_store:
                 # get empty carrier if non is available
-                if Sensor(self.revpi, self.name + "_SENS_OUT", self.mainloop_name).get_current_value() == False:
+                if Sensor(self.revpi, self.name + "_SENS_OUT", self.line_name).get_current_value() == False:
                     self.retrieve_product(color="Carrier", as_thread=False)
                 self.ready_for_product = True
                 # move arm to cb
                 self.switch_state(State.MOVING_TO_CB)
-                Actuator(self.revpi, self.name + "_CB_BWD", self.mainloop_name).run_for_time("", 0.5)
+                Actuator(self.revpi, self.name + "_CB_BWD", self.line_name).run_for_time("", 0.5)
                 self.__move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
                 self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
             elif for_retrieve:
                 # if carrier at cb, move it into storage
-                if Sensor(self.revpi, self.name + "_SENS_OUT", self.mainloop_name).get_current_value() == True:
+                if Sensor(self.revpi, self.name + "_SENS_OUT", self.line_name).get_current_value() == True:
                     # move arm to cb
                     self.switch_state(State.MOVING_TO_CB)
-                    Actuator(self.revpi, self.name + "_CB_BWD", self.mainloop_name).run_for_time("", 0.5)
+                    Actuator(self.revpi, self.name + "_CB_BWD", self.line_name).run_for_time("", 0.5)
                     self.__move_to_position(self.__POS_CB_HORIZONTAL, self.__POS_CB_VERTICAL)
                     self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
                     self.store_product(color="Carrier", as_thread=False)
@@ -188,7 +188,7 @@ class Warehouse(Machine):
         color = color if color != None else self.__color
 
         try:
-            if Sensor(self.revpi, self.name + "_SENS_OUT", self.mainloop_name).get_current_value() == False:
+            if Sensor(self.revpi, self.name + "_SENS_OUT", self.line_name).get_current_value() == False:
                 raise(Exception("No Product to store found"))
             
             if position == None:

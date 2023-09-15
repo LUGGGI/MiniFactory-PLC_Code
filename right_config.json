@@ -24,7 +24,7 @@
             "name": "Main2", 
             "run": false,
             "start_at": "CB1",
-            "end_at": "store",
+            "end_at": "storage",
             "with_oven": true,
             "with_saw": false,
             "with_PM": false,
@@ -54,5 +54,5 @@
             "color": "BLUE"
         }
     ],
-    "states": ["CB1", "CB3_TO_WH", "CB3_TO_CB4", "CB4", "CB5", "GR1", "GR2_CB1_TO_CB3", "GR2_CB1_TO_PM", "GR2_PM_TO_CB3", "GR3", "VG2", "MPS", "PM", "SL", "WH_STORE", "WH_RETRIEVE", "END", "start", "store"]
+    "states": ["CB1", "CB3_TO_WH", "CB3_TO_CB4", "CB4", "CB5", "GR1", "GR2_CB1_TO_CB3", "GR2_CB1_TO_PM", "GR2_PM_TO_CB3", "GR3", "VG2", "MPS", "PM", "SL", "WH_STORE", "WH_RETRIEVE", "END", "start", "storage"]
 }

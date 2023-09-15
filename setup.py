@@ -71,7 +71,7 @@ class Setup():
 
 
     def run_factory(self):
-        '''Starts the factory, adds and updates the mainloops.'''
+        '''Starts the factory, adds and updates the lines.'''
 
         while(True):
             self.loop_start_time = time()
@@ -83,16 +83,16 @@ class Setup():
                     self.last_config_update_time = time()
 
                     for config in self.io_interface.new_configs:
-                        # add mainloop if it doesn't exists
+                        # add line if it doesn't exists
                         if self.lines.get(config["name"]) == None:
                             if config["run"] == False:
                                 continue
                             self.lines[config["name"]] = self.line_class(self.revpi, config)
-                            log.warning(f"Added new Mainloop: {config['name']}")
-                        # update config in existing mainloop
+                            log.warning(f"Added new line: {config['name']}")
+                        # update config in existing line
                         else:
                             self.lines[config["name"]].config = config
-                            log.warning(f"Updated Mainloop: {config['name']}")
+                            log.warning(f"Updated line: {config['name']}")
                     self.io_interface.new_configs.clear()
             
                 self.__update_factory()
@@ -122,46 +122,45 @@ class Setup():
 
 
     def __update_factory(self):
-        '''Updates the factory and starts every mainloop.'''
-        # check for error in mainloops
-        mainloop: MainLine
-        for mainloop in self.lines.values():
-            # end the mainloop
-            if mainloop.end_machine or mainloop.config["run"] == False:
-                log.critical(f"Stop: {mainloop.name}")
-                self.lines.pop(mainloop.name)
+        '''Updates the factory and starts every line.'''
+        # check for error in lines
+        line: MainLine
+        for line in self.lines.values():
+            # end the line
+            if line.end_machine or line.config["run"] == False:
+                log.critical(f"Stop: {line.name}")
+                self.lines.pop(line.name)
                 break
 
-            if mainloop.problem_in_machine:
+            if line.problem_in_machine:
                 if self.io_interface.factory_run == False:
-                    mainloop.state = self.states.END
-                    return
+                    line.state = self.states.END
                 else:
-                    log.error(f"Problem in mainloop {mainloop.name}")
+                    log.error(f"Problem in line {line.name}")
                     self.io_interface.factory_run = False
             
-            # handel exception in mainloop
-            if mainloop.error_exception_in_machine:
-                log.error(f"Error in mainloop {mainloop.name}")
+            # handel exception in line
+            if line.error_exception_in_machine:
+                log.error(f"Error in line {line.name}")
                 self.exit_handler.stop_factory()
                 self.exception = True
                 break
             
-            # run an iteration if the mainloop
-            if mainloop.running:
-                mainloop.update(self.io_interface.factory_run)
-            # start the mainloop
-            elif mainloop.config["run"] == True and (self.lines.get("Init") == None or self.lines.get("Init").running == False):
-                log.critical(f"Start: {mainloop.name}")
-                mainloop.switch_state(mainloop.config["start_at"], False)
-                mainloop.running = True
-                mainloop.update(self.io_interface.factory_run)
+            # run an iteration if the line
+            if line.running:
+                line.update(self.io_interface.factory_run)
+            # start the line
+            elif line.config["run"] == True and (self.lines.get("Init") == None or self.lines.get("Init").running == False):
+                log.critical(f"Start: {line.name}")
+                line.switch_state(line.config["start_at"], False)
+                line.running = True
+                line.update(self.io_interface.factory_run)
 
-        # end all mainloops if error occurred
+        # end all lines if error occurred
         if self.exit_handler.was_called or self.exception:
-            for mainloop in self.lines:
-                log.critical(f"Ending mainloop: {mainloop.name}")
-                mainloop.end_machine = True
+            for line in self.lines:
+                log.critical(f"Ending line: {line.name}")
+                line.end_machine = True
                 self.exception = True
             return
 
@@ -173,7 +172,7 @@ class Setup():
         factory_status = {}
         lines = {}
         
-        # get the mainloop states
+        # get the line states
         for state in self.states:
             main_states.append(state)
 
@@ -181,15 +180,15 @@ class Setup():
         factory_status["running"] = self.io_interface.factory_run
         factory_status["exit_if_end"] = self.io_interface.factory_end
         
-        # get the status dictionaries of all machines in all active mainloops
-        mainloop: MainLine
-        for mainloop in self.lines.values():
-            if mainloop.config["run"] == False:
+        # get the status dictionaries of all machines in all active lines
+        line: MainLine
+        for line in self.lines.values():
+            if line.config["run"] == False:
                 continue
-            dictionary = {"self": mainloop.status_dict}
-            for machine in mainloop.machines.values():
+            dictionary = {"self": line.status_dict}
+            for machine in line.machines.values():
                 dictionary[machine.name] = machine.get_status_dict()
-            lines[mainloop.name] = dictionary
+            lines[line.name] = dictionary
 
 
         self.io_interface.update_output(main_states, factory_status, lines)

@@ -1,5 +1,5 @@
 '''
-Main Loop for MiniFactory project for machines:
+Right line for MiniFactory project for machines:
 Conveyor
 PunchMach
 Warehouse
@@ -72,13 +72,13 @@ class RightLine(MainLine):
         super().__init__(revpi, config, State)
         
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Main)")
+        self.log = log.getChild(f"{self.line_name}(Main)")
 
         self.state = State.INIT
 
     def mainloop(self):
-        '''Switches the main states.'''
-        # if Mainloop is waiting for the next machine
+        '''Switches the line states.'''
+        # if line is waiting for the next machine
         if self.waiting_for_state != None:
             return
 
@@ -178,7 +178,7 @@ class RightLine(MainLine):
             for vg in ["VG1", "VG2"]:
                 self.machines[vg] = VacRobot(self.revpi, vg, self.name, Position(-1, -1, -1))
                 self.machines[vg].init(to_end=True)
-            self.machines["WH"] = Warehouse(self.revpi, "WH", self.name, factory=self.FACTORY)
+            self.machines["WH"] = Warehouse(self.revpi, "WH", self.name)
             self.machines["WH"].init(to_end=True)
 
         if self.machines.__len__() <= 0:

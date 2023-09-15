@@ -33,20 +33,20 @@ class Conveyor(Machine):
         exception (Exception): Holds exception if exception was raised.
     '''
 
-    def __init__(self, revpi, name: str, mainloop_name: str):
+    def __init__(self, revpi, name: str, line_name: str):
         '''Initializes Conveyor.
         
         Args
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name (str): Name of current mainloop.
+            line_name (str): Name of current line.
         '''
-        super().__init__(revpi, name, mainloop_name)
+        super().__init__(revpi, name, line_name)
         self.position = 1
         self.exception = None
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Conv)")
+        self.log = log.getChild(f"{self.line_name}(Conv)")
 
         self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
@@ -77,10 +77,10 @@ class Conveyor(Machine):
             if start_sensor != None:
                 # wait for start sensor to detect product
                 self.switch_state(State.WAIT)
-                Sensor(self.revpi, start_sensor, self.mainloop_name).wait_for_detect(timeout_in_s=(timeout_in_s//2))
+                Sensor(self.revpi, start_sensor, self.line_name).wait_for_detect(timeout_in_s=(timeout_in_s//2))
             
             self.switch_state(State.RUN)
-            motor = Actuator(self.revpi, self.name, self.mainloop_name)
+            motor = Actuator(self.revpi, self.name, self.line_name)
             motor.run_to_sensor(direction, stop_sensor, stop_delay_in_ms, timeout_in_s)
 
         except SensorTimeoutError as error:
@@ -121,9 +121,9 @@ class Conveyor(Machine):
         self.log.warning(f"{self.name} :Running to value: {trigger_value} at {counter}")
         self.switch_state(State.RUN)
         try:
-            encoder = Sensor(self.revpi, counter, self.mainloop_name)
+            encoder = Sensor(self.revpi, counter, self.line_name)
             encoder.reset_encoder()
-            Actuator(self.revpi, self.name, self.mainloop_name).run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s)
+            Actuator(self.revpi, self.name, self.line_name).run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s)
 
         except SensorTimeoutError as error:
             self.problem_in_machine = True

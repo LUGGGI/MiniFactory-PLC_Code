@@ -29,29 +29,29 @@ class GripRobot(Robot3D):
         __motor_claw (Actuator): Motor for claw.
     '''
 
-    def __init__(self, revpi, name: str, mainloop_name: str, moving_position: Position):
+    def __init__(self, revpi, name: str, line_name: str, moving_position: Position):
         '''Initializes the Gripper Robot.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name: Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name: Name of current mainloop.
+            line_name: Name of current line.
             moving_position (Position): Position at which the axes should be to allow save moving.
         '''
-        super().__init__(revpi, name, mainloop_name, moving_position)
+        super().__init__(revpi, name, line_name, moving_position)
         self.GRIPPER_CLOSED = 13
         self.GRIPPER_OPENED = 9
         
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Grip)")
+        self.log = log.getChild(f"{self.line_name}(Grip)")
 
         # change encoder to counter
-        self._Robot3D__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_COUNTER", self.mainloop_name, SensorType.COUNTER)
+        self._Robot3D__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_COUNTER", self.line_name, SensorType.COUNTER)
         self._Robot3D__MOVE_THRESHOLD_HOR = 2
 
         # get encoder and motor for claw
-        self.__encoder_claw = Sensor(self.revpi, self.name + "_CLAW_COUNTER", self.mainloop_name, SensorType.COUNTER)
-        self.__motor_claw = Actuator(self.revpi, self.name, self.mainloop_name, type="claw")
+        self.__encoder_claw = Sensor(self.revpi, self.name + "_CLAW_COUNTER", self.line_name, SensorType.COUNTER)
+        self.__motor_claw = Actuator(self.revpi, self.name, self.line_name, type="claw")
 
         self.log.debug(f"Created {type(self).__name__}: {self.name}")
 

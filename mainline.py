@@ -24,7 +24,7 @@ class MainLine(Machine):
     '''Controls the MiniFactory.
     
     Methodes:
-        update(): Updates the mainloop
+        update(): Updates the line
         line_config(): Config functionality
         mainloop(): Calls the different states
         switch_state(): Switches state to given state if not BLOCKED or RUNNING
@@ -59,14 +59,14 @@ class MainLine(Machine):
         self.status_dict = {}
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}")
+        self.log = log.getChild(f"{self.line_name}")
 
 
     def update(self, run: bool):
-        '''Updates the mainloop.
+        '''Updates the line.
         
         Args:
-            run: Only run the mainloop if True.
+            run: Only run the line if True.
         '''
         try:
             if self.line_config() and run:
@@ -121,7 +121,7 @@ class MainLine(Machine):
 
             return False
         
-        # update mainloop status for status
+        # update line status for status
         self.status_dict = {
             "state": self.state.name if self.state else None,
             "product_at": self.product_at,

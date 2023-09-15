@@ -26,22 +26,22 @@ class VacRobot(Robot3D):
         __valve (Actuator): valve for vacuum gripper.
     '''
 
-    def __init__(self, revpi, name: str, mainloop_name: str, moving_position=Position(-1, -1, 1400)):
+    def __init__(self, revpi, name: str, line_name: str, moving_position=Position(-1, -1, 1400)):
         '''Initializes the Vacuum Robot.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name: Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name: Name of current mainloop.
+            line_name: Name of current line.
             moving_position (Position): Position at which the axes should be to allow save moving.
         '''
-        super().__init__(revpi, name, mainloop_name, moving_position)
+        super().__init__(revpi, name, line_name, moving_position)
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Vac)")
+        self.log = log.getChild(f"{self.line_name}(Vac)")
 
-        self.__compressor = Actuator(self.revpi, self.name + "_COMPRESSOR", self.mainloop_name)
-        self.__valve = Actuator(self.revpi, self.name + "_VALVE_VACUUM", self.mainloop_name)
+        self.__compressor = Actuator(self.revpi, self.name + "_COMPRESSOR", self.line_name)
+        self.__valve = Actuator(self.revpi, self.name + "_VALVE_VACUUM", self.line_name)
 
         self.log.debug(f"Created {type(self).__name__}: {self.name}")
 

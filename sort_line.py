@@ -35,21 +35,21 @@ class SortLine(Machine):
         start_next_machine(bool): Is set to True if next machine should be started.
     '''
 
-    def __init__(self, revpi, name: str, mainloop_name: str):
+    def __init__(self, revpi, name: str, line_name: str):
         '''Initializes the Sorting Line.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name (str): Name of current mainloop.
+            line_name (str): Name of current line.
         '''
-        super().__init__(revpi, name, mainloop_name)
+        super().__init__(revpi, name, line_name)
         self.position = 1
         self.color = "WHITE"
         self.start_next_machine = False
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Sort)")
+        self.log = log.getChild(f"{self.line_name}(Sort)")
 
         self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
@@ -70,7 +70,7 @@ class SortLine(Machine):
         try:
             # Color Sensing
             self.switch_state(State.COLOR_SENSING)
-            cb = Conveyor(self.revpi, f"{self.name}_CB_FWD", self.mainloop_name)
+            cb = Conveyor(self.revpi, f"{self.name}_CB_FWD", self.line_name)
 
             # TODO: Handle color sensing
             # color_sensor = Sensor(self.revpi, f"{self.name}_COLOR_SENSOR")
@@ -84,7 +84,7 @@ class SortLine(Machine):
 
             # SORTING
             self.switch_state(State.SORTING)
-            compressor = Actuator(self.revpi, f"{self.name}_COMPRESSOR", self.mainloop_name)
+            compressor = Actuator(self.revpi, f"{self.name}_COMPRESSOR", self.line_name)
 
             # determine sorting position
             position = 0
@@ -104,11 +104,11 @@ class SortLine(Machine):
             # push into bay
             compressor.start()
             sleep(0.2)
-            Actuator(self.revpi, f"{self.name}_VALVE_PISTON_{self.color}", self.mainloop_name).run_for_time("", 0.5)
+            Actuator(self.revpi, f"{self.name}_VALVE_PISTON_{self.color}", self.line_name).run_for_time("", 0.5)
             compressor.stop()
             # check if in bay
             sleep(1)
-            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}", self.mainloop_name).get_current_value() == False:
+            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}", self.line_name).get_current_value() == False:
                 # no detection at sensor
                 raise(Exception(f"{self.name} :Product not in right bay"))
 

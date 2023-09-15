@@ -1629,7 +1629,7 @@
 2023-05-04 13:50:30,826; DEBUG   ; VG2_CW              ; sensor    ; __del__                  ( 70); Destroyed Sensor(REF_SWITCH): VG2_REF_SW_ROTATION
 2023-05-04 13:50:30,996; INFO    ; VG2_CW              ; sensor    ; reset_encoder            (190); Reset encoder: VG2_ROTATION_ENCODER
 2023-05-04 13:50:30,997; INFO    ; VG2_INIT            ; robot_3d  ; move_all_axes            (249); VG2 :Axes moved to: (r:0, h:-, v:-)
-2023-05-04 13:50:30,999; INFO    ; MainThread          ; main      ; mainloop                 (123); End of program
+2023-05-04 13:50:30,999; INFO    ; MainThread          ; main      ; line                 (123); End of program
 2023-05-04 13:50:31,245; DEBUG   ; MainThread          ; vac_robot ; __del__                  ( 44); Destroyed Vacuum Robot: VG2
 2023-05-04 13:50:31,245; DEBUG   ; MainThread          ; sensor    ; __del__                  ( 70); Destroyed Sensor(ENCODER): VG2_ROTATION_ENCODER
 2023-05-04 13:50:31,246; DEBUG   ; MainThread          ; sensor    ; __del__                  ( 70); Destroyed Sensor(ENCODER): VG2_HORIZONTAL_ENCODER

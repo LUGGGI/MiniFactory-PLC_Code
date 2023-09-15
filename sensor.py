@@ -36,7 +36,7 @@ class Sensor():
         CYCLE_TIME (int): how often encoder/counter ar checked for new values.
         __revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
         name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
-        mainloop_name (str): Name of current mainloop.
+        line_name (str): Name of current line.
         type (SensorType): Type of the sensor.
         counter_offset (int): Offset for counter so that counter can be used like encoder.
         log (Logger): Log object to print to log.
@@ -44,18 +44,18 @@ class Sensor():
     CYCLE_TIME = 0.005 # s
 
 
-    def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str, type: SensorType=None):
+    def __init__(self, revpi: RevPiModIO, name: str, line_name: str, type: SensorType=None):
         '''Initializes Sensor.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name (str): Name of current mainloop.
+            line_name (str): Name of current line.
             type (SensorType): Type of the sensor, if empty type is determined from name.
         '''
         self.__revpi = revpi
         self.name = name
-        self.mainloop_name = mainloop_name
+        self.line_name = line_name
         self.type = type
 
         self.counter_offset = 0
@@ -71,7 +71,7 @@ class Sensor():
                 self.type = SensorType.COUNTER
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Sens)")
+        self.log = log.getChild(f"{self.line_name}(Sens)")
 
         self.log.debug(f"Created Sensor({self.type.name}): {self.name}")
 

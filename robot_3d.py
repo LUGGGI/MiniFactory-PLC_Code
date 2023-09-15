@@ -81,26 +81,26 @@ class Robot3D(Machine):
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
 
-    def __init__(self, revpi, name: str, mainloop_name: str, moving_position: Position):
+    def __init__(self, revpi, name: str, line_name: str, moving_position: Position):
         '''Initializes the 3D Robot
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name (str): Name of current mainloop.
+            line_name (str): Name of current line.
             moving_position (Position): Position where the axes should be to allow save moving.
         '''
-        super().__init__(revpi, name, mainloop_name)
+        super().__init__(revpi, name, line_name)
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Rob)")
+        self.log = log.getChild(f"{self.line_name}(Rob)")
 
         self.__moving_position = moving_position
 
         # get encoder
-        self.__encoder_rot = Sensor(self.revpi, self.name + "_ROTATION_ENCODER", self.mainloop_name)
-        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER", self.mainloop_name)
-        self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER", self.mainloop_name)
+        self.__encoder_rot = Sensor(self.revpi, self.name + "_ROTATION_ENCODER", self.line_name)
+        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER", self.line_name)
+        self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER", self.line_name)
 
         # get pwm pins
         pwm_rot = self.name + "_ROTATION_PWM"
@@ -108,9 +108,9 @@ class Robot3D(Machine):
         pwm_ver = None
 
         # get motors
-        self.__motor_rot = Actuator(self.revpi, self.name, self.mainloop_name, pwm=pwm_rot, type="rotation")
-        self.__motor_hor = Actuator(self.revpi, self.name, self.mainloop_name, pwm=pwm_hor, type="horizontal")
-        self.__motor_ver = Actuator(self.revpi, self.name, self.mainloop_name, pwm=pwm_ver, type="vertical")
+        self.__motor_rot = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_rot, type="rotation")
+        self.__motor_hor = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_hor, type="horizontal")
+        self.__motor_ver = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_ver, type="vertical")
 
 
     def init(self, to_end=False, as_thread=True):
@@ -178,7 +178,7 @@ class Robot3D(Machine):
                 self.__move_all_axes(Position(-1, -1, start_vertical_position))
 
                 # check if product still at sensor, if true try to grip again
-                if sensor and Sensor(self.revpi, sensor, self.mainloop_name).get_current_value() == True:
+                if sensor and Sensor(self.revpi, sensor, self.line_name).get_current_value() == True:
                     self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num+1}")
                     self.reset_claw(as_thread=False)
                     if try_num == max_tries-1:

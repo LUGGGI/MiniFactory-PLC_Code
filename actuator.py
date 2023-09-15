@@ -35,7 +35,7 @@ class Actuator():
         __PWM_DURATION (int): Range around the trigger value where the actuator is slowed down.
         __revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
         name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
-        mainloop_name (str): Name of current mainloop.
+        line_name (str): Name of current line.
         __pwm (str): Name of PWM-pin, Slows motor down, bevor reaching the value.
         __type (str): Specifier for motor name.
         __thread (Thread): Thread object if a function is called as thread.
@@ -49,19 +49,19 @@ class Actuator():
     __PWM_WINDOW = 300
     __PWM_DURATION = 100
 
-    def __init__(self, revpi: RevPiModIO, name: str, mainloop_name: str, pwm: str=None, type: str=None):
+    def __init__(self, revpi: RevPiModIO, name: str, line_name: str, pwm: str=None, type: str=None):
         '''Initializes Actuator.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name: Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name: Name of current mainloop.
+            line_name: Name of current line.
             pwm: Name of PWM-pin, Slows motor down, bevor reaching the value.
             type (str): Specifier for motor name.
         '''
         self.__revpi = revpi
         self.name = name
-        self.mainloop_name = mainloop_name
+        self.line_name = line_name
         self.__pwm = pwm
         self.__type = ("_" + type) if type else ""
 
@@ -70,7 +70,7 @@ class Actuator():
         self.__pwm_value = 100
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Act)")
+        self.log = log.getChild(f"{self.line_name}(Act)")
 
         self.log.debug(f"Created: Actuator {self.name}{self.__type}")
 
@@ -101,7 +101,7 @@ class Actuator():
         self.log.info(f"{actuator} run to sensor {stop_sensor}")
 
         try:
-            sensor = Sensor(self.__revpi, stop_sensor, self.mainloop_name)
+            sensor = Sensor(self.__revpi, stop_sensor, self.line_name)
 
             # check if already at stop sensor
             if sensor.get_current_value() == True:
@@ -145,7 +145,7 @@ class Actuator():
             
             if check_sensor:
                 # register event on sensor
-                sensor = Sensor(self.__revpi, check_sensor, self.mainloop_name)
+                sensor = Sensor(self.__revpi, check_sensor, self.line_name)
                 sensor.start_monitor()
 
             time.sleep(wait_time_in_s) # Wait for given time

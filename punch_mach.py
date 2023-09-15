@@ -32,20 +32,20 @@ class PunchMach(Machine):
         ready_for_transport (bool): If True then the next machine can transport the product.
     '''
 
-    def __init__(self, revpi, name: str, mainloop_name: str):
+    def __init__(self, revpi, name: str, line_name: str):
         '''Initializes the Punching Maschine.
         
         Args
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
-            mainloop_name (str): Name of current mainloop.
+            line_name (str): Name of current line.
         '''
-        super().__init__(revpi, name, mainloop_name)
+        super().__init__(revpi, name, line_name)
         self.position = 1
         self.ready_for_transport = False
 
         global log
-        self.log = log.getChild(f"{self.mainloop_name}(Pun)")
+        self.log = log.getChild(f"{self.line_name}(Pun)")
 
         self.log.debug(f"Created {type(self).__name__}: {self.name}")
 
@@ -64,8 +64,8 @@ class PunchMach(Machine):
         
         self.switch_state(State.START)
         try:
-            puncher = Actuator(self.revpi, self.name, self.mainloop_name)
-            cb_punch = Conveyor(self.revpi, "PM_CB", self.mainloop_name)
+            puncher = Actuator(self.revpi, self.name, self.line_name)
+            cb_punch = Conveyor(self.revpi, "PM_CB", self.line_name)
 
             self.switch_state(State.CB_TO_PUNCH)
             # raise puncher
