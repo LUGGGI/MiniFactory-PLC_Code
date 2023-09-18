@@ -60,7 +60,7 @@ class Warehouse(Machine):
         __POS_CB_VERTICAL (int): Vertical position of conveyor belt.
         __MOVE_THRESHOLD_HOR (int): Only moves the horizontal axis if movement is more.
         __MOVE_THRESHOLD_VER (int): Only moves the vertical axis if movement is more.
-        __JSON_FILE (str): File path to the file that saves the inventory.
+        __content_file (str): File path to the file that saves the inventory.
         ready_for_product (bool): True if a carrier is at input for store.
         __ref_sw_arm_front (str): Referenz switch name for arm in extended state.
         __ref_sw_arm_back (str): Referenz switch name for arm in retracted state.
@@ -76,18 +76,19 @@ class Warehouse(Machine):
     __POS_CB_VERTICAL = 1450
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
-    __JSON_FILE = "right_wh_content.json"
 
-    def __init__(self, revpi, name: str, line_name: str):
+    def __init__(self, revpi, name: str, line_name: str, content_file: str):
         '''Initializes the Warehouse.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
             line_name (str): Name of current line.
+            content_file (str): File path to the file that saves the inventory.
         '''
         super().__init__(revpi, name, line_name)
 
+        self.__content_file = content_file
         self.ready_for_product = False
 
         self.__ref_sw_arm_front = self.name + "_REF_SW_ARM_FRONT"
@@ -193,7 +194,7 @@ class Warehouse(Machine):
             
             if position == None:
                 # find Empty bay
-                with open(Warehouse.__JSON_FILE, "r") as fp:
+                with open(Warehouse.__content_file, "r") as fp:
                     positions = json.load(fp)["content"]
 
                 # find the nearest empty bay
@@ -238,10 +239,10 @@ class Warehouse(Machine):
                 else:
                     continue
                 break
-            with open(Warehouse.__JSON_FILE, "r") as fp:
+            with open(Warehouse.__content_file, "r") as fp:
                 json_obj = json.load(fp)
             json_obj["content"][hor][ver] = color
-            with open(self.__JSON_FILE, "w") as fp:
+            with open(self.__content_file, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
         except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
@@ -276,7 +277,7 @@ class Warehouse(Machine):
         try:
             if position == None:
                 # find wanted color
-                with open(Warehouse.__JSON_FILE, "r") as fp:
+                with open(Warehouse.__content_file, "r") as fp:
                     positions = json.load(fp)["content"]
 
                 # find the nearest empty bay
@@ -326,10 +327,10 @@ class Warehouse(Machine):
                 else:
                     continue
                 break
-            with open(Warehouse.__JSON_FILE, "r") as fp:
+            with open(Warehouse.__content_file, "r") as fp:
                 json_obj = json.load(fp)
             json_obj["content"][hor][ver] = "Empty"
-            with open(self.__JSON_FILE, "w") as fp:
+            with open(self.__content_file, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
             
         except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:

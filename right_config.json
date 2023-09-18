@@ -10,36 +10,6 @@
             "end_at": "END"
         },
         {
-            "name": "Main", 
-            "run": true,
-            "start_at": "storage",
-            "end_at": "END",
-            "with_oven": false,
-            "with_saw": false,
-            "with_PM": false,
-            "with_WH": true,
-            "color": "RED"
-        }
-    ],
-    "configs2": [
-        {
-            "name": "Init", 
-            "run": true,
-            "start_at": "INIT",
-            "end_at": "END"
-        },
-        {
-            "name": "Main0", 
-            "run": true,
-            "start_at": "CB1",
-            "end_at": "END",
-            "with_oven": true,
-            "with_saw": true,
-            "with_PM": false,
-            "with_WH": false,
-            "color": "BLUE"
-        },
-        {
             "name": "Main1", 
             "run": true,
             "start_at": "start",
@@ -47,7 +17,7 @@
             "with_oven": true,
             "with_saw": true,
             "with_PM": false,
-            "with_WH": true,
+            "with_WH": false,
             "color": "RED"
         },
         {
@@ -55,8 +25,8 @@
             "run": true,
             "start_at": "start",
             "end_at": "storage",
-            "with_oven": true,
-            "with_saw": false,
+            "with_oven": false,
+            "with_saw": true,
             "with_PM": true,
             "with_WH": true,
             "color": "RED"
@@ -66,10 +36,8 @@
             "run": true,
             "start_at": "start",
             "end_at": "END",
-            "with_oven": false,
-            "with_saw": false,
             "with_PM": false,
-            "with_WH": false,
+            "with_WH": true,
             "color": "BLUE"
         },
         {
@@ -77,10 +45,6 @@
             "run": true,
             "start_at": "storage",
             "end_at": "END",
-            "with_oven": false,
-            "with_saw": false,
-            "with_PM": false,
-            "with_WH": true,
             "color": "RED"
         },
         {
@@ -88,10 +52,6 @@
             "run": true,
             "start_at": "storage",
             "end_at": "END",
-            "with_oven": false,
-            "with_saw": false,
-            "with_PM": false,
-            "with_WH": true,
             "color": "BLUE"
         },
         {
@@ -99,10 +59,6 @@
             "run": true,
             "start_at": "storage",
             "end_at": "END",
-            "with_oven": false,
-            "with_saw": false,
-            "with_PM": false,
-            "with_WH": true,
             "color": "WHITE"
         }
     ],

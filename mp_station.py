@@ -86,7 +86,7 @@ class MPStation(Machine):
             self.position = 1
 
     def run(self, with_oven=True, with_saw=False, as_thread=True):
-        '''Runs the Punching Maschine routine.
+        '''Runs the Multi Purpose Station routine.
         
         Args:
             with_oven (bool): Product goes through oven

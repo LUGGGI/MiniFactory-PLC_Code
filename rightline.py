@@ -65,7 +65,11 @@ class RightLine(MainLine):
     
     Methodes:
         run_...(): Calls the different modules
+    Attributes:
+        WAREHOUSE_CONTENT_FILE (str): File path to the file that saves the warehouse inventory.
     '''
+    WAREHOUSE_CONTENT_FILE = "right_wh_content.json"
+
     def __init__(self, revpi, config: dict):
         '''Initializes MiniFactory control loop.'''
         super().__init__(revpi, config, State)
@@ -450,7 +454,7 @@ class RightLine(MainLine):
             return True
 
     def run_wh_store(self) -> False:
-        wh: Warehouse = self.get_machine("WH", Warehouse)
+        wh: Warehouse = self.get_machine("WH", Warehouse, self.WAREHOUSE_CONTENT_FILE)
         vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 200))
         if wh.is_position(0):
             wh.init(for_store=True)
@@ -467,7 +471,7 @@ class RightLine(MainLine):
         elif vg.is_position(3):
             self.product_at = vg.name
             # move to wh
-            vg.move_to_position(Position(1780, 1080, 400))
+            vg.move_to_position(Position(1775, 1080, 400))
 
         # wait for warehouse to have a carrier
         elif vg.is_position(4) and wh.ready_for_product == True:
@@ -496,7 +500,7 @@ class RightLine(MainLine):
             return True
 
     def run_wh_retrieve(self) -> False:
-        wh: Warehouse = self.get_machine("WH", Warehouse)
+        wh: Warehouse = self.get_machine("WH", Warehouse, self.WAREHOUSE_CONTENT_FILE)
         vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 200))
         if wh.is_position(0):
             wh.init(for_retrieve=True)
@@ -508,14 +512,14 @@ class RightLine(MainLine):
             wh.retrieve_product(color=self.config["color"])
         if vg.is_position(1):
             # move to wh if new vg1
-            vg.move_to_position(Position(1780, 1080, 400), ignore_moving_pos=True)
+            vg.move_to_position(Position(1775, 1080, 400), ignore_moving_pos=True)
         elif vg.is_position(2) and (wh.is_position(2) or wh.is_position(3)):
             # move down, grip product, move up
             vg.get_product(700)
         elif vg.is_position(3):
             self.product_at = vg.name
             # move to cb3
-            vg.move_to_position(Position(97, 815, 950))
+            vg.move_to_position(Position(120, 815, 950))
             wh.init(to_end=False)
 
         elif vg.is_position(4) and State.CB3_TO_CB4.value[1] == Status.FREE:
