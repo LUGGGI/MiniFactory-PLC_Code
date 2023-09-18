@@ -1,9 +1,9 @@
 {
     "content": [
         [
-            "Carrier",
             "Empty",
-            "BLUE"
+            "Empty",
+            "Carrier"
         ],
         [
             "BLUE",
@@ -11,8 +11,8 @@
             "RED"
         ],
         [
-            "Empty",
-            "BLUE",
+            "Carrier",
+            "WHITE",
             "Empty"
         ]
     ],

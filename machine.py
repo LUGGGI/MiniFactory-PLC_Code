@@ -91,7 +91,7 @@ class Machine:
         return state_time
 
 
-    def switch_state(self, state, wait=False):
+    def switch_state(self, state, wait=True):
         '''Switch to given state and save state start time.
         
         Args:

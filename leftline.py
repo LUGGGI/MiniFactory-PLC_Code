@@ -1,11 +1,79 @@
 '''
-Right line for MiniFactory project for machines:
+Main Loop for left MiniFactory project for machines:
 Conveyor
 PunchMach
 Warehouse
 VacRobot
 GripRobot
 SortLine
+MPStation
+
+#dicitonary with Gripper1 Values
+gr1_dict = {
+    'revpickup_rotation' : 1950, #safe
+    'revpickup_vertical': 3500, #safe
+    'revpickup_horizontal' : 75, #safe
+    'revhandover_rotation' : 870, #safe
+    'revhandover_vertical' : 1000, #safe   
+    'revhandover_horizontal' : 65, #safe
+    'gripper_close' : 12 #safe
+            }
+#----------------------------------------------------------------------------------------------------
+#dicitonary with Gripper2 Values
+gr2_dict = {
+    'revpickup_rotation' : 340, #safe
+    'revpickup_vertical': 2400, #safe
+    'revpickup_horizontal' : 75, #safe
+    'revhandover_rotation' : 3675, #safe
+    'revhandover_vertical' : 1950, #safe
+    'revhandover_horizontal' : 72, #safe
+    'gripper_close' : 12 #safe
+            }
+#----------------------------------------------------------------------------------------------------
+#dicitonary with Gripper3 Values
+gr3_dict = {
+    'revpickup_rotation' : 1950, #safe
+    'revpickup_vertical': 2000, #safe
+    'revpickup_horizontal' : 30, #safe
+    'revhandover_rotation' : 100, #safe
+    'revhandover_vertical' : 3500, #safe   
+    'revhandover_horizontal' : 75, #safe
+    'gripper_close' : 12 #safe
+            }
+#----------------------------------------------------------------------------------------------------
+#dicitonary with Gripper4 Values - virtuell, for Transport from Punching machine to Convoyer - not verified
+gr4_dict = {
+    'revpickup_rotation' : 3665, #safe
+    'revpickup_vertical': 2000, #safe
+    'revpickup_horizontal' : 75, #safe
+    'revhandover_rotation' : 1960, #safe
+    'revhandover_vertical' : 2500, #safe
+    'revhandover_horizontal' : 1, #safe
+    'gripper_close' : 12 #safe
+            }
+
+vg_dict = {
+    'revconvoyer_rotation' : 915, 
+    'revconvoyer_vertical': 1380, 
+    'revconvoyer_horizontal' : 1950, 
+    'revwarehouse_rotation' : 2720, 
+    'revwarehouse_vertical' : 500,    
+    'revwarehouse_horizontal' : 1460,
+    'travel_rotation' : 1800,
+    'travel_horizontal' : 1000,
+    'travel_vertical': 110
+}
+
+'''
+
+'''
+Left line for MiniFactory project for machines:
+Conveyor
+PunchMach
+Warehouse
+VacRobot
+GripRobot
+IndexLine
 MPStation
 '''
 
@@ -25,7 +93,7 @@ from punch_mach import PunchMach
 from mp_station import MPStation
 from grip_robot import GripRobot, Position
 from vac_robot import VacRobot
-from sort_line import SortLine
+from index_line import IndexLine
 from warehouse import Warehouse
 from mainline import MainLine, Status
 from setup import Setup
@@ -46,11 +114,9 @@ class State(Enum):
     GR2_PM_TO_CB3 = [223, Status.FREE, "None"]
     GR3 = [23, Status.FREE, "None"]
 
-    VG2 = [32, Status.FREE, "None"]
-
+    INDX = [4, Status.FREE, "None"]
     MPS = [5, Status.FREE, "None"]
     PM = [6, Status.FREE, "None"]
-    SL = [7, Status.FREE, "None"]
     WH_STORE = [81, Status.FREE, "None"]
     WH_RETRIEVE = [82, Status.FREE, "None"]
 
@@ -60,16 +126,16 @@ class State(Enum):
     TEST = [1000, Status.FREE, "None"]
 
 
-class RightLine(MainLine):
-    '''State loop and functions for right Factory.
+class LeftLine(MainLine):
+    '''State loop and functions for left Factory.
     
     Methodes:
-        run_...(): Calls the different modules.
         mainloop(): Switches between machines.
+        run_...(): Calls the different modules.
     Attributes:
         WAREHOUSE_CONTENT_FILE (str): File path to the file that saves the warehouse inventory.
     '''
-    WAREHOUSE_CONTENT_FILE = "right_wh_content.json"
+    WAREHOUSE_CONTENT_FILE = "left_wh_content.json"
 
     def __init__(self, revpi, config: dict):
         '''Initializes MiniFactory control loop.'''
@@ -149,23 +215,19 @@ class RightLine(MainLine):
 
         elif self.state == State.CB4:
             if self.run_cb4():
+                self.switch_state(State.CB5)
+
+        elif self.state == State.CB5:
+            if self.run_cb5():
+                self.switch_state(State.INDX)
+
+        elif self.state == State.INDX:
+            if self.run_indx():
                 self.switch_state(State.GR3)
 
         elif self.state == State.GR3:
             if self.run_gr3():
                 self.switch_state(State.CB5)
-
-        elif self.state == State.CB5:
-            if self.run_cb5():
-                self.switch_state(State.SL)
-
-        elif self.state == State.SL:
-            if self.run_sl():
-                self.switch_state(State.VG2)
-
-        elif self.state == State.VG2:
-            if self.run_vg2():
-                self.switch_state(State.END)
 
     ####################################################################################################
     # Methods that control the different states for the
@@ -179,7 +241,7 @@ class RightLine(MainLine):
             for gr in ["GR1", "GR2", "GR3"]:
                 self.machines[gr] = GripRobot(self.revpi, gr, self.name, Position(-1, -1, -1))
                 self.machines[gr].init(to_end=True)
-            for vg in ["VG1", "VG2"]:
+            for vg in ["VG"]:
                 self.machines[vg] = VacRobot(self.revpi, vg, self.name, Position(-1, -1, -1))
                 self.machines[vg].init(to_end=True)
             self.machines["WH"] = Warehouse(self.revpi, "WH", self.name, self.WAREHOUSE_CONTENT_FILE)
@@ -259,14 +321,14 @@ class RightLine(MainLine):
             # get product from plate
             gr.GRIPPER_OPENED = 5
             gr.reset_claw()
-            gr.move_to_position(Position(2235, 67, 3450))
+            gr.move_to_position(Position(1950, 75, 3500))
         elif gr.is_position(2):
             # grip product
             gr.grip()
         elif gr.is_position(3):
             self.product_at = gr.name
             # move to mps
-            gr.move_to_position(Position(1365, 0, 1700))
+            gr.move_to_position(Position(870, 0, 1000))
         elif gr.is_position(4) and (State.MPS.value[1] == Status.FREE or State.MPS.value[2] == self.name):
             # move to tray
             gr.move_to_position(Position(-1, 33, -1))
@@ -288,17 +350,17 @@ class RightLine(MainLine):
             if gr.is_position(1):
                 # move to cb1 (6s)
                 gr.reset_claw()
-                gr.move_to_position(Position(245, 65, 1600), ignore_moving_pos=True)
+                gr.move_to_position(Position(340, 75, 2400), ignore_moving_pos=True)
 
         # move product from cb1 to pm
         if self.state == State.GR2_CB1_TO_PM:
             if gr.is_position(2):
                 # move down, grip product, move up
-                gr.get_product(2100, sensor="CB1_SENS_END")
+                gr.get_product(2400, sensor="CB1_SENS_END")
             elif gr.is_position(3):
                 self.product_at = gr.name
                 # move to cb2
-                gr.move_to_position(Position(3860, 78, 1500))
+                gr.move_to_position(Position(3675, 72, 1500))
             elif gr.is_position(4):
                 # move down
                 gr.move_to_position(Position(-1, -1, 1950))
@@ -316,25 +378,25 @@ class RightLine(MainLine):
         if self.state == State.GR2_CB1_TO_CB3:
             if gr.is_position(2):
                 # move down, grip product, move up
-                gr.get_product(2100, sensor="CB1_SENS_END")
+                gr.get_product(2400, sensor="CB1_SENS_END")
 
         # move to pm
         if self.state == State.PM or self.state == State.GR2_PM_TO_CB3:
             if gr.is_position(1):
                 # move to cb2
                 gr.reset_claw()
-                gr.move_to_position(Position(3860, 78, 1300), ignore_moving_pos=True)
+                gr.move_to_position(Position(3675, 72, 1300), ignore_moving_pos=True)
         # get from pm
         if self.state == State.GR2_PM_TO_CB3:
             if gr.is_position(2):
                 # move down, grip product, move up
-                gr.get_product(2000, sensor="CB2_SENS_START")
+                gr.get_product(1950, sensor="CB2_SENS_START")
 
         if self.state == State.GR2_CB1_TO_CB3 or self.state == State.GR2_PM_TO_CB3:
             if gr.is_position(3):
                 self.product_at = gr.name
                 # move to cb3
-                gr.move_to_position(Position(2305, 40, 1550))
+                gr.move_to_position(Position(1960, 0, 1950))
             elif gr.is_position(4) and State.CB3_TO_WH.value[1] == Status.FREE:
                 if self.config.get("with_WH") and State.WH_STORE.value[1] != Status.FREE:
                     return
@@ -353,54 +415,25 @@ class RightLine(MainLine):
         elif gr.is_position(1):
             # move to cb4
             gr.reset_claw()
-            gr.move_to_position(Position(450, 43, 1600), ignore_moving_pos=True)
+            gr.move_to_position(Position(1950, 30, 1600), ignore_moving_pos=True)
 
         # if product ready get it
         elif gr.is_position(2) and self.state == State.GR3:
             # move down, grip product, move up
-            gr.get_product(1900, sensor="CB4_SENS_END")
+            gr.get_product(2000, sensor="CB4_SENS_END")
         elif gr.is_position(3):
             self.product_at = gr.name
-            # move to cb5
+            # move to out
             gr.move_to_position(Position(1865, 10, 1400))
-        elif gr.is_position(4) and State.CB5.value[1] == Status.FREE:
+        elif gr.is_position(4):
             # move down
-            gr.move_to_position(Position(-1, -1, 1800))
+            gr.move_to_position(Position(-1, -1, 3500))
         elif gr.is_position(5):
             # release product
             gr.release()
         elif gr.is_position(6):
             # move back to init
             gr.init(to_end=True)
-            return True
-    
-    def run_vg2(self) -> False:
-        vg: VacRobot = self.get_machine("VG2", VacRobot, Position(-1, -1, 400))
-        if vg.is_position(0):
-            vg.init()
-
-        elif vg.is_position(1) and self.config["color"] == "WHITE":
-            # move to white
-            vg.move_to_position(Position(0, 1450, 1200))
-        elif vg.is_position(1) and self.config["color"] == "RED":
-            # move to red
-            vg.move_to_position(Position(142, 1560, 1200))
-        elif vg.is_position(1) and self.config["color"] == "BLUE":
-            # move to blue
-            vg.move_to_position(Position(255, 1750, 1200))
-
-        elif vg.is_position(2) and self.state == State.VG2:
-            vg.get_product(1400, sensor=f"SL_SENS_{self.config['color']}")
-        elif vg.is_position(3):
-            self.product_at = vg.name
-            # move to out
-            vg.move_to_position(Position(1000, 800, 1750))
-        elif vg.is_position(4):
-            # release product
-            vg.release()
-        elif vg.is_position(5):
-            # move back to init
-            vg.init(to_end=True)
             return True
 
     def run_pm(self) -> False:
@@ -442,21 +475,25 @@ class RightLine(MainLine):
             mps.run_to_out()
             return True
 
-    def run_sl(self) -> False:
-        sl: SortLine = self.get_machine("SL", SortLine)
-        if self.state != self.config["end_at"] and sl.start_next_machine:
-            self.run_vg2()
+    def run_indx(self) -> False:
+        indx: IndexLine = self.get_machine("SL", IndexLine)
         
-        if sl.is_position(1):
-            self.product_at = sl.name
-            sl.run(color=self.config["color"])
-        if sl.is_position(2):
-            sl.end_machine = True
+        if indx.is_position(1):
+            self.product_at = indx.name
+            indx.run()
+        elif indx.is_position(2):
+            indx.end_machine = True
             return True
+        
+        if indx.start_next_machine:
+            # init GR3
+            if self.state != self.config["end_at"] and State.GR3.value[1] == Status.FREE:
+                self.run_gr3()
+
 
     def run_wh_store(self) -> False:
         wh: Warehouse = self.get_machine("WH", Warehouse, self.WAREHOUSE_CONTENT_FILE)
-        vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 200))
+        vg: VacRobot = self.get_machine("VG", VacRobot, Position(-1, -1, 200))
         if wh.is_position(0):
             wh.init(for_store=True)
         if vg.is_position(0):
@@ -502,7 +539,7 @@ class RightLine(MainLine):
 
     def run_wh_retrieve(self) -> False:
         wh: Warehouse = self.get_machine("WH", Warehouse, self.WAREHOUSE_CONTENT_FILE)
-        vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 200))
+        vg: VacRobot = self.get_machine("VG", VacRobot, Position(-1, -1, 200))
         if wh.is_position(0):
             wh.init(for_retrieve=True)
         if vg.is_position(0):
@@ -544,5 +581,5 @@ class RightLine(MainLine):
 
 if __name__ == "__main__":
     # Start and run the factory
-    setup = Setup("right_config.json", "states.json", State, RightLine)
+    setup = Setup("left_config.json", "states.json", State, LeftLine)
     setup.run_factory()

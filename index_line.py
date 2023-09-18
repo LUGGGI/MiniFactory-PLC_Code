@@ -150,7 +150,6 @@ class IndexLine(Machine):
             self.error_exception_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
-        else:  
-            self.end_machine = True
+        else:
             self.position += 1
             self.switch_state(State.END)
