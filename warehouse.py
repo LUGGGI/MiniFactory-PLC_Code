@@ -194,7 +194,7 @@ class Warehouse(Machine):
             
             if position == None:
                 # find Empty bay
-                with open(Warehouse.__content_file, "r") as fp:
+                with open(self.__content_file, "r") as fp:
                     positions = json.load(fp)["content"]
 
                 # find the nearest empty bay
@@ -239,7 +239,7 @@ class Warehouse(Machine):
                 else:
                     continue
                 break
-            with open(Warehouse.__content_file, "r") as fp:
+            with open(self.__content_file, "r") as fp:
                 json_obj = json.load(fp)
             json_obj["content"][hor][ver] = color
             with open(self.__content_file, "w") as fp:
@@ -277,7 +277,7 @@ class Warehouse(Machine):
         try:
             if position == None:
                 # find wanted color
-                with open(Warehouse.__content_file, "r") as fp:
+                with open(self.__content_file, "r") as fp:
                     positions = json.load(fp)["content"]
 
                 # find the nearest empty bay
@@ -327,7 +327,7 @@ class Warehouse(Machine):
                 else:
                     continue
                 break
-            with open(Warehouse.__content_file, "r") as fp:
+            with open(self.__content_file, "r") as fp:
                 json_obj = json.load(fp)
             json_obj["content"][hor][ver] = "Empty"
             with open(self.__content_file, "w") as fp:
