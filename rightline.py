@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2023.09.21"
 
 from enum import Enum
 
@@ -221,7 +221,7 @@ class RightLine(MainLine):
             if cb.is_position(1):
                 self.product_at = cb.name
                 cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
-            elif cb.is_position(2):
+            elif cb.is_position(2) and State.CB4.value[1] == Status.FREE:
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
                 return True
         
@@ -244,7 +244,7 @@ class RightLine(MainLine):
         if cb.is_position(1):
             self.product_at = cb.name
             cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
-        elif cb.is_position(2):
+        elif cb.is_position(2) and State.SL.value[1] == Status.FREE:
             cb.run_to_stop_sensor("FWD", stop_sensor="SL_CB_SENS_START", end_machine=True)
             return True
 
@@ -289,13 +289,15 @@ class RightLine(MainLine):
                 # move to cb1 (6s)
                 gr.reset_claw()
                 gr.move_to_position(Position(245, 65, 1600), ignore_moving_pos=True)
-
-        # move product from cb1 to pm
-        if self.state == State.GR2_CB1_TO_PM:
+        # get product from cb1
+        if self.state == State.GR2_CB1_TO_PM or self.state == State.GR2_CB1_TO_CB3:
             if gr.is_position(2):
                 # move down, grip product, move up
                 gr.get_product(2100, sensor="CB1_SENS_END")
-            elif gr.is_position(3):
+
+        # move product from cb1 to pm
+        if self.state == State.GR2_CB1_TO_PM:
+            if gr.is_position(3):
                 self.product_at = gr.name
                 # move to cb2
                 gr.move_to_position(Position(3860, 78, 1500))
@@ -312,24 +314,19 @@ class RightLine(MainLine):
                 return True
             return
 
-        # get from cb1   
-        if self.state == State.GR2_CB1_TO_CB3:
-            if gr.is_position(2):
-                # move down, grip product, move up
-                gr.get_product(2100, sensor="CB1_SENS_END")
-
-        # move to pm
+        # move to pm if new gr
         if self.state == State.PM or self.state == State.GR2_PM_TO_CB3:
             if gr.is_position(1):
                 # move to cb2
                 gr.reset_claw()
                 gr.move_to_position(Position(3860, 78, 1300), ignore_moving_pos=True)
-        # get from pm
+        # get product from pm
         if self.state == State.GR2_PM_TO_CB3:
             if gr.is_position(2):
                 # move down, grip product, move up
                 gr.get_product(2000, sensor="CB2_SENS_START")
 
+        # move product to cb3
         if self.state == State.GR2_CB1_TO_CB3 or self.state == State.GR2_PM_TO_CB3:
             if gr.is_position(3):
                 self.product_at = gr.name

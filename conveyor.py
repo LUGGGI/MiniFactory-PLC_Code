@@ -5,14 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2023.09.21"
 
 import threading
 from enum import Enum
 
 from logger import log
 from machine import Machine
-from sensor import Sensor, SensorTimeoutError
+from sensor import Sensor, SensorTimeoutError, NoDetectionError
 from actuator import Actuator
 
 
@@ -133,6 +133,44 @@ class Conveyor(Machine):
             self.__error_propagation(error)
         else:
             self.log.warning(f"{self.name} :Reached value: {trigger_value} at {counter}")
+            self.position += 1
+            if end_machine:
+                self.end_conveyor()
+                
+    def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None, end_machine=False, as_thread=True):
+        '''Runs the Conveyor for the given time, can check for sensor detection.
+        
+        Args:
+            direction (str): Actuator direction, (last part of whole name).
+            wait_time_in_s (int): Time after which the actuator stops.
+            check_sensor (str): If given, checks if detection occurred.
+            end_machine (bool): Ends the machine if this function completes, set to false to keep machine.
+            as_thread (bool): Runs the function as a thread.
+        Raises:
+            Only if called from other Machine.
+            SensorTimeoutError: Timeout is reached (no detection happened).
+            EncoderOverflowError: Encoder value negativ.
+            ValueError: Counter jumped values.
+        '''
+        # call this function again as a thread
+        if as_thread == True:
+            self.thread = threading.Thread(target=self.run_to_counter_value, args=(direction, wait_time_in_s, check_sensor, end_machine, False), name=self.name)
+            self.thread.start()
+            return
+
+        self.log.warning(f"{self.name} :Running for time: {wait_time_in_s} s")
+        self.switch_state(State.RUN)
+        try:
+            Actuator(self.revpi, self.name, self.line_name).run_for_time(direction, wait_time_in_s, check_sensor)
+
+        except NoDetectionError as error:
+            self.problem_in_machine = True
+            self.__error_propagation(error)
+        except Exception as error:
+            self.error_exception_in_machine = True
+            self.__error_propagation(error)
+        else:
+            self.log.warning(f"{self.name} :Reached time: {wait_time_in_s} s")
             self.position += 1
             if end_machine:
                 self.end_conveyor()

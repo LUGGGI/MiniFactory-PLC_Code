@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2023.09.21"
 
 import threading
 from time import sleep
@@ -89,8 +89,8 @@ class MPStation(Machine):
         '''Runs the Multi Purpose Station routine.
         
         Args:
-            with_oven (bool): Product goes through oven
-            with_saw (bool): Product goes through saw
+            with_oven (bool): Product goes through oven.
+            with_saw (bool): Product goes through saw.
             as_thread (bool): Runs the function as a thread.
         '''
         # call this function again as a thread

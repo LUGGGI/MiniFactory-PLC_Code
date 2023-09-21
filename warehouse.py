@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2023.09.21"
 
 import threading
 from enum import Enum
@@ -206,6 +206,8 @@ class Warehouse(Machine):
                     else:
                         continue
                     break
+                else:
+                    raise LookupError(f"{self.name}: No empty spaces left.")
             
             horizontal = position[0]
             vertical = position[1]
@@ -289,6 +291,8 @@ class Warehouse(Machine):
                     else:
                         continue
                     break
+                else:
+                    raise LookupError(f"{self.name}: Color {color} not found.")
             
             horizontal = position[0]
             vertical = position[1]

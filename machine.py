@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2023.09.21"
 
 import threading
 from datetime import datetime
@@ -76,7 +76,6 @@ class Machine:
             int: Run time of machine
         '''
         run_time = round(time() - self.__time_start)
-        self.log.info(f"Runtime: {run_time}")
         return run_time
 
 
@@ -91,7 +90,7 @@ class Machine:
         return state_time
 
 
-    def switch_state(self, state, wait=True):
+    def switch_state(self, state, wait=False):
         '''Switch to given state and save state start time.
         
         Args:
@@ -133,7 +132,7 @@ class Machine:
         return {
             "state": self.state.name if self.state else None,
             "position": self.position,
-            "end_machine": self.end_machine,
+            "end_machine": False if not self.end_machine else f"true, Runtime: {self.get_run_time()} s",
             "error_exception_in_machine": self.error_exception_in_machine,
             "problem_in_machine": self.problem_in_machine
         }

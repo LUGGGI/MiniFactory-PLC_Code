@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2023.09.21"
 
 import time
 from enum import Enum
@@ -191,7 +191,13 @@ class Sensor():
                         self.counter_offset += 2
                     new_value = old_value = self.get_current_value()
                 elif new_value > old_value:
-                    raise(ValueError(f"{self.name} :Counter jumped values"))
+                    self.log.exception(ValueError(f"{self.name} :Counter jumped values"))
+                    difference = new_value - old_value - 1
+                    if lower:
+                        self.counter_offset += 2 + difference
+                    else:
+                        self.counter_offset += difference
+                    new_value = old_value = self.get_current_value()
 
             if abs(new_value - trigger_value) <= trigger_threshold:
 
