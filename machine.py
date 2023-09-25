@@ -18,9 +18,9 @@ class Machine:
     '''Parent class for all machine modules.
     
     Methodes:
-        get_run_time(): Get run time of machine
-        get_state_time(): Get run time of current state
-        switch_state(): Switch to given state
+        get_run_time(): Get run time of machine.
+        get_state_time(): Get run time of current state.
+        switch_state(): Switch to given state.
         is_position(): Returns True if no thread is running and given position is current position.
     Attributes:
         revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
@@ -73,7 +73,7 @@ class Machine:
         '''Get run time of machine in seconds since creation of Machine.
         
         Returns:
-            int: Run time of machine
+            int: Run time of machine.
         '''
         run_time = round(time() - self.__time_start)
         return run_time
@@ -83,7 +83,7 @@ class Machine:
         '''Get run time of state in seconds since switch.
         
         Returns:
-            int: Run time of machine
+            int: Run time of state.
         '''
         state_time = round(time() - self.__state_time_start)
         self.log.info(f"{self.state} time: + {state_time}")
@@ -108,7 +108,10 @@ class Machine:
     def is_position(self, postion: int) -> bool:
         '''Returns True if no thread is running and given position is current position.
         
+        Args:
             position (int): position at which it should return True.
+        Returns:
+            bool: True if no thread is running and at position.
         '''
         try:
             # False, if current thread is active
