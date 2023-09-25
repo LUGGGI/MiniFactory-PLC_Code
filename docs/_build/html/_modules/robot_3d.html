@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>robot_3d &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for robot_3d</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;This module controls the 3D Robots, it inherits from Machine&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;st166506@stud.uni-stuttgart.de&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;GPL&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2023.09.15&quot;</span>
+
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="kn">from</span> <span class="nn">logger</span> <span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">machine</span> <span class="kn">import</span> <span class="n">Machine</span>
+<span class="kn">from</span> <span class="nn">sensor</span> <span class="kn">import</span> <span class="n">Sensor</span>
+<span class="kn">from</span> <span class="nn">actuator</span> <span class="kn">import</span> <span class="n">Actuator</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">,</span> <span class="n">SensorTimeoutError</span>
+
+<div class="viewcode-block" id="State">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.State">[docs]</a>
+<span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">INIT</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">TO_MOVING_POS</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">MOVING</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">TO_DESTINATION</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">GRIPPING</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">RELEASE</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">GET_PRODUCT</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">END</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">999</span></div>
+
+
+<div class="viewcode-block" id="Position">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.Position">[docs]</a>
+<span class="k">class</span> <span class="nc">Position</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Holds a int value for each axis.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        rotation (int): Rotation position.</span>
+<span class="sd">        horizontal (int): Horizontal position.</span>
+<span class="sd">        vertical (int): Vertical position.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rotation</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">horizontal</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">vertical</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Save given positions.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            rotation (int): Rotation position.</span>
+<span class="sd">            horizontal (int): Horizontal position.</span>
+<span class="sd">            vertical (int): Vertical position.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span> <span class="o">=</span> <span class="n">rotation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">horizontal</span> <span class="o">=</span> <span class="n">horizontal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vertical</span> <span class="o">=</span> <span class="n">vertical</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Get formatted string of positions.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Formatted string of positions.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(r:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="si">}</span><span class="s2">, h:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">horizontal</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">horizontal</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="si">}</span><span class="s2">, v:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">vertical</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">vertical</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>  </div>
+
+
+<div class="viewcode-block" id="Robot3D">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.Robot3D">[docs]</a>
+<span class="k">class</span> <span class="nc">Robot3D</span><span class="p">(</span><span class="n">Machine</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Controls the 3D Robot.</span>
+<span class="sd">    </span>
+<span class="sd">    Methodes:</span>
+<span class="sd">        init(): Move to init position.</span>
+<span class="sd">        move_to_position(): Moves to given position.</span>
+<span class="sd">        move_all_axes(): Makes linear move to give position.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        __MOVE_THRESHOLD_ROT (int): Only moves the rotation axis if movement is more.</span>
+<span class="sd">        __MOVE_THRESHOLD_HOR (int): Only moves the horizontal axis if movement is more.</span>
+<span class="sd">        __MOVE_THRESHOLD_VER (int): Only moves the vertical axis if movement is more.</span>
+<span class="sd">        __MAX_PICKUP_TRIES (int): Max tries the robot can use to pickup a product.</span>
+<span class="sd">        __moving_position (Position): Position where the axes should be to allow save moving.</span>
+<span class="sd">        __encoder_rot (Sensor): Encoder for rotation axis.</span>
+<span class="sd">        __encoder_hor (Sensor): Encoder for horizontal axis.</span>
+<span class="sd">        __encoder_ver (Sensor): Encoder for vertical axis.</span>
+<span class="sd">        pwm_rot (str): PWM name for rotation axis.</span>
+<span class="sd">        pwm_hor (str): PWM name for horizontal axis.</span>
+<span class="sd">        pwm_ver (str): PWM name for vertical axis.</span>
+<span class="sd">        __motor_rot (Actuator): Motor for rotation axis.</span>
+<span class="sd">        __motor_hor (Actuator): Motor for horizontal axis.</span>
+<span class="sd">        __motor_ver (Actuator): Motor for vertical axis.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">__MOVE_THRESHOLD_ROT</span> <span class="o">=</span> <span class="mi">40</span>
+    <span class="n">__MOVE_THRESHOLD_HOR</span> <span class="o">=</span> <span class="mi">40</span>
+    <span class="n">__MOVE_THRESHOLD_VER</span> <span class="o">=</span> <span class="mi">40</span>
+    <span class="n">__MAX_PICKUP_TRIES</span> <span class="o">=</span> <span class="mi">3</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">line_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">moving_position</span><span class="p">:</span> <span class="n">Position</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Initializes the 3D Robot</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
+<span class="sd">            name (str): Exact name of the machine in PiCtory (everything bevor first &#39;_&#39;).</span>
+<span class="sd">            line_name (str): Name of current line.</span>
+<span class="sd">            moving_position (Position): Position where the axes should be to allow save moving.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">line_name</span><span class="p">)</span>
+
+        <span class="k">global</span> <span class="n">log</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="si">}</span><span class="s2">(Rob)&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span> <span class="o">=</span> <span class="n">moving_position</span>
+
+        <span class="c1"># get encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_rot</span> <span class="o">=</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_ROTATION_ENCODER&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_hor</span> <span class="o">=</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_HORIZONTAL_ENCODER&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_ver</span> <span class="o">=</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_VERTICAL_ENCODER&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+
+        <span class="c1"># get pwm pins</span>
+        <span class="n">pwm_rot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_ROTATION_PWM&quot;</span>
+        <span class="n">pwm_hor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_HORIZONTAL_PWM&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;VG&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">pwm_ver</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># get motors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_rot</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="n">pwm</span><span class="o">=</span><span class="n">pwm_rot</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;rotation&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_hor</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="n">pwm</span><span class="o">=</span><span class="n">pwm_hor</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_ver</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="n">pwm</span><span class="o">=</span><span class="n">pwm_ver</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Robot3D.init">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.Robot3D.init">[docs]</a>
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">to_end</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Move to init position.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            to_end (bool): If True ends machine after completion of init.</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">to_end</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_INIT&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">INIT</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># move to init position</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_all_axes</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_all_axes</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="p">(</span><span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">to_end</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">END</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Initialized&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="Robot3D.get_product">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.Robot3D.get_product">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vertical_position</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sensor</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Moves to position without moving position, grips product and moves back up to original position.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vertical_position (int): Vertical value to move to to grip.</span>
+<span class="sd">            sensor (str): Sensor that will be checked for detection while moving up.</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_product</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">vertical_position</span><span class="p">,</span> <span class="n">sensor</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GET_PRODUCT</span><span class="p">)</span>
+            <span class="n">current_program_position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span>
+            <span class="c1"># start position</span>
+            <span class="n">start_vertical_position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_ver</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span>
+            <span class="n">try_num</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">while</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span><span class="p">:</span>
+                    <span class="k">break</span>
+                
+                <span class="c1"># move down to product</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__move_all_axes</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">vertical_position</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">grip</span><span class="p">(</span><span class="n">as_thread</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="c1"># move back up</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__move_all_axes</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">start_vertical_position</span><span class="p">))</span>
+
+                <span class="c1"># check if product still at sensor, if so try to grip again</span>
+                <span class="k">if</span> <span class="n">sensor</span> <span class="ow">and</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="n">sensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Product still at Sensor, try nr.: </span><span class="si">{</span><span class="n">try_num</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reset_claw</span><span class="p">(</span><span class="n">as_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># product was gripped</span>
+                    <span class="k">break</span>
+
+                <span class="c1"># try one list time with complete robot reset.</span>
+                <span class="k">if</span> <span class="n">try_num</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MAX_PICKUP_TRIES</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Product still at Sensor, grip failed, resetting position&quot;</span><span class="p">)</span>
+                    <span class="c1"># get current position</span>
+                    <span class="n">current_position</span> <span class="o">=</span> <span class="n">Position</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_rot</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">(),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_hor</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">(),</span>
+                        <span class="n">start_vertical_position</span>
+                    <span class="p">)</span>
+                    <span class="c1"># reset robot position and try again</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">as_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">current_position</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="c1"># pickup failed</span>
+                <span class="k">elif</span> <span class="n">try_num</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MAX_PICKUP_TRIES</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">GetProductError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Product still at Sensor, grip failed&quot;</span><span class="p">)</span>
+
+                <span class="n">try_num</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">current_program_position</span> <span class="o">+</span> <span class="mi">1</span>
+        
+        <span class="k">except</span> <span class="p">(</span><span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">,</span> <span class="n">GetProductError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Robot3D.move_to_position">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.Robot3D.move_to_position">[docs]</a>
+    <span class="k">def</span> <span class="nf">move_to_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Position</span><span class="p">,</span> <span class="n">ignore_moving_pos</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">True</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Moves Robot to given position.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            position (Position): to move to (rotation, horizontal, vertical): int.</span>
+<span class="sd">            ignore_moving_pos (bool): If True robot won&#39;t move to moving Position.</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">ignore_moving_pos</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        
+        <span class="n">end_position</span> <span class="o">=</span> <span class="n">position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Moving to Position: </span><span class="si">{</span><span class="n">end_position</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># ignore moving position if rotation and one other axis doesn&#39;t move</span>
+        <span class="k">if</span> <span class="n">position</span><span class="o">.</span><span class="n">rotation</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">horizontal</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">position</span><span class="o">.</span><span class="n">vertical</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">ignore_moving_pos</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_moving_pos</span><span class="p">:</span>
+                <span class="c1"># move to moving position</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">TO_MOVING_POS</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_ver</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="o">.</span><span class="n">vertical</span><span class="p">:</span>
+                    <span class="c1"># if robot is higher than moving postion rotate directly</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__move_all_axes</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">rotation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="o">.</span><span class="n">horizontal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="o">.</span><span class="n">vertical</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__move_all_axes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="p">)</span>
+
+                <span class="c1"># move non moving position axes</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">MOVING</span><span class="p">)</span>
+                <span class="c1"># only move axis if there was no moving position for axis or the value is smaller than the moving position</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="o">.</span><span class="n">rotation</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">position</span><span class="o">.</span><span class="n">rotation</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="o">.</span><span class="n">rotation</span><span class="p">:</span>
+                    <span class="n">rotation</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">rotation</span>
+                    <span class="n">position</span><span class="o">.</span><span class="n">rotation</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rotation</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="o">.</span><span class="n">horizontal</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">position</span><span class="o">.</span><span class="n">horizontal</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="o">.</span><span class="n">horizontal</span><span class="p">:</span>
+                    <span class="n">horizontal</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">horizontal</span>
+                    <span class="n">position</span><span class="o">.</span><span class="n">horizontal</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">horizontal</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="o">.</span><span class="n">vertical</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">position</span><span class="o">.</span><span class="n">vertical</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">__moving_position</span><span class="o">.</span><span class="n">vertical</span><span class="p">:</span>
+                    <span class="n">vertical</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">vertical</span>
+                    <span class="n">position</span><span class="o">.</span><span class="n">vertical</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">vertical</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__move_all_axes</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="n">rotation</span><span class="p">,</span> <span class="n">horizontal</span><span class="p">,</span> <span class="n">vertical</span><span class="p">))</span>
+
+            <span class="c1"># move to destination</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">TO_DESTINATION</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_all_axes</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
+        
+        <span class="k">except</span> <span class="p">(</span><span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Position reached: </span><span class="si">{</span><span class="n">end_position</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">__move_all_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">Position</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Makes linear move to given position, set a axis to -1 to not move that axis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            position (Position): to move to (rotation, horizontal, vertical): int.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SensorTimeoutError: Timeout is reached (no detection happened).</span>
+<span class="sd">            ValueError: Counter jumped values.</span>
+<span class="sd">            EncoderOverflowError: Encoder hat overflow, because value went lower than 0.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Moving axes to: </span><span class="si">{</span><span class="n">position</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># get current position</span>
+        <span class="n">current_position</span> <span class="o">=</span> <span class="n">Position</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_rot</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">(),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_hor</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">(),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_ver</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="c1"># get motor directions</span>
+        <span class="n">dir_rot</span> <span class="o">=</span> <span class="s2">&quot;CCW&quot;</span>
+        <span class="n">dir_hor</span> <span class="o">=</span> <span class="s2">&quot;FWD&quot;</span>
+        <span class="n">dir_ver</span> <span class="o">=</span> <span class="s2">&quot;DOWN&quot;</span>
+        <span class="k">if</span> <span class="n">position</span><span class="o">.</span><span class="n">rotation</span> <span class="o">&lt;=</span> <span class="n">current_position</span><span class="o">.</span><span class="n">rotation</span><span class="p">:</span>
+            <span class="n">dir_rot</span> <span class="o">=</span> <span class="s2">&quot;CW&quot;</span>
+        <span class="k">if</span> <span class="n">position</span><span class="o">.</span><span class="n">horizontal</span> <span class="o">&lt;=</span> <span class="n">current_position</span><span class="o">.</span><span class="n">horizontal</span><span class="p">:</span>
+            <span class="n">dir_hor</span> <span class="o">=</span> <span class="s2">&quot;BWD&quot;</span>
+        <span class="k">if</span> <span class="n">position</span><span class="o">.</span><span class="n">vertical</span> <span class="o">&lt;=</span> <span class="n">current_position</span><span class="o">.</span><span class="n">vertical</span><span class="p">:</span>
+            <span class="n">dir_ver</span> <span class="o">=</span> <span class="s2">&quot;UP&quot;</span>
+
+        <span class="c1"># move to position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_rot</span><span class="o">.</span><span class="n">move_axis</span><span class="p">(</span><span class="n">dir_rot</span><span class="p">,</span> <span class="n">position</span><span class="o">.</span><span class="n">rotation</span><span class="p">,</span> <span class="n">current_position</span><span class="o">.</span><span class="n">rotation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MOVE_THRESHOLD_ROT</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_rot</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_ROTATION&quot;</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_hor</span><span class="o">.</span><span class="n">move_axis</span><span class="p">(</span><span class="n">dir_hor</span><span class="p">,</span> <span class="n">position</span><span class="o">.</span><span class="n">horizontal</span><span class="p">,</span> <span class="n">current_position</span><span class="o">.</span><span class="n">horizontal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MOVE_THRESHOLD_HOR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_hor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_HORIZONTAL&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_ver</span><span class="o">.</span><span class="n">move_axis</span><span class="p">(</span><span class="n">dir_ver</span><span class="p">,</span> <span class="n">position</span><span class="o">.</span><span class="n">vertical</span><span class="p">,</span> <span class="n">current_position</span><span class="o">.</span><span class="n">vertical</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MOVE_THRESHOLD_VER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_ver</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_VERTICAL&quot;</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># wait for end of each move</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_rot</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_hor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_ver</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Axes moved to: </span><span class="si">{</span><span class="n">position</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Robot3D.grip">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.Robot3D.grip">[docs]</a>
+    <span class="k">def</span> <span class="nf">grip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Grip product. Abstract function, see subclass.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Robot3D.release">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.Robot3D.release">[docs]</a>
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Release product. Abstract function, see subclass.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Robot3D.reset_claw">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.Robot3D.reset_claw">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_claw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Reset gripper. Abstract function, see subclass.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+<div class="viewcode-block" id="GetProductError">
+<a class="viewcode-back" href="../robot_3d.html#robot_3d.GetProductError">[docs]</a>
+<span class="k">class</span> <span class="nc">GetProductError</span><span class="p">(</span><span class="ne">SystemError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Robot could not grip Product.&#39;&#39;&#39;</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

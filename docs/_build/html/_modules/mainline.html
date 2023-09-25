@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mainline &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mainline</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Parent Class for production lines on MiniFactory project</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;st166506@stud.uni-stuttgart.de&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;GPL&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2023.09.15&quot;</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">logger</span> <span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">machine</span> <span class="kn">import</span> <span class="n">Machine</span>
+
+<div class="viewcode-block" id="Status">
+<a class="viewcode-back" href="../mainline.html#mainline.Status">[docs]</a>
+<span class="k">class</span> <span class="nc">Status</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">FREE</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">RUNNING</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">BLOCKED</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">WAITING</span> <span class="o">=</span> <span class="mi">4</span></div>
+
+
+<div class="viewcode-block" id="MainLine">
+<a class="viewcode-back" href="../mainline.html#mainline.MainLine">[docs]</a>
+<span class="k">class</span> <span class="nc">MainLine</span><span class="p">(</span><span class="n">Machine</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Controls the MiniFactory.</span>
+<span class="sd">    </span>
+<span class="sd">    Methodes:</span>
+<span class="sd">        update(): Updates the line</span>
+<span class="sd">        line_config(): Config functionality</span>
+<span class="sd">        mainloop(): Calls the different states</span>
+<span class="sd">        switch_state(): Switches state to given state if not BLOCKED or RUNNING</span>
+<span class="sd">        switch_status(): Switch status in states</span>
+<span class="sd">        end(): Waits for any machines left running.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        config (dict): Config for the line.</span>
+<span class="sd">        states (State): States from Subclass.</span>
+<span class="sd">        machines (dict): All active machines.</span>
+<span class="sd">        product_at (bool): Name of machine where product is at. </span>
+<span class="sd">        waiting_for_state (State): If line is waiting for machine, holds the state of that machine.</span>
+<span class="sd">        running (bool): True if line is currently running.</span>
+<span class="sd">        status_dict (dict): Status of line.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revpi</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">states</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Initializes MiniFactory control loop.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
+<span class="sd">            config (dict): Config for the line.</span>
+<span class="sd">            states (State): States from Subclass.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">revpi</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="n">states</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="p">:</span> <span class="s2">&quot;dict[str, Machine]&quot;</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">global</span> <span class="n">log</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="MainLine.update">
+<a class="viewcode-back" href="../mainline.html#mainline.MainLine.update">[docs]</a>
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Updates the line.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            run: Only run the line if True.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_config</span><span class="p">()</span> <span class="ow">and</span> <span class="n">run</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mainloop</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="MainLine.line_config">
+<a class="viewcode-back" href="../mainline.html#mainline.MainLine.line_config">[docs]</a>
+    <span class="k">def</span> <span class="nf">line_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Config functionality.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            False if error occurred else returns True.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">machine</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="c1"># look for errors in the machines</span>
+            <span class="k">if</span> <span class="n">machine</span><span class="o">.</span><span class="n">error_exception_in_machine</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">machine</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="c1"># end machines </span>
+            <span class="k">if</span> <span class="n">machine</span><span class="o">.</span><span class="n">end_machine</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">machine</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ended: </span><span class="si">{</span><span class="n">machine</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="n">machine</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">machine</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">break</span>        
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># waiting for running or blocked machines</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Continuing to: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">END</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">END</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="c1"># update line status for status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;product_at&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span><span class="p">,</span>
+            <span class="s2">&quot;waiting_for_state&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;error_exception_in_machine&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span><span class="p">,</span>
+            <span class="s2">&quot;problem_in_machine&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+        
+<div class="viewcode-block" id="MainLine.mainloop">
+<a class="viewcode-back" href="../mainline.html#mainline.MainLine.mainloop">[docs]</a>
+    <span class="k">def</span> <span class="nf">mainloop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Abstract function should never be called&#39;&#39;&#39;</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Abstract function called&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="MainLine.switch_state">
+<a class="viewcode-back" href="../mainline.html#mainline.MainLine.switch_state">[docs]</a>
+    <span class="k">def</span> <span class="nf">switch_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Switch to given state and save state start time.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            state (State): State Enum to switch to.</span>
+<span class="sd">            wait (bool): Calls for input bevor switching.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;end_at&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">state</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">END</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">END</span><span class="p">,</span> <span class="n">wait</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">state</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span> <span class="ow">or</span> <span class="n">state</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+                <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Press any key to go to switch: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> to state: </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;: Switching state to: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">state</span>
+            <span class="k">if</span> <span class="n">state</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">END</span> <span class="ow">or</span> <span class="n">state</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">WAITING</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Waiting for: </span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">WAITING</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span> <span class="o">=</span> <span class="n">state</span></div>
+
+
+
+<div class="viewcode-block" id="MainLine.switch_status">
+<a class="viewcode-back" href="../mainline.html#mainline.MainLine.switch_status">[docs]</a>
+    <span class="k">def</span> <span class="nf">switch_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_name</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">Status</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Switch status in states, if name switches all to a machine belonging states.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            state (State | str): Can be a State Enum or a string of to switching state.</span>
+<span class="sd">            status (Status): Status that the state should be switched to.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># get the used_by tag</span>
+        <span class="n">name_tag</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">state_name</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">state_name</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">status</span>
+            <span class="c1"># set the used_by tag</span>
+            <span class="n">state_name</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_tag</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">state_name</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="c1"># set status</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">status</span>
+                    <span class="c1"># set the used_by tag</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_tag</span></div>
+
+
+
+<div class="viewcode-block" id="MainLine.get_machine">
+<a class="viewcode-back" href="../mainline.html#mainline.MainLine.get_machine">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_machine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">machine_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">machine_class</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Machine</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Returns given machine, if not available initializes it.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            machine_name (str): Name of machine that should be returned.</span>
+<span class="sd">            machine_class (Mainloop): Class of the machine.</span>
+<span class="sd">            *args: additional arguments passed to machine.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Machine: machine object for given machine.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">machine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">machine_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">machine</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">machine</span> <span class="o">=</span> <span class="n">machine_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="n">machine_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="p">[</span><span class="n">machine_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">machine</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="n">machine_name</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">machine</span></div>
+
+    
+    
+<div class="viewcode-block" id="MainLine.end">
+<a class="viewcode-back" href="../mainline.html#mainline.MainLine.end">[docs]</a>
+    <span class="k">def</span> <span class="nf">end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Waits for any machines left running.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if all machine have endet else False.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">machine_running</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">while</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+            <span class="c1"># check if there any machines left running</span>
+            <span class="n">machine</span><span class="p">:</span> <span class="n">Machine</span>
+            <span class="k">for</span> <span class="n">machine</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">machine</span><span class="o">.</span><span class="n">end_machine</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">machine</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Main&quot;</span><span class="p">:</span>
+                    <span class="c1"># wait for running machines</span>
+                    <span class="n">machine_running</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">if</span> <span class="n">machine</span><span class="o">.</span><span class="n">position</span> <span class="o">!=</span> <span class="mi">100</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waiting for machine to end: </span><span class="si">{</span><span class="n">machine</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">machine</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">100</span>
+            <span class="k">if</span> <span class="n">machine_running</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="c1"># all machines have ended</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_machine</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

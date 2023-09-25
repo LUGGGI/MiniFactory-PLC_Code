@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>warehouse &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for warehouse</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;This module controls the Warehouse, it inherits from Machine&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;st166506@stud.uni-stuttgart.de&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;GPL&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2023.09.21&quot;</span>
+
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">logger</span> <span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">machine</span> <span class="kn">import</span> <span class="n">Machine</span>
+<span class="kn">from</span> <span class="nn">sensor</span> <span class="kn">import</span> <span class="n">Sensor</span><span class="p">,</span> <span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span>
+<span class="kn">from</span> <span class="nn">actuator</span> <span class="kn">import</span> <span class="n">Actuator</span>
+<span class="kn">from</span> <span class="nn">conveyor</span> <span class="kn">import</span> <span class="n">Conveyor</span>
+
+<div class="viewcode-block" id="State">
+<a class="viewcode-back" href="../warehouse.html#warehouse.State">[docs]</a>
+<span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">INIT</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">MOVING_TO_CB</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">MOVING_TO_RACK</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">GETTING_PRODUCT</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">SETTING_PRODUCT</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">CB_BWD</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">CB_FWD</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">END</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">999</span></div>
+
+
+<span class="c1"># Positions in the Warehouse rack</span>
+<span class="n">POSITIONS</span><span class="p">:</span> <span class="s2">&quot;list[list[tuple]]&quot;</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span> <span class="c1"># first column</span>
+        <span class="p">(</span><span class="mi">1540</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">1540</span><span class="p">,</span> <span class="mi">900</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">1540</span><span class="p">,</span> <span class="mi">1650</span><span class="p">)</span>
+    <span class="p">],</span>
+    <span class="p">[</span> <span class="c1"># second column</span>
+        <span class="p">(</span><span class="mi">2675</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">2675</span><span class="p">,</span> <span class="mi">900</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">2675</span><span class="p">,</span> <span class="mi">1650</span><span class="p">)</span>
+    <span class="p">],</span>
+    <span class="p">[</span> <span class="c1"># third column</span>
+        <span class="p">(</span><span class="mi">3840</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">3840</span><span class="p">,</span> <span class="mi">900</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">3840</span><span class="p">,</span> <span class="mi">1650</span><span class="p">)</span>
+    <span class="p">]</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="Warehouse">
+<a class="viewcode-back" href="../warehouse.html#warehouse.Warehouse">[docs]</a>
+<span class="k">class</span> <span class="nc">Warehouse</span><span class="p">(</span><span class="n">Machine</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Controls the Warehouse</span>
+<span class="sd">    </span>
+<span class="sd">    Methodes:</span>
+<span class="sd">        init(): Move to init Position</span>
+<span class="sd">        store_product(): Stores a product at given position.</span>
+<span class="sd">        retrieve_product(): Retrieves a product from given position.</span>
+<span class="sd">        __move_to_position(): Moves Crane given coordinates.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        __POS_CB_HORIZONTAL (int): Horizontal position of conveyor belt.</span>
+<span class="sd">        __POS_CB_VERTICAL (int): Vertical position of conveyor belt.</span>
+<span class="sd">        __MOVE_THRESHOLD_HOR (int): Only moves the horizontal axis if movement is more.</span>
+<span class="sd">        __MOVE_THRESHOLD_VER (int): Only moves the vertical axis if movement is more.</span>
+<span class="sd">        __content_file (str): File path to the file that saves the inventory.</span>
+<span class="sd">        ready_for_product (bool): True if a carrier is at input for store.</span>
+<span class="sd">        __ref_sw_arm_front (str): Referenz switch name for arm in extended state.</span>
+<span class="sd">        __ref_sw_arm_back (str): Referenz switch name for arm in retracted state.</span>
+<span class="sd">        __cb (Conveyor): Conveyor object for in-/output conveyor.</span>
+<span class="sd">        __encoder_hor (Sensor): Encoder for horizontal axis.</span>
+<span class="sd">        __encoder_ver (Sensor): Encoder for vertical axis.</span>
+<span class="sd">        __motor_loading (Actuator): Motor for arm front-back axis.</span>
+<span class="sd">        __motor_hor (Actuator): Motor for horizontal axis.</span>
+<span class="sd">        __motor_ver (Actuator): Motor for vertical axis.</span>
+<span class="sd">        __color (str): Color of product.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">__POS_CB_HORIZONTAL</span> <span class="o">=</span> <span class="mi">85</span>
+    <span class="n">__POS_CB_VERTICAL</span> <span class="o">=</span> <span class="mi">1450</span>
+    <span class="n">__MOVE_THRESHOLD_HOR</span> <span class="o">=</span> <span class="mi">40</span>
+    <span class="n">__MOVE_THRESHOLD_VER</span> <span class="o">=</span> <span class="mi">40</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">line_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">content_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Initializes the Warehouse.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
+<span class="sd">            name (str): Exact name of the machine in PiCtory (everything bevor first &#39;_&#39;).</span>
+<span class="sd">            line_name (str): Name of current line.</span>
+<span class="sd">            content_file (str): File path to the file that saves the inventory.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">line_name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__content_file</span> <span class="o">=</span> <span class="n">content_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ready_for_product</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_front</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_ARM_FRONT&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_back</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_ARM_BACK&quot;</span>
+
+        <span class="c1"># get conveyor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__cb</span> <span class="o">=</span> <span class="n">Conveyor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_CB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+
+        <span class="c1"># get encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_hor</span> <span class="o">=</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_HORIZONTAL_ENCODER&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_ver</span> <span class="o">=</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_VERTICAL_ENCODER&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+
+        <span class="c1"># get motors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_ARM&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;loading&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_hor</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_CRANE&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_ver</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_ARM&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__color</span> <span class="o">=</span> <span class="s2">&quot;COLOR_UNKNOWN&quot;</span>
+
+        <span class="k">global</span> <span class="n">log</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="si">}</span><span class="s2">(Ware)&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Warehouse.init">
+<a class="viewcode-back" href="../warehouse.html#warehouse.Warehouse.init">[docs]</a>
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">for_store</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">for_retrieve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">to_end</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Move to init position.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            for_store (bool): Moves a carrier to input/output.</span>
+<span class="sd">            for_retrieve (bool): Removes carrier from input/output.</span>
+<span class="sd">            to_end (bool): If True ends machine after completion of init.</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">for_store</span><span class="p">,</span> <span class="n">for_retrieve</span><span class="p">,</span> <span class="n">to_end</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">INIT</span><span class="p">)</span>
+        <span class="n">current_position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;BWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_back</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">for_store</span><span class="p">:</span>
+                <span class="c1"># get empty carrier if non is available</span>
+                <span class="k">if</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_SENS_OUT&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_product</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;Carrier&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ready_for_product</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># move arm to cb</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">MOVING_TO_CB</span><span class="p">)</span>
+                <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_CB_BWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__POS_CB_HORIZONTAL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__POS_CB_VERTICAL</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_front</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">for_retrieve</span><span class="p">:</span>
+                <span class="c1"># if carrier at cb, move it into storage</span>
+                <span class="k">if</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_SENS_OUT&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="c1"># move arm to cb</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">MOVING_TO_CB</span><span class="p">)</span>
+                    <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_CB_BWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__POS_CB_HORIZONTAL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__POS_CB_VERTICAL</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_front</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">store_product</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;Carrier&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="p">(</span><span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">to_end</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">END</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Initialized&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">current_position</span> <span class="o">+</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="Warehouse.store_product">
+<a class="viewcode-back" href="../warehouse.html#warehouse.Warehouse.store_product">[docs]</a>
+    <span class="k">def</span> <span class="nf">store_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">POSITIONS</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Stores a product at given position.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            position (POSITIONS): Position of a shelf defined in POSITIONS, can be None.</span>
+<span class="sd">            color (str): Color of the Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier).</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">store_product</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="n">color</span> <span class="o">=</span> <span class="n">color</span> <span class="k">if</span> <span class="n">color</span> <span class="o">!=</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">__color</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_SENS_OUT&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">raise</span><span class="p">(</span><span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No Product to store found&quot;</span><span class="p">))</span>
+            
+            <span class="k">if</span> <span class="n">position</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># find Empty bay</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__content_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                    <span class="n">positions</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+
+                <span class="c1"># find the nearest empty bay</span>
+                <span class="k">for</span> <span class="n">hor</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">positions</span><span class="p">[</span><span class="n">hor</span><span class="p">][</span><span class="n">ver</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Empty&quot;</span><span class="p">:</span>
+                            <span class="n">position</span> <span class="o">=</span> <span class="n">POSITIONS</span><span class="p">[</span><span class="n">hor</span><span class="p">][</span><span class="n">ver</span><span class="p">]</span>
+                            <span class="k">break</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: No empty spaces left.&quot;</span><span class="p">)</span>
+            
+            <span class="n">horizontal</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">vertical</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Store </span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2">-product at position: [hor:</span><span class="si">{</span><span class="n">hor</span><span class="si">}</span><span class="s2">,ver:</span><span class="si">{</span><span class="n">ver</span><span class="si">}</span><span class="s2">]; </span><span class="si">{</span><span class="n">position</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+            <span class="c1"># move product to inside</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB_FWD</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_SENS_IN&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># get product from cb</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GETTING_PRODUCT</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__POS_CB_VERTICAL</span> <span class="o">-</span> <span class="mi">150</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;BWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_back</span><span class="p">)</span>
+
+            <span class="c1"># move crane to given rack</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">MOVING_TO_RACK</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="n">horizontal</span><span class="p">,</span> <span class="n">vertical</span> <span class="o">-</span> <span class="mi">100</span><span class="p">)</span>
+
+            <span class="c1"># store product in rack</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">SETTING_PRODUCT</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_front</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">vertical</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;BWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_back</span><span class="p">)</span>
+            
+            <span class="c1"># save Product to file</span>
+            <span class="k">for</span> <span class="n">hor</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">POSITIONS</span><span class="p">[</span><span class="n">hor</span><span class="p">][</span><span class="n">ver</span><span class="p">]</span> <span class="o">==</span> <span class="n">position</span><span class="p">:</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">break</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__content_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">json_obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="n">json_obj</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">][</span><span class="n">hor</span><span class="p">][</span><span class="n">ver</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__content_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">json_obj</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="p">(</span><span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :</span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2">-product stored at position: [hor:</span><span class="si">{</span><span class="n">hor</span><span class="si">}</span><span class="s2">,ver:</span><span class="si">{</span><span class="n">ver</span><span class="si">}</span><span class="s2">]; </span><span class="si">{</span><span class="n">position</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="Warehouse.retrieve_product">
+<a class="viewcode-back" href="../warehouse.html#warehouse.Warehouse.retrieve_product">[docs]</a>
+    <span class="k">def</span> <span class="nf">retrieve_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="n">POSITIONS</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Retrieves a product from given position.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            position (POSITIONS): Position of a shelf defined in POSITIONS, can be None.</span>
+<span class="sd">            color (str): Color of the wanted Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier).</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">retrieve_product</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="n">color</span> <span class="o">=</span> <span class="n">color</span> <span class="k">if</span> <span class="n">color</span> <span class="o">!=</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">__color</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">position</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># find wanted color</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__content_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                    <span class="n">positions</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+
+                <span class="c1"># find the nearest empty bay</span>
+                <span class="k">for</span> <span class="n">hor</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">positions</span><span class="p">[</span><span class="n">hor</span><span class="p">][</span><span class="n">ver</span><span class="p">]</span> <span class="o">==</span> <span class="n">color</span><span class="p">:</span>
+                            <span class="n">position</span> <span class="o">=</span> <span class="n">POSITIONS</span><span class="p">[</span><span class="n">hor</span><span class="p">][</span><span class="n">ver</span><span class="p">]</span>
+                            <span class="k">break</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Color </span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2"> not found.&quot;</span><span class="p">)</span>
+            
+            <span class="n">horizontal</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">vertical</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Retrieve </span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2">-product from position: [hor:</span><span class="si">{</span><span class="n">hor</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">,ver:</span><span class="si">{</span><span class="n">ver</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">]; </span><span class="si">{</span><span class="n">position</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># move to given rack</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">MOVING_TO_RACK</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;BWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_back</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="n">horizontal</span><span class="p">,</span> <span class="n">vertical</span><span class="p">)</span>
+
+            <span class="c1"># get product from rack</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GETTING_PRODUCT</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_front</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">vertical</span> <span class="o">-</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;BWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_back</span><span class="p">)</span>
+
+            <span class="c1"># move to cb</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">MOVING_TO_CB</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__POS_CB_VERTICAL</span> <span class="o">-</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__POS_CB_HORIZONTAL</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># put product on cb</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">SETTING_PRODUCT</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_loading</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ref_sw_arm_front</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__move_to_position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__POS_CB_VERTICAL</span><span class="p">)</span>
+
+            <span class="c1"># move product to outside</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB_BWD</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;BWD&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_SENS_OUT&quot;</span><span class="p">,</span> <span class="n">stop_delay_in_ms</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># save &quot;empty&quot; to file</span>
+            <span class="k">for</span> <span class="n">hor</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">POSITIONS</span><span class="p">[</span><span class="n">hor</span><span class="p">][</span><span class="n">ver</span><span class="p">]</span> <span class="o">==</span> <span class="n">position</span><span class="p">:</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">break</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__content_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">json_obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="n">json_obj</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">][</span><span class="n">hor</span><span class="p">][</span><span class="n">ver</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Empty&quot;</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__content_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">json_obj</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="p">(</span><span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :</span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2">-product retrieved from position: [hor:</span><span class="si">{</span><span class="n">hor</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">,ver:</span><span class="si">{</span><span class="n">ver</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">]; </span><span class="si">{</span><span class="n">position</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">__move_to_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">horizontal</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">vertical</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Moves Crane given coordinates, set a coordinate to -1 to not move that axis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            horizontal (int): Horizontal coordinate to move to.</span>
+<span class="sd">            vertical (int): Vertical coordinate to move to.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SensorTimeoutError: Timeout is reached (no detection happened).</span>
+<span class="sd">            EncoderOverflowError: Encoder value negativ.</span>
+<span class="sd">            ValueError: Counter jumped values.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Moving Crane to position: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(hor:</span><span class="si">{</span><span class="n">horizontal</span><span class="si">}</span><span class="s2">,ver:</span><span class="si">{</span><span class="n">vertical</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">))</span>
+
+        <span class="c1"># get current position</span>
+        <span class="n">current_horizontal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_hor</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span>
+        <span class="n">current_vertical</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_ver</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span>
+
+
+        <span class="c1"># get motor directions</span>
+        <span class="n">dir_hor</span> <span class="o">=</span> <span class="s2">&quot;TO_RACK&quot;</span>
+        <span class="n">dir_ver</span> <span class="o">=</span> <span class="s2">&quot;DOWN&quot;</span>
+        <span class="k">if</span> <span class="n">horizontal</span> <span class="o">&lt;=</span> <span class="n">current_horizontal</span><span class="p">:</span>
+            <span class="n">dir_hor</span> <span class="o">=</span> <span class="s2">&quot;TO_CB&quot;</span>
+        <span class="k">if</span> <span class="n">vertical</span> <span class="o">&lt;=</span> <span class="n">current_vertical</span><span class="p">:</span>
+            <span class="n">dir_ver</span> <span class="o">=</span> <span class="s2">&quot;UP&quot;</span>
+
+
+        <span class="c1"># move to position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_hor</span><span class="o">.</span><span class="n">move_axis</span><span class="p">(</span><span class="n">dir_hor</span><span class="p">,</span> <span class="n">horizontal</span><span class="p">,</span> <span class="n">current_horizontal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MOVE_THRESHOLD_HOR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_hor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_HORIZONTAL&quot;</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_ver</span><span class="o">.</span><span class="n">move_axis</span><span class="p">(</span><span class="n">dir_ver</span><span class="p">,</span> <span class="n">vertical</span><span class="p">,</span> <span class="n">current_vertical</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MOVE_THRESHOLD_VER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_ver</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_VERTICAL&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># wait for end of each move</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_hor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_ver</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Moved crane to: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">horizontal</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">vertical</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">))</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

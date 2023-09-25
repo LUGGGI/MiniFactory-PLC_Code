@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rightline &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for rightline</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Right line for MiniFactory project for machines:</span>
+<span class="sd">Conveyor</span>
+<span class="sd">PunchMach</span>
+<span class="sd">Warehouse</span>
+<span class="sd">VacRobot</span>
+<span class="sd">GripRobot</span>
+<span class="sd">SortLine</span>
+<span class="sd">MPStation</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;st166506@stud.uni-stuttgart.de&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;GPL&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2023.09.21&quot;</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="kn">from</span> <span class="nn">logger</span> <span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">sensor</span> <span class="kn">import</span> <span class="n">Sensor</span>
+<span class="kn">from</span> <span class="nn">conveyor</span> <span class="kn">import</span> <span class="n">Conveyor</span>
+<span class="kn">from</span> <span class="nn">punch_mach</span> <span class="kn">import</span> <span class="n">PunchMach</span>
+<span class="kn">from</span> <span class="nn">mp_station</span> <span class="kn">import</span> <span class="n">MPStation</span>
+<span class="kn">from</span> <span class="nn">grip_robot</span> <span class="kn">import</span> <span class="n">GripRobot</span><span class="p">,</span> <span class="n">Position</span>
+<span class="kn">from</span> <span class="nn">vac_robot</span> <span class="kn">import</span> <span class="n">VacRobot</span>
+<span class="kn">from</span> <span class="nn">sort_line</span> <span class="kn">import</span> <span class="n">SortLine</span>
+<span class="kn">from</span> <span class="nn">warehouse</span> <span class="kn">import</span> <span class="n">Warehouse</span>
+<span class="kn">from</span> <span class="nn">mainline</span> <span class="kn">import</span> <span class="n">MainLine</span><span class="p">,</span> <span class="n">Status</span>
+<span class="kn">from</span> <span class="nn">setup</span> <span class="kn">import</span> <span class="n">Setup</span>
+
+<div class="viewcode-block" id="State">
+<a class="viewcode-back" href="../rightline.html#rightline.State">[docs]</a>
+<span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;NAME = [ID, Status, Used_by]&#39;&#39;&#39;</span>
+    <span class="n">INIT</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+
+    <span class="n">CB1</span> <span class="o">=</span> <span class="p">[</span><span class="mi">11</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">CB3_TO_WH</span> <span class="o">=</span> <span class="p">[</span><span class="mi">131</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">CB3_TO_CB4</span> <span class="o">=</span> <span class="p">[</span><span class="mi">132</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">CB4</span> <span class="o">=</span> <span class="p">[</span><span class="mi">14</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">CB5</span> <span class="o">=</span> <span class="p">[</span><span class="mi">15</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+
+    <span class="n">GR1</span> <span class="o">=</span> <span class="p">[</span><span class="mi">21</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">GR2_CB1_TO_CB3</span> <span class="o">=</span> <span class="p">[</span><span class="mi">221</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">GR2_CB1_TO_PM</span> <span class="o">=</span> <span class="p">[</span><span class="mi">222</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">GR2_PM_TO_CB3</span> <span class="o">=</span> <span class="p">[</span><span class="mi">223</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">GR3</span> <span class="o">=</span> <span class="p">[</span><span class="mi">23</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+
+    <span class="n">VG2</span> <span class="o">=</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+
+    <span class="n">MPS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">PM</span> <span class="o">=</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">SL</span> <span class="o">=</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">WH_STORE</span> <span class="o">=</span> <span class="p">[</span><span class="mi">81</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">WH_RETRIEVE</span> <span class="o">=</span> <span class="p">[</span><span class="mi">82</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+
+    <span class="n">WAITING</span> <span class="o">=</span> <span class="p">[</span><span class="mi">99</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">END</span> <span class="o">=</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">ERROR</span> <span class="o">=</span> <span class="p">[</span><span class="mi">999</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span>
+    <span class="n">TEST</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="RightLine">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine">[docs]</a>
+<span class="k">class</span> <span class="nc">RightLine</span><span class="p">(</span><span class="n">MainLine</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;State loop and functions for right Factory.</span>
+<span class="sd">    </span>
+<span class="sd">    Methodes:</span>
+<span class="sd">        run_...(): Calls the different modules.</span>
+<span class="sd">        mainloop(): Switches between machines.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        WAREHOUSE_CONTENT_FILE (str): File path to the file that saves the warehouse inventory.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">WAREHOUSE_CONTENT_FILE</span> <span class="o">=</span> <span class="s2">&quot;right_wh_content.json&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revpi</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Initializes MiniFactory control loop.&#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">revpi</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">State</span><span class="p">)</span>
+        
+        <span class="k">global</span> <span class="n">log</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="si">}</span><span class="s2">(Main)&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="o">.</span><span class="n">INIT</span>
+
+<div class="viewcode-block" id="RightLine.mainloop">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.mainloop">[docs]</a>
+    <span class="k">def</span> <span class="nf">mainloop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Switches the line states.&#39;&#39;&#39;</span>
+        <span class="c1"># if line is waiting for the next machine</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">waiting_for_state</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">TEST</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">():</span>
+                <span class="k">return</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">INIT</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_init</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">END</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_gr1</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">MPS</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">MPS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_mps</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB1</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">CB1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_cb1</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;with_PM&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_PM</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_CB3</span><span class="p">)</span> 
+        
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_PM</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_gr2</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">PM</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">PM</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_pm</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GR2_PM_TO_CB3</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_PM_TO_CB3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_gr2</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;with_WH&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_WH</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_CB4</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_CB3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_gr2</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;with_WH&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_WH</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_CB4</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_WH</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_cb3</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">WH_STORE</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">WH_STORE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_wh_store</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">WH_RETRIEVE</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">WH_RETRIEVE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_wh_retrieve</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_CB4</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_CB4</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_cb3</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB4</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">CB4</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_cb4</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GR3</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_gr3</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB5</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">CB5</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_cb5</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">SL</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">SL</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_sl</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">VG2</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">VG2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_vg2</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">END</span><span class="p">)</span></div>
+
+
+    <span class="c1">####################################################################################################</span>
+    <span class="c1"># Methods that control the different states for the</span>
+<div class="viewcode-block" id="RightLine.test">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.test">[docs]</a>
+    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_init">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_init">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_init</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">INIT</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">gr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;GR1&quot;</span><span class="p">,</span> <span class="s2">&quot;GR2&quot;</span><span class="p">,</span> <span class="s2">&quot;GR3&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="p">[</span><span class="n">gr</span><span class="p">]</span> <span class="o">=</span> <span class="n">GripRobot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="n">gr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="p">[</span><span class="n">gr</span><span class="p">]</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">vg</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;VG1&quot;</span><span class="p">,</span> <span class="s2">&quot;VG2&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="p">[</span><span class="n">vg</span><span class="p">]</span> <span class="o">=</span> <span class="n">VacRobot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="n">vg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="p">[</span><span class="n">vg</span><span class="p">]</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="p">[</span><span class="s2">&quot;WH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Warehouse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="s2">&quot;WH&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAREHOUSE_CONTENT_FILE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="p">[</span><span class="s2">&quot;WH&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">machines</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">INIT</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_cb1">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_cb1">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_cb1</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">cb</span><span class="p">:</span> <span class="n">Conveyor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;CB1&quot;</span><span class="p">,</span> <span class="n">Conveyor</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cb</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_SENS_END&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">end_conveyor</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="c1"># init GR2</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;end_at&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_CB3</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span> <span class="ow">or</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_CB3</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_gr2</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_cb3">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_cb3">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_cb3</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">cb</span><span class="p">:</span> <span class="n">Conveyor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;CB3&quot;</span><span class="p">,</span> <span class="n">Conveyor</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_WH</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">State</span><span class="o">.</span><span class="n">WH_STORE</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">name</span>
+                <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cb</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_SENS_END&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                <span class="n">cb</span><span class="o">.</span><span class="n">end_conveyor</span><span class="p">()</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="c1"># init wh</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;end_at&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">WH_STORE</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span> <span class="ow">or</span> <span class="n">State</span><span class="o">.</span><span class="n">WH_STORE</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_wh_store</span><span class="p">()</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_CB4</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">name</span>
+                <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cb</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_SENS_END&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="n">State</span><span class="o">.</span><span class="n">CB4</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+                <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="o">=</span><span class="s2">&quot;CB4_SENS_START&quot;</span><span class="p">,</span> <span class="n">end_machine</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span></div>
+
+        
+<div class="viewcode-block" id="RightLine.run_cb4">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_cb4">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_cb4</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">cb</span><span class="p">:</span> <span class="n">Conveyor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;CB4&quot;</span><span class="p">,</span> <span class="n">Conveyor</span><span class="p">)</span>         
+        
+        <span class="k">if</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cb</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_SENS_END&quot;</span><span class="p">,</span> <span class="n">stop_delay_in_ms</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">end_conveyor</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="c1"># init gr3</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;end_at&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GR3</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span> <span class="ow">or</span> <span class="n">State</span><span class="o">.</span><span class="n">GR3</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_gr3</span><span class="p">()</span></div>
+
+        
+<div class="viewcode-block" id="RightLine.run_cb5">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_cb5">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_cb5</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">cb</span><span class="p">:</span> <span class="n">Conveyor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;CB5&quot;</span><span class="p">,</span> <span class="n">Conveyor</span><span class="p">)</span>           
+        
+        <span class="k">if</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cb</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_SENS_END&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="n">State</span><span class="o">.</span><span class="n">SL</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="o">=</span><span class="s2">&quot;SL_CB_SENS_START&quot;</span><span class="p">,</span> <span class="n">end_machine</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_gr1">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_gr1">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_gr1</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">gr</span><span class="p">:</span> <span class="n">GripRobot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;GR1&quot;</span><span class="p">,</span> <span class="n">GripRobot</span><span class="p">,</span> <span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1100</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">State</span><span class="o">.</span><span class="n">MPS</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_mps</span><span class="p">()</span>
+
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># get product from plate</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">GRIPPER_OPENED</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">reset_claw</span><span class="p">()</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">2235</span><span class="p">,</span> <span class="mi">67</span><span class="p">,</span> <span class="mi">3450</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="c1"># grip product</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">grip</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">name</span>
+            <span class="c1"># move to mps</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">1365</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1700</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">MPS</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span> <span class="ow">or</span> <span class="n">State</span><span class="o">.</span><span class="n">MPS</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+            <span class="c1"># move to tray</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">33</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+            <span class="c1"># release product</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+            <span class="c1"># move back to init</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_gr2">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_gr2">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_gr2</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">gr</span><span class="p">:</span> <span class="n">GripRobot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;GR2&quot;</span><span class="p">,</span> <span class="n">GripRobot</span><span class="p">,</span> <span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1300</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+        <span class="c1"># move gr to cb1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">CB1</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_PM</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_CB3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># move to cb1 (6s)</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">reset_claw</span><span class="p">()</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">245</span><span class="p">,</span> <span class="mi">65</span><span class="p">,</span> <span class="mi">1600</span><span class="p">),</span> <span class="n">ignore_moving_pos</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># get product from cb1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_PM</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_CB3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                <span class="c1"># move down, grip product, move up</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">get_product</span><span class="p">(</span><span class="mi">2100</span><span class="p">,</span> <span class="n">sensor</span><span class="o">=</span><span class="s2">&quot;CB1_SENS_END&quot;</span><span class="p">)</span>
+
+        <span class="c1"># move product from cb1 to pm</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_PM</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">name</span>
+                <span class="c1"># move to cb2</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">3860</span><span class="p">,</span> <span class="mi">78</span><span class="p">,</span> <span class="mi">1500</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                <span class="c1"># move down</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1950</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+                <span class="c1"># release product</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+                <span class="c1"># move up and end_machine</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1300</span><span class="p">))</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">return</span>
+
+        <span class="c1"># move to pm if new gr</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">PM</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_PM_TO_CB3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># move to cb2</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">reset_claw</span><span class="p">()</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">3860</span><span class="p">,</span> <span class="mi">78</span><span class="p">,</span> <span class="mi">1300</span><span class="p">),</span> <span class="n">ignore_moving_pos</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># get product from pm</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_PM_TO_CB3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                <span class="c1"># move down, grip product, move up</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">get_product</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">sensor</span><span class="o">=</span><span class="s2">&quot;CB2_SENS_START&quot;</span><span class="p">)</span>
+
+        <span class="c1"># move product to cb3</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_CB1_TO_CB3</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_PM_TO_CB3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">name</span>
+                <span class="c1"># move to cb3</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">2305</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">1550</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="ow">and</span> <span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_WH</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;with_WH&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">State</span><span class="o">.</span><span class="n">WH_STORE</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="c1"># release product</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+                <span class="c1"># move back to init</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_gr3">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_gr3">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_gr3</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">gr</span><span class="p">:</span> <span class="n">GripRobot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;GR3&quot;</span><span class="p">,</span> <span class="n">GripRobot</span><span class="p">,</span> <span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1400</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># move to cb4</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">reset_claw</span><span class="p">()</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">450</span><span class="p">,</span> <span class="mi">43</span><span class="p">,</span> <span class="mi">1600</span><span class="p">),</span> <span class="n">ignore_moving_pos</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># if product ready get it</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">GR3</span><span class="p">:</span>
+            <span class="c1"># move down, grip product, move up</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">get_product</span><span class="p">(</span><span class="mi">1900</span><span class="p">,</span> <span class="n">sensor</span><span class="o">=</span><span class="s2">&quot;CB4_SENS_END&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">name</span>
+            <span class="c1"># move to cb5</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">1865</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1400</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="ow">and</span> <span class="n">State</span><span class="o">.</span><span class="n">CB5</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+            <span class="c1"># move down</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1800</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+            <span class="c1"># release product</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">gr</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+            <span class="c1"># move back to init</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+    
+<div class="viewcode-block" id="RightLine.run_vg2">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_vg2">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_vg2</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">vg</span><span class="p">:</span> <span class="n">VacRobot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;VG2&quot;</span><span class="p">,</span> <span class="n">VacRobot</span><span class="p">,</span> <span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">400</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;WHITE&quot;</span><span class="p">:</span>
+            <span class="c1"># move to white</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1450</span><span class="p">,</span> <span class="mi">1200</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;RED&quot;</span><span class="p">:</span>
+            <span class="c1"># move to red</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">142</span><span class="p">,</span> <span class="mi">1560</span><span class="p">,</span> <span class="mi">1200</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;BLUE&quot;</span><span class="p">:</span>
+            <span class="c1"># move to blue</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">1750</span><span class="p">,</span> <span class="mi">1200</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">VG2</span><span class="p">:</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">get_product</span><span class="p">(</span><span class="mi">1400</span><span class="p">,</span> <span class="n">sensor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SL_SENS_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">vg</span><span class="o">.</span><span class="n">name</span>
+            <span class="c1"># move to out</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="mi">1750</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="c1"># release product</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+            <span class="c1"># move back to init</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_pm">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_pm">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_pm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">pm</span><span class="p">:</span> <span class="n">PunchMach</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;PM&quot;</span><span class="p">,</span> <span class="n">PunchMach</span><span class="p">)</span>
+        <span class="n">cb</span><span class="p">:</span> <span class="n">Conveyor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;CB2&quot;</span><span class="p">,</span> <span class="n">Conveyor</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_status</span><span class="p">(</span><span class="s2">&quot;GR2&quot;</span><span class="p">,</span> <span class="n">Status</span><span class="o">.</span><span class="n">BLOCKED</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cb</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_SENS_END&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pm</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_SENS_IN&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">pm</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">out_stop_sensor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cb</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_SENS_END&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pm</span><span class="o">.</span><span class="n">ready_for_transport</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;BWD&quot;</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cb</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_SENS_START&quot;</span><span class="p">,</span> <span class="n">stop_delay_in_ms</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">cb</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pm</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="n">pm</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">end_conveyor</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="k">if</span> <span class="n">pm</span><span class="o">.</span><span class="n">ready_for_transport</span><span class="p">:</span>
+            <span class="c1"># init GR2</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;end_at&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GR2_PM_TO_CB3</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span> <span class="ow">or</span> <span class="n">State</span><span class="o">.</span><span class="n">GR2_PM_TO_CB3</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_gr2</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_mps">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_mps">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">mps</span><span class="p">:</span> <span class="n">MPStation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;MPS&quot;</span><span class="p">,</span> <span class="n">MPStation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">mps</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        
+        <span class="k">elif</span> <span class="n">mps</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">mps</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">with_oven</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;with_oven&quot;</span><span class="p">),</span> <span class="n">with_saw</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;with_saw&quot;</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">mps</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="n">State</span><span class="o">.</span><span class="n">CB1</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+            <span class="n">mps</span><span class="o">.</span><span class="n">run_to_out</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_sl">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_sl">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_sl</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">sl</span><span class="p">:</span> <span class="n">SortLine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;SL&quot;</span><span class="p">,</span> <span class="n">SortLine</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;end_at&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">sl</span><span class="o">.</span><span class="n">start_next_machine</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_vg2</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">sl</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">sl</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">sl</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="n">sl</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_wh_store">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_wh_store">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_wh_store</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">wh</span><span class="p">:</span> <span class="n">Warehouse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;WH&quot;</span><span class="p">,</span> <span class="n">Warehouse</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAREHOUSE_CONTENT_FILE</span><span class="p">)</span>
+        <span class="n">vg</span><span class="p">:</span> <span class="n">VacRobot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;VG1&quot;</span><span class="p">,</span> <span class="n">VacRobot</span><span class="p">,</span> <span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">wh</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">wh</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">for_store</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># move to cb3</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">97</span><span class="p">,</span> <span class="mi">815</span><span class="p">,</span> <span class="mi">950</span><span class="p">),</span> <span class="n">ignore_moving_pos</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">WH_STORE</span><span class="p">:</span>
+            <span class="c1"># move down, grip product, move up</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">get_product</span><span class="p">(</span><span class="mi">1250</span><span class="p">,</span> <span class="n">sensor</span><span class="o">=</span><span class="s2">&quot;CB3_SENS_END&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">vg</span><span class="o">.</span><span class="n">name</span>
+            <span class="c1"># move to wh</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">1775</span><span class="p">,</span> <span class="mi">1080</span><span class="p">,</span> <span class="mi">400</span><span class="p">))</span>
+
+        <span class="c1"># wait for warehouse to have a carrier</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="ow">and</span> <span class="n">wh</span><span class="o">.</span><span class="n">ready_for_product</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># move down a bit</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">700</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+            <span class="c1"># release product</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+            <span class="c1"># move up a bit</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">400</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">wh</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">wh</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">wh</span><span class="o">.</span><span class="n">store_product</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">])</span>
+
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;end_at&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">WH_STORE</span><span class="p">:</span>
+                <span class="n">vg</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">wh</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;end_at&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">State</span><span class="o">.</span><span class="n">WH_STORE</span><span class="p">:</span>
+                <span class="n">wh</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">vg</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wh</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">vg</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="RightLine.run_wh_retrieve">
+<a class="viewcode-back" href="../rightline.html#rightline.RightLine.run_wh_retrieve">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_wh_retrieve</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">wh</span><span class="p">:</span> <span class="n">Warehouse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;WH&quot;</span><span class="p">,</span> <span class="n">Warehouse</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAREHOUSE_CONTENT_FILE</span><span class="p">)</span>
+        <span class="n">vg</span><span class="p">:</span> <span class="n">VacRobot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_machine</span><span class="p">(</span><span class="s2">&quot;VG1&quot;</span><span class="p">,</span> <span class="n">VacRobot</span><span class="p">,</span> <span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">wh</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">wh</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">for_retrieve</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">wh</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">wh</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">wh</span><span class="o">.</span><span class="n">retrieve_product</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># move to wh if new vg1</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">1775</span><span class="p">,</span> <span class="mi">1080</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="n">ignore_moving_pos</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">wh</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="n">wh</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">3</span><span class="p">)):</span>
+            <span class="c1"># move down, grip product, move up</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">get_product</span><span class="p">(</span><span class="mi">700</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_at</span> <span class="o">=</span> <span class="n">vg</span><span class="o">.</span><span class="n">name</span>
+            <span class="c1"># move to cb3</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">815</span><span class="p">,</span> <span class="mi">950</span><span class="p">))</span>
+            <span class="n">wh</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="ow">and</span> <span class="n">State</span><span class="o">.</span><span class="n">CB3_TO_CB4</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FREE</span><span class="p">:</span>
+            <span class="c1"># move down</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">move_to_position</span><span class="p">(</span><span class="n">Position</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1150</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+            <span class="c1"># release product</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="s2">&quot;CB3_SENS_END&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">get_current_value</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">vg</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">vg</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Product still at WH, trying again&quot;</span><span class="p">)</span>
+                <span class="n">vg</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">vg</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">vg</span><span class="o">.</span><span class="n">is_position</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>        
+            <span class="c1"># move back to init</span>
+            <span class="n">vg</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">to_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">wh</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+        
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Start and run the factory</span>
+    <span class="n">setup</span> <span class="o">=</span> <span class="n">Setup</span><span class="p">(</span><span class="s2">&quot;right_config.json&quot;</span><span class="p">,</span> <span class="s2">&quot;states.json&quot;</span><span class="p">,</span> <span class="n">State</span><span class="p">,</span> <span class="n">RightLine</span><span class="p">)</span>
+    <span class="n">setup</span><span class="o">.</span><span class="n">run_factory</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

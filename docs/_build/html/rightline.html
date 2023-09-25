@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>rightline module &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="robot_3d module" href="robot_3d.html" />
+    <link rel="prev" title="punch_mach module" href="punch_mach.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-rightline">
+<span id="rightline-module"></span><h1>rightline module<a class="headerlink" href="#module-rightline" title="Link to this heading">¶</a></h1>
+<p>Right line for MiniFactory project for machines:
+Conveyor
+PunchMach
+Warehouse
+VacRobot
+GripRobot
+SortLine
+MPStation</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="rightline.RightLine">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">rightline.</span></span><span class="sig-name descname"><span class="pre">RightLine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/rightline.html#RightLine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="mainline.html#mainline.MainLine" title="mainline.MainLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">MainLine</span></code></a></p>
+<p>State loop and functions for right Factory.</p>
+<dl class="simple">
+<dt>Methodes:</dt><dd><p><a href="#id1"><span class="problematic" id="id2">run_</span></a>…(): Calls the different modules.
+mainloop(): Switches between machines.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.RightLine.WAREHOUSE_CONTENT_FILE">
+<span class="sig-name descname"><span class="pre">WAREHOUSE_CONTENT_FILE</span></span><a class="headerlink" href="#rightline.RightLine.WAREHOUSE_CONTENT_FILE" title="Link to this definition">¶</a></dt>
+<dd><p>File path to the file that saves the warehouse inventory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">WAREHOUSE_CONTENT_FILE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'right_wh_content.json'</span></em><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.mainloop">
+<span class="sig-name descname"><span class="pre">mainloop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/rightline.html#RightLine.mainloop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.mainloop" title="Link to this definition">¶</a></dt>
+<dd><p>Switches the line states.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_cb1">
+<span class="sig-name descname"><span class="pre">run_cb1</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_cb1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_cb1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_cb3">
+<span class="sig-name descname"><span class="pre">run_cb3</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_cb3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_cb3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_cb4">
+<span class="sig-name descname"><span class="pre">run_cb4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_cb4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_cb4" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_cb5">
+<span class="sig-name descname"><span class="pre">run_cb5</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_cb5"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_cb5" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_gr1">
+<span class="sig-name descname"><span class="pre">run_gr1</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_gr1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_gr1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_gr2">
+<span class="sig-name descname"><span class="pre">run_gr2</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_gr2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_gr2" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_gr3">
+<span class="sig-name descname"><span class="pre">run_gr3</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_gr3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_gr3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_init">
+<span class="sig-name descname"><span class="pre">run_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_init" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_mps">
+<span class="sig-name descname"><span class="pre">run_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_mps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_pm">
+<span class="sig-name descname"><span class="pre">run_pm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_pm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_pm" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_sl">
+<span class="sig-name descname"><span class="pre">run_sl</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_sl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_sl" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_vg2">
+<span class="sig-name descname"><span class="pre">run_vg2</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_vg2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_vg2" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_wh_retrieve">
+<span class="sig-name descname"><span class="pre">run_wh_retrieve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_wh_retrieve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_wh_retrieve" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.run_wh_store">
+<span class="sig-name descname"><span class="pre">run_wh_store</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.run_wh_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.run_wh_store" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="rightline.RightLine.test">
+<span class="sig-name descname"><span class="pre">test</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">False</span></span></span></span><a class="reference internal" href="_modules/rightline.html#RightLine.test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.RightLine.test" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="rightline.State">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">rightline.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/rightline.html#State"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#rightline.State" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>NAME = [ID, Status, Used_by]</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.CB1">
+<span class="sig-name descname"><span class="pre">CB1</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[11,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.CB1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.CB3_TO_CB4">
+<span class="sig-name descname"><span class="pre">CB3_TO_CB4</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[132,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.CB3_TO_CB4" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.CB3_TO_WH">
+<span class="sig-name descname"><span class="pre">CB3_TO_WH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[131,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.CB3_TO_WH" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.CB4">
+<span class="sig-name descname"><span class="pre">CB4</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[14,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.CB4" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.CB5">
+<span class="sig-name descname"><span class="pre">CB5</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[15,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.CB5" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.END">
+<span class="sig-name descname"><span class="pre">END</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[100,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.END" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.ERROR">
+<span class="sig-name descname"><span class="pre">ERROR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[999,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.ERROR" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.GR1">
+<span class="sig-name descname"><span class="pre">GR1</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[21,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.GR1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.GR2_CB1_TO_CB3">
+<span class="sig-name descname"><span class="pre">GR2_CB1_TO_CB3</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[221,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.GR2_CB1_TO_CB3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.GR2_CB1_TO_PM">
+<span class="sig-name descname"><span class="pre">GR2_CB1_TO_PM</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[222,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.GR2_CB1_TO_PM" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.GR2_PM_TO_CB3">
+<span class="sig-name descname"><span class="pre">GR2_PM_TO_CB3</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[223,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.GR2_PM_TO_CB3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.GR3">
+<span class="sig-name descname"><span class="pre">GR3</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[23,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.GR3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.INIT">
+<span class="sig-name descname"><span class="pre">INIT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[0,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.INIT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.MPS">
+<span class="sig-name descname"><span class="pre">MPS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[5,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.MPS" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.PM">
+<span class="sig-name descname"><span class="pre">PM</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[6,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.PM" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.SL">
+<span class="sig-name descname"><span class="pre">SL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[7,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.SL" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.TEST">
+<span class="sig-name descname"><span class="pre">TEST</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[1000,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.TEST" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.VG2">
+<span class="sig-name descname"><span class="pre">VG2</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[32,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.VG2" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.WAITING">
+<span class="sig-name descname"><span class="pre">WAITING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[99,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.WAITING" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.WH_RETRIEVE">
+<span class="sig-name descname"><span class="pre">WH_RETRIEVE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[82,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.WH_RETRIEVE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="rightline.State.WH_STORE">
+<span class="sig-name descname"><span class="pre">WH_STORE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[81,</span> <span class="pre">Status.FREE,</span> <span class="pre">'None']</span></em><a class="headerlink" href="#rightline.State.WH_STORE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">rightline module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#rightline.RightLine"><code class="docutils literal notranslate"><span class="pre">RightLine</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.WAREHOUSE_CONTENT_FILE"><code class="docutils literal notranslate"><span class="pre">RightLine.WAREHOUSE_CONTENT_FILE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">RightLine.WAREHOUSE_CONTENT_FILE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.mainloop"><code class="docutils literal notranslate"><span class="pre">RightLine.mainloop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_cb1"><code class="docutils literal notranslate"><span class="pre">RightLine.run_cb1()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_cb3"><code class="docutils literal notranslate"><span class="pre">RightLine.run_cb3()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_cb4"><code class="docutils literal notranslate"><span class="pre">RightLine.run_cb4()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_cb5"><code class="docutils literal notranslate"><span class="pre">RightLine.run_cb5()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_gr1"><code class="docutils literal notranslate"><span class="pre">RightLine.run_gr1()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_gr2"><code class="docutils literal notranslate"><span class="pre">RightLine.run_gr2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_gr3"><code class="docutils literal notranslate"><span class="pre">RightLine.run_gr3()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_init"><code class="docutils literal notranslate"><span class="pre">RightLine.run_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_mps"><code class="docutils literal notranslate"><span class="pre">RightLine.run_mps()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_pm"><code class="docutils literal notranslate"><span class="pre">RightLine.run_pm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_sl"><code class="docutils literal notranslate"><span class="pre">RightLine.run_sl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_vg2"><code class="docutils literal notranslate"><span class="pre">RightLine.run_vg2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_wh_retrieve"><code class="docutils literal notranslate"><span class="pre">RightLine.run_wh_retrieve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.run_wh_store"><code class="docutils literal notranslate"><span class="pre">RightLine.run_wh_store()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.RightLine.test"><code class="docutils literal notranslate"><span class="pre">RightLine.test()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#rightline.State"><code class="docutils literal notranslate"><span class="pre">State</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.CB1"><code class="docutils literal notranslate"><span class="pre">State.CB1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.CB3_TO_CB4"><code class="docutils literal notranslate"><span class="pre">State.CB3_TO_CB4</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.CB3_TO_WH"><code class="docutils literal notranslate"><span class="pre">State.CB3_TO_WH</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.CB4"><code class="docutils literal notranslate"><span class="pre">State.CB4</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.CB5"><code class="docutils literal notranslate"><span class="pre">State.CB5</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.END"><code class="docutils literal notranslate"><span class="pre">State.END</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.ERROR"><code class="docutils literal notranslate"><span class="pre">State.ERROR</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.GR1"><code class="docutils literal notranslate"><span class="pre">State.GR1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.GR2_CB1_TO_CB3"><code class="docutils literal notranslate"><span class="pre">State.GR2_CB1_TO_CB3</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.GR2_CB1_TO_PM"><code class="docutils literal notranslate"><span class="pre">State.GR2_CB1_TO_PM</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.GR2_PM_TO_CB3"><code class="docutils literal notranslate"><span class="pre">State.GR2_PM_TO_CB3</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.GR3"><code class="docutils literal notranslate"><span class="pre">State.GR3</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.INIT"><code class="docutils literal notranslate"><span class="pre">State.INIT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.MPS"><code class="docutils literal notranslate"><span class="pre">State.MPS</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.PM"><code class="docutils literal notranslate"><span class="pre">State.PM</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.SL"><code class="docutils literal notranslate"><span class="pre">State.SL</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.TEST"><code class="docutils literal notranslate"><span class="pre">State.TEST</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.VG2"><code class="docutils literal notranslate"><span class="pre">State.VG2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.WAITING"><code class="docutils literal notranslate"><span class="pre">State.WAITING</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.WH_RETRIEVE"><code class="docutils literal notranslate"><span class="pre">State.WH_RETRIEVE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rightline.State.WH_STORE"><code class="docutils literal notranslate"><span class="pre">State.WH_STORE</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="punch_mach.html" title="previous chapter">punch_mach module</a></li>
+      <li>Next: <a href="robot_3d.html" title="next chapter">robot_3d module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/rightline.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

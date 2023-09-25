@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>vac_robot module &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="warehouse module" href="warehouse.html" />
+    <link rel="prev" title="sort_line module" href="sort_line.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-vac_robot">
+<span id="vac-robot-module"></span><h1>vac_robot module<a class="headerlink" href="#module-vac_robot" title="Link to this heading">¶</a></h1>
+<p>This module controls the Vacuum Robot, it inherits from Robot3D</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="vac_robot.VacRobot">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">vac_robot.</span></span><span class="sig-name descname"><span class="pre">VacRobot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moving_position=&lt;robot_3d.Position</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vac_robot.html#VacRobot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vac_robot.VacRobot" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="robot_3d.html#robot_3d.Robot3D" title="robot_3d.Robot3D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Robot3D</span></code></a></p>
+<p>Controls the Vacuum Robot</p>
+<dl class="simple">
+<dt>Methodes:</dt><dd><p>grip(): Grip Product.
+release(): Release Product.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="vac_robot.VacRobot.__compressor">
+<span class="sig-name descname"><span class="pre">__compressor</span></span><a class="headerlink" href="#vac_robot.VacRobot.__compressor" title="Link to this definition">¶</a></dt>
+<dd><p>Compressor for vacuum gripper.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="actuator.html#actuator.Actuator" title="actuator.Actuator">Actuator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="vac_robot.VacRobot.__valve">
+<span class="sig-name descname"><span class="pre">__valve</span></span><a class="headerlink" href="#vac_robot.VacRobot.__valve" title="Link to this definition">¶</a></dt>
+<dd><p>valve for vacuum gripper.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="actuator.html#actuator.Actuator" title="actuator.Actuator">Actuator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="vac_robot.VacRobot.grip">
+<span class="sig-name descname"><span class="pre">grip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vac_robot.html#VacRobot.grip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vac_robot.VacRobot.grip" title="Link to this definition">¶</a></dt>
+<dd><p>Grip Product.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="vac_robot.VacRobot.release">
+<span class="sig-name descname"><span class="pre">release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vac_robot.html#VacRobot.release"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vac_robot.VacRobot.release" title="Link to this definition">¶</a></dt>
+<dd><p>Release product.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">vac_robot module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#vac_robot.VacRobot"><code class="docutils literal notranslate"><span class="pre">VacRobot</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vac_robot.VacRobot.__compressor"><code class="docutils literal notranslate"><span class="pre">VacRobot.__compressor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vac_robot.VacRobot.__valve"><code class="docutils literal notranslate"><span class="pre">VacRobot.__valve</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vac_robot.VacRobot.grip"><code class="docutils literal notranslate"><span class="pre">VacRobot.grip()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vac_robot.VacRobot.release"><code class="docutils literal notranslate"><span class="pre">VacRobot.release()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="sort_line.html" title="previous chapter">sort_line module</a></li>
+      <li>Next: <a href="warehouse.html" title="next chapter">warehouse module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/vac_robot.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

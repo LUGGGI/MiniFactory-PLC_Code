@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>robot_3d module &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="sensor module" href="sensor.html" />
+    <link rel="prev" title="rightline module" href="rightline.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-robot_3d">
+<span id="robot-3d-module"></span><h1>robot_3d module<a class="headerlink" href="#module-robot_3d" title="Link to this heading">¶</a></h1>
+<p>This module controls the 3D Robots, it inherits from Machine</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="robot_3d.GetProductError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">robot_3d.</span></span><span class="sig-name descname"><span class="pre">GetProductError</span></span><a class="reference internal" href="_modules/robot_3d.html#GetProductError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.GetProductError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SystemError</span></code></p>
+<p>Robot could not grip Product.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="robot_3d.Position">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">robot_3d.</span></span><span class="sig-name descname"><span class="pre">Position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rotation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizontal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertical</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/robot_3d.html#Position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.Position" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Holds a int value for each axis.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Position.rotation">
+<span class="sig-name descname"><span class="pre">rotation</span></span><a class="headerlink" href="#robot_3d.Position.rotation" title="Link to this definition">¶</a></dt>
+<dd><p>Rotation position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Position.horizontal">
+<span class="sig-name descname"><span class="pre">horizontal</span></span><a class="headerlink" href="#robot_3d.Position.horizontal" title="Link to this definition">¶</a></dt>
+<dd><p>Horizontal position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Position.vertical">
+<span class="sig-name descname"><span class="pre">vertical</span></span><a class="headerlink" href="#robot_3d.Position.vertical" title="Link to this definition">¶</a></dt>
+<dd><p>Vertical position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="robot_3d.Robot3D">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">robot_3d.</span></span><span class="sig-name descname"><span class="pre">Robot3D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moving_position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#robot_3d.Position" title="robot_3d.Position"><span class="pre">Position</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/robot_3d.html#Robot3D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.Robot3D" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="machine.html#machine.Machine" title="machine.Machine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Machine</span></code></a></p>
+<p>Controls the 3D Robot.</p>
+<dl class="simple">
+<dt>Methodes:</dt><dd><p>init(): Move to init position.
+move_to_position(): Moves to given position.
+move_all_axes(): Makes linear move to give position.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__MOVE_THRESHOLD_ROT">
+<span class="sig-name descname"><span class="pre">__MOVE_THRESHOLD_ROT</span></span><a class="headerlink" href="#robot_3d.Robot3D.__MOVE_THRESHOLD_ROT" title="Link to this definition">¶</a></dt>
+<dd><p>Only moves the rotation axis if movement is more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__MOVE_THRESHOLD_HOR">
+<span class="sig-name descname"><span class="pre">__MOVE_THRESHOLD_HOR</span></span><a class="headerlink" href="#robot_3d.Robot3D.__MOVE_THRESHOLD_HOR" title="Link to this definition">¶</a></dt>
+<dd><p>Only moves the horizontal axis if movement is more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__MOVE_THRESHOLD_VER">
+<span class="sig-name descname"><span class="pre">__MOVE_THRESHOLD_VER</span></span><a class="headerlink" href="#robot_3d.Robot3D.__MOVE_THRESHOLD_VER" title="Link to this definition">¶</a></dt>
+<dd><p>Only moves the vertical axis if movement is more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__MAX_PICKUP_TRIES">
+<span class="sig-name descname"><span class="pre">__MAX_PICKUP_TRIES</span></span><a class="headerlink" href="#robot_3d.Robot3D.__MAX_PICKUP_TRIES" title="Link to this definition">¶</a></dt>
+<dd><p>Max tries the robot can use to pickup a product.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__moving_position">
+<span class="sig-name descname"><span class="pre">__moving_position</span></span><a class="headerlink" href="#robot_3d.Robot3D.__moving_position" title="Link to this definition">¶</a></dt>
+<dd><p>Position where the axes should be to allow save moving.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#robot_3d.Position" title="robot_3d.Position">Position</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__encoder_rot">
+<span class="sig-name descname"><span class="pre">__encoder_rot</span></span><a class="headerlink" href="#robot_3d.Robot3D.__encoder_rot" title="Link to this definition">¶</a></dt>
+<dd><p>Encoder for rotation axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor">Sensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__encoder_hor">
+<span class="sig-name descname"><span class="pre">__encoder_hor</span></span><a class="headerlink" href="#robot_3d.Robot3D.__encoder_hor" title="Link to this definition">¶</a></dt>
+<dd><p>Encoder for horizontal axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor">Sensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__encoder_ver">
+<span class="sig-name descname"><span class="pre">__encoder_ver</span></span><a class="headerlink" href="#robot_3d.Robot3D.__encoder_ver" title="Link to this definition">¶</a></dt>
+<dd><p>Encoder for vertical axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor">Sensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.pwm_rot">
+<span class="sig-name descname"><span class="pre">pwm_rot</span></span><a class="headerlink" href="#robot_3d.Robot3D.pwm_rot" title="Link to this definition">¶</a></dt>
+<dd><p>PWM name for rotation axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.pwm_hor">
+<span class="sig-name descname"><span class="pre">pwm_hor</span></span><a class="headerlink" href="#robot_3d.Robot3D.pwm_hor" title="Link to this definition">¶</a></dt>
+<dd><p>PWM name for horizontal axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.pwm_ver">
+<span class="sig-name descname"><span class="pre">pwm_ver</span></span><a class="headerlink" href="#robot_3d.Robot3D.pwm_ver" title="Link to this definition">¶</a></dt>
+<dd><p>PWM name for vertical axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__motor_rot">
+<span class="sig-name descname"><span class="pre">__motor_rot</span></span><a class="headerlink" href="#robot_3d.Robot3D.__motor_rot" title="Link to this definition">¶</a></dt>
+<dd><p>Motor for rotation axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="actuator.html#actuator.Actuator" title="actuator.Actuator">Actuator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__motor_hor">
+<span class="sig-name descname"><span class="pre">__motor_hor</span></span><a class="headerlink" href="#robot_3d.Robot3D.__motor_hor" title="Link to this definition">¶</a></dt>
+<dd><p>Motor for horizontal axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="actuator.html#actuator.Actuator" title="actuator.Actuator">Actuator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.__motor_ver">
+<span class="sig-name descname"><span class="pre">__motor_ver</span></span><a class="headerlink" href="#robot_3d.Robot3D.__motor_ver" title="Link to this definition">¶</a></dt>
+<dd><p>Motor for vertical axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="actuator.html#actuator.Actuator" title="actuator.Actuator">Actuator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.get_product">
+<span class="sig-name descname"><span class="pre">get_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertical_position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/robot_3d.html#Robot3D.get_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.Robot3D.get_product" title="Link to this definition">¶</a></dt>
+<dd><p>Moves to position without moving position, grips product and moves back up to original position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vertical_position</strong> (<em>int</em>) – Vertical value to move to to grip.</p></li>
+<li><p><strong>sensor</strong> (<em>str</em>) – Sensor that will be checked for detection while moving up.</p></li>
+<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.grip">
+<span class="sig-name descname"><span class="pre">grip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/robot_3d.html#Robot3D.grip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.Robot3D.grip" title="Link to this definition">¶</a></dt>
+<dd><p>Grip product. Abstract function, see subclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">to_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/robot_3d.html#Robot3D.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.Robot3D.init" title="Link to this definition">¶</a></dt>
+<dd><p>Move to init position.
+:param to_end: If True ends machine after completion of init.
+:type to_end: bool
+:param as_thread: Runs the function as a thread.
+:type as_thread: bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.move_to_position">
+<span class="sig-name descname"><span class="pre">move_to_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#robot_3d.Position" title="robot_3d.Position"><span class="pre">Position</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_moving_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="k"><span class="pre">True</span></span></span></span><a class="reference internal" href="_modules/robot_3d.html#Robot3D.move_to_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.Robot3D.move_to_position" title="Link to this definition">¶</a></dt>
+<dd><p>Moves Robot to given position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>position</strong> (<a class="reference internal" href="#robot_3d.Position" title="robot_3d.Position"><em>Position</em></a>) – to move to (rotation, horizontal, vertical): int.</p></li>
+<li><p><strong>ignore_moving_pos</strong> (<em>bool</em>) – If True robot won’t move to moving Position.</p></li>
+<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.release">
+<span class="sig-name descname"><span class="pre">release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/robot_3d.html#Robot3D.release"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.Robot3D.release" title="Link to this definition">¶</a></dt>
+<dd><p>Release product. Abstract function, see subclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="robot_3d.Robot3D.reset_claw">
+<span class="sig-name descname"><span class="pre">reset_claw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/robot_3d.html#Robot3D.reset_claw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.Robot3D.reset_claw" title="Link to this definition">¶</a></dt>
+<dd><p>Reset gripper. Abstract function, see subclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="robot_3d.State">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">robot_3d.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/robot_3d.html#State"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#robot_3d.State" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.State.END">
+<span class="sig-name descname"><span class="pre">END</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></em><a class="headerlink" href="#robot_3d.State.END" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.State.ERROR">
+<span class="sig-name descname"><span class="pre">ERROR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">999</span></em><a class="headerlink" href="#robot_3d.State.ERROR" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.State.GET_PRODUCT">
+<span class="sig-name descname"><span class="pre">GET_PRODUCT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#robot_3d.State.GET_PRODUCT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.State.GRIPPING">
+<span class="sig-name descname"><span class="pre">GRIPPING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#robot_3d.State.GRIPPING" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.State.INIT">
+<span class="sig-name descname"><span class="pre">INIT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#robot_3d.State.INIT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.State.MOVING">
+<span class="sig-name descname"><span class="pre">MOVING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#robot_3d.State.MOVING" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.State.RELEASE">
+<span class="sig-name descname"><span class="pre">RELEASE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#robot_3d.State.RELEASE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.State.TO_DESTINATION">
+<span class="sig-name descname"><span class="pre">TO_DESTINATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#robot_3d.State.TO_DESTINATION" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="robot_3d.State.TO_MOVING_POS">
+<span class="sig-name descname"><span class="pre">TO_MOVING_POS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#robot_3d.State.TO_MOVING_POS" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">robot_3d module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#robot_3d.GetProductError"><code class="docutils literal notranslate"><span class="pre">GetProductError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#robot_3d.Position"><code class="docutils literal notranslate"><span class="pre">Position</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Position.rotation"><code class="docutils literal notranslate"><span class="pre">Position.rotation</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Position.horizontal"><code class="docutils literal notranslate"><span class="pre">Position.horizontal</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Position.vertical"><code class="docutils literal notranslate"><span class="pre">Position.vertical</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#robot_3d.Robot3D"><code class="docutils literal notranslate"><span class="pre">Robot3D</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__MOVE_THRESHOLD_ROT"><code class="docutils literal notranslate"><span class="pre">Robot3D.__MOVE_THRESHOLD_ROT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__MOVE_THRESHOLD_HOR"><code class="docutils literal notranslate"><span class="pre">Robot3D.__MOVE_THRESHOLD_HOR</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__MOVE_THRESHOLD_VER"><code class="docutils literal notranslate"><span class="pre">Robot3D.__MOVE_THRESHOLD_VER</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__MAX_PICKUP_TRIES"><code class="docutils literal notranslate"><span class="pre">Robot3D.__MAX_PICKUP_TRIES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__moving_position"><code class="docutils literal notranslate"><span class="pre">Robot3D.__moving_position</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__encoder_rot"><code class="docutils literal notranslate"><span class="pre">Robot3D.__encoder_rot</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__encoder_hor"><code class="docutils literal notranslate"><span class="pre">Robot3D.__encoder_hor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__encoder_ver"><code class="docutils literal notranslate"><span class="pre">Robot3D.__encoder_ver</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.pwm_rot"><code class="docutils literal notranslate"><span class="pre">Robot3D.pwm_rot</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.pwm_hor"><code class="docutils literal notranslate"><span class="pre">Robot3D.pwm_hor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.pwm_ver"><code class="docutils literal notranslate"><span class="pre">Robot3D.pwm_ver</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__motor_rot"><code class="docutils literal notranslate"><span class="pre">Robot3D.__motor_rot</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__motor_hor"><code class="docutils literal notranslate"><span class="pre">Robot3D.__motor_hor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.__motor_ver"><code class="docutils literal notranslate"><span class="pre">Robot3D.__motor_ver</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.get_product"><code class="docutils literal notranslate"><span class="pre">Robot3D.get_product()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.grip"><code class="docutils literal notranslate"><span class="pre">Robot3D.grip()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.init"><code class="docutils literal notranslate"><span class="pre">Robot3D.init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.move_to_position"><code class="docutils literal notranslate"><span class="pre">Robot3D.move_to_position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.release"><code class="docutils literal notranslate"><span class="pre">Robot3D.release()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.Robot3D.reset_claw"><code class="docutils literal notranslate"><span class="pre">Robot3D.reset_claw()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#robot_3d.State"><code class="docutils literal notranslate"><span class="pre">State</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.State.END"><code class="docutils literal notranslate"><span class="pre">State.END</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.State.ERROR"><code class="docutils literal notranslate"><span class="pre">State.ERROR</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.State.GET_PRODUCT"><code class="docutils literal notranslate"><span class="pre">State.GET_PRODUCT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.State.GRIPPING"><code class="docutils literal notranslate"><span class="pre">State.GRIPPING</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.State.INIT"><code class="docutils literal notranslate"><span class="pre">State.INIT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.State.MOVING"><code class="docutils literal notranslate"><span class="pre">State.MOVING</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.State.RELEASE"><code class="docutils literal notranslate"><span class="pre">State.RELEASE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.State.TO_DESTINATION"><code class="docutils literal notranslate"><span class="pre">State.TO_DESTINATION</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot_3d.State.TO_MOVING_POS"><code class="docutils literal notranslate"><span class="pre">State.TO_MOVING_POS</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="rightline.html" title="previous chapter">rightline module</a></li>
+      <li>Next: <a href="sensor.html" title="next chapter">sensor module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/robot_3d.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

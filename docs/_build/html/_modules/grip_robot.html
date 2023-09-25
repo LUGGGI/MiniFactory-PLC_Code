@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>grip_robot &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for grip_robot</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;This module controls the Gripper Robots, it inherits from Robot3D&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;st166506@stud.uni-stuttgart.de&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;GPL&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2023.09.15&quot;</span>
+
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">from</span> <span class="nn">logger</span> <span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">sensor</span> <span class="kn">import</span> <span class="n">Sensor</span><span class="p">,</span> <span class="n">SensorType</span>
+<span class="kn">from</span> <span class="nn">actuator</span> <span class="kn">import</span> <span class="n">Actuator</span><span class="p">,</span> <span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span>
+<span class="kn">from</span> <span class="nn">robot_3d</span> <span class="kn">import</span> <span class="n">Robot3D</span><span class="p">,</span> <span class="n">Position</span><span class="p">,</span> <span class="n">State</span>
+
+
+<div class="viewcode-block" id="GripRobot">
+<a class="viewcode-back" href="../grip_robot.html#grip_robot.GripRobot">[docs]</a>
+<span class="k">class</span> <span class="nc">GripRobot</span><span class="p">(</span><span class="n">Robot3D</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Controls the Gripper Robot.</span>
+<span class="sd">    </span>
+<span class="sd">    Methodes:</span>
+<span class="sd">        grip(): Grip Product.</span>
+<span class="sd">        release(): Release Product.</span>
+<span class="sd">        reset_claw(): Reset claw to init position.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        GRIPPER_CLOSED (int): Value at which the gripper is closed.</span>
+<span class="sd">        GRIPPER_OPENED (int): Value at which the gripper is opened.</span>
+<span class="sd">        __encoder_claw (Sensor): Encoder (counter) for claw.</span>
+<span class="sd">        __motor_claw (Actuator): Motor for claw.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">line_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">moving_position</span><span class="p">:</span> <span class="n">Position</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Initializes the Gripper Robot.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
+<span class="sd">            name: Exact name of the machine in PiCtory (everything bevor first &#39;_&#39;).</span>
+<span class="sd">            line_name: Name of current line.</span>
+<span class="sd">            moving_position (Position): Position at which the axes should be to allow save moving.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">line_name</span><span class="p">,</span> <span class="n">moving_position</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GRIPPER_CLOSED</span> <span class="o">=</span> <span class="mi">13</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GRIPPER_OPENED</span> <span class="o">=</span> <span class="mi">9</span>
+        
+        <span class="k">global</span> <span class="n">log</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="si">}</span><span class="s2">(Grip)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># change encoder to counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_Robot3D__encoder_hor</span> <span class="o">=</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_HORIZONTAL_COUNTER&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="n">SensorType</span><span class="o">.</span><span class="n">COUNTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_Robot3D__MOVE_THRESHOLD_HOR</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="c1"># get encoder and motor for claw</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_claw</span> <span class="o">=</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_CLAW_COUNTER&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="n">SensorType</span><span class="o">.</span><span class="n">COUNTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__motor_claw</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;claw&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="GripRobot.grip">
+<a class="viewcode-back" href="../grip_robot.html#grip_robot.GripRobot.grip">[docs]</a>
+    <span class="k">def</span> <span class="nf">grip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Grip Product.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">as_thread</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grip</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="kc">False</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">GRIPPING</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_claw</span><span class="o">.</span><span class="n">run_to_encoder_value</span><span class="p">(</span><span class="s2">&quot;CLOSE&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_claw</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GRIPPER_CLOSED</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="p">(</span><span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="GripRobot.release">
+<a class="viewcode-back" href="../grip_robot.html#grip_robot.GripRobot.release">[docs]</a>
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Release product.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">as_thread</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">release</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="kc">False</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">RELEASE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_claw</span><span class="o">.</span><span class="n">run_to_encoder_value</span><span class="p">(</span><span class="s2">&quot;OPEN&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_claw</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GRIPPER_OPENED</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="p">(</span><span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="GripRobot.reset_claw">
+<a class="viewcode-back" href="../grip_robot.html#grip_robot.GripRobot.reset_claw">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_claw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Reset claw to init position.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">as_thread</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reset_claw</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="kc">False</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_claw</span><span class="o">.</span><span class="n">run_to_encoder_start</span><span class="p">(</span><span class="s2">&quot;OPEN&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_CLAW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_claw</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__motor_claw</span><span class="o">.</span><span class="n">run_to_encoder_value</span><span class="p">(</span><span class="s2">&quot;CLOSE&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__encoder_claw</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GRIPPER_OPENED</span><span class="p">)</span>
+        
+        <span class="k">except</span> <span class="p">(</span><span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">EncoderOverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

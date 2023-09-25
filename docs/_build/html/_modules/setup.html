@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>setup &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for setup</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Factory setup for MiniFactory project</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;st166506@stud.uni-stuttgart.de&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;GPL&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2023.09.15&quot;</span>
+
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span><span class="p">,</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">revpimodio2</span> <span class="kn">import</span> <span class="n">RevPiModIO</span>
+
+<span class="kn">from</span> <span class="nn">exit_handler</span> <span class="kn">import</span> <span class="n">ExitHandler</span>
+<span class="kn">from</span> <span class="nn">io_interface</span> <span class="kn">import</span> <span class="n">IOInterface</span>
+<span class="kn">from</span> <span class="nn">logger</span> <span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">mainline</span> <span class="kn">import</span> <span class="n">MainLine</span>
+
+
+<div class="viewcode-block" id="Setup">
+<a class="viewcode-back" href="../setup.html#setup.Setup">[docs]</a>
+<span class="k">class</span> <span class="nc">Setup</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Setup for Factory.</span>
+<span class="sd">    </span>
+<span class="sd">    Methodes:</span>
+<span class="sd">        run_factory(): Starts the factory, adds and updates the lines.</span>
+<span class="sd">        __update_factory(): Updates the factory and starts every line.</span>
+<span class="sd">        __save_status(): Puts the states, factory status and line status into output.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        LOOP_TIME (int): How often a new iteration is started (in seconds).</span>
+<span class="sd">        revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
+<span class="sd">        states (State): All possible States of the line.</span>
+<span class="sd">        line_class (Mainline): Class of the current line.</span>
+<span class="sd">        exception (bool): True if exception in factory.</span>
+<span class="sd">        loop_start_time (float): Current loop start time.</span>
+<span class="sd">        last_config_update_time (float): Time of last config update.</span>
+<span class="sd">        lines (dict): All Line objects currently active.</span>
+<span class="sd">        exit_handler (ExitHandler): Object for Exit Handler.</span>
+<span class="sd">        io_interface (IOInterface): Object for IO Interface.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">LOOP_TIME</span> <span class="o">=</span> <span class="mf">0.02</span> <span class="c1"># in seconds</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">states</span><span class="p">,</span> <span class="n">line_class</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Init setup and setup of RevpiModIO.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            input_file (str): Config json file path where the lines are configured.</span>
+<span class="sd">            output_file (str): Json file path where the states are logged.</span>
+<span class="sd">            states (State): All possible States of the line.</span>
+<span class="sd">            line_class (Mainline): Class of the current line.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># setup RevpiModIO</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">revpi</span> <span class="o">=</span> <span class="n">RevPiModIO</span><span class="p">(</span><span class="n">autorefresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="c1"># load simulation if not connected to factory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">revpi</span> <span class="o">=</span> <span class="n">RevPiModIO</span><span class="p">(</span><span class="n">autorefresh</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">configrsc</span><span class="o">=</span><span class="s2">&quot;../RevPi/RevPi82247.rsc&quot;</span><span class="p">,</span> <span class="n">procimg</span><span class="o">=</span><span class="s2">&quot;../RevPi/RevPi82247.img&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="o">.</span><span class="n">mainloop</span><span class="p">(</span><span class="n">blocking</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="n">states</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">line_class</span> <span class="o">=</span> <span class="n">line_class</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loop_start_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_config_update_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exit_handler</span> <span class="o">=</span> <span class="n">ExitHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span> <span class="o">=</span> <span class="n">IOInterface</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">states</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Setup.run_factory">
+<a class="viewcode-back" href="../setup.html#setup.Setup.run_factory">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Starts the factory, adds and updates the lines.&#39;&#39;&#39;</span>
+
+        <span class="k">while</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loop_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># update the config</span>
+                <span class="k">if</span> <span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_config_update_time</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">update_configs_with_input</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">last_config_update_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+
+                    <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">new_configs</span><span class="p">:</span>
+                        <span class="c1"># add line if it doesn&#39;t exists</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;run&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                                <span class="k">continue</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+                            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Added new line: </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="c1"># update config in existing line</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+                            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated line: </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">new_configs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            
+                <span class="bp">self</span><span class="o">.</span><span class="n">__update_factory</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># save Status of factory and every running machine</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__save_status</span><span class="p">()</span>
+            
+            <span class="c1"># exit the factory if error occurred or end has ben reached</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exception</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">factory_end</span><span class="p">:</span>
+                <span class="k">break</span>
+
+
+            <span class="c1"># wait the remaining runtime</span>
+            <span class="n">loop_run_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">loop_start_time</span>
+            <span class="k">if</span> <span class="n">loop_run_time</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">LOOP_TIME</span><span class="p">:</span>
+                <span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">LOOP_TIME</span> <span class="o">-</span> <span class="n">loop_run_time</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Long Loop run time: </span><span class="si">{</span><span class="p">(</span><span class="n">loop_run_time</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span><span class="o">.</span><span class="fm">__round__</span><span class="p">()</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s2">&quot;End of program&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">__update_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Updates the factory and starts every line.&#39;&#39;&#39;</span>
+        <span class="c1"># check for error in lines</span>
+        <span class="n">line</span><span class="p">:</span> <span class="n">MainLine</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="c1"># end the line</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">end_machine</span> <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;run&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stop: </span><span class="si">{</span><span class="n">line</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">problem_in_machine</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">factory_run</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="n">line</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">END</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Problem in line </span><span class="si">{</span><span class="n">line</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">factory_run</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="c1"># handel exception in line</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">error_exception_in_machine</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in line </span><span class="si">{</span><span class="n">line</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exit_handler</span><span class="o">.</span><span class="n">stop_factory</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+            
+            <span class="c1"># run an iteration if the line</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">running</span><span class="p">:</span>
+                <span class="n">line</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">factory_run</span><span class="p">)</span>
+            <span class="c1"># start the line</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;run&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Init&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Init&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">running</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Start: </span><span class="si">{</span><span class="n">line</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">line</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;start_at&quot;</span><span class="p">],</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="n">line</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">line</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">factory_run</span><span class="p">)</span>
+
+        <span class="c1"># end all lines if error occurred</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_handler</span><span class="o">.</span><span class="n">was_called</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">exception</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ending line: </span><span class="si">{</span><span class="n">line</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">line</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">__save_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Puts the states, factory status and line status into output.&#39;&#39;&#39;</span>
+
+        <span class="n">main_states</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">factory_status</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># get the line states</span>
+        <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">:</span>
+            <span class="n">main_states</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+        <span class="c1"># get factory status</span>
+        <span class="n">factory_status</span><span class="p">[</span><span class="s2">&quot;running&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">factory_run</span>
+        <span class="n">factory_status</span><span class="p">[</span><span class="s2">&quot;exit_if_end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">factory_end</span>
+        
+        <span class="c1"># get the status dictionaries of all machines in all active lines</span>
+        <span class="n">line</span><span class="p">:</span> <span class="n">MainLine</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;run&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">dictionary</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="n">line</span><span class="o">.</span><span class="n">status_dict</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">machine</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">machines</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">dictionary</span><span class="p">[</span><span class="n">machine</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">machine</span><span class="o">.</span><span class="n">get_status_dict</span><span class="p">()</span>
+            <span class="n">lines</span><span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">dictionary</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">io_interface</span><span class="o">.</span><span class="n">update_output</span><span class="p">(</span><span class="n">main_states</span><span class="p">,</span> <span class="n">factory_status</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>warehouse module &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="vac_robot module" href="vac_robot.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-warehouse">
+<span id="warehouse-module"></span><h1>warehouse module<a class="headerlink" href="#module-warehouse" title="Link to this heading">¶</a></h1>
+<p>This module controls the Warehouse, it inherits from Machine</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="warehouse.State">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">warehouse.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/warehouse.html#State"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#warehouse.State" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.State.CB_BWD">
+<span class="sig-name descname"><span class="pre">CB_BWD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#warehouse.State.CB_BWD" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.State.CB_FWD">
+<span class="sig-name descname"><span class="pre">CB_FWD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#warehouse.State.CB_FWD" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.State.END">
+<span class="sig-name descname"><span class="pre">END</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></em><a class="headerlink" href="#warehouse.State.END" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.State.ERROR">
+<span class="sig-name descname"><span class="pre">ERROR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">999</span></em><a class="headerlink" href="#warehouse.State.ERROR" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.State.GETTING_PRODUCT">
+<span class="sig-name descname"><span class="pre">GETTING_PRODUCT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#warehouse.State.GETTING_PRODUCT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.State.INIT">
+<span class="sig-name descname"><span class="pre">INIT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#warehouse.State.INIT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.State.MOVING_TO_CB">
+<span class="sig-name descname"><span class="pre">MOVING_TO_CB</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#warehouse.State.MOVING_TO_CB" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.State.MOVING_TO_RACK">
+<span class="sig-name descname"><span class="pre">MOVING_TO_RACK</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#warehouse.State.MOVING_TO_RACK" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.State.SETTING_PRODUCT">
+<span class="sig-name descname"><span class="pre">SETTING_PRODUCT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#warehouse.State.SETTING_PRODUCT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="warehouse.Warehouse">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">warehouse.</span></span><span class="sig-name descname"><span class="pre">Warehouse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/warehouse.html#Warehouse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#warehouse.Warehouse" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="machine.html#machine.Machine" title="machine.Machine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Machine</span></code></a></p>
+<p>Controls the Warehouse</p>
+<dl class="simple">
+<dt>Methodes:</dt><dd><p>init(): Move to init Position
+store_product(): Stores a product at given position.
+retrieve_product(): Retrieves a product from given position.
+__move_to_position(): Moves Crane given coordinates.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__POS_CB_HORIZONTAL">
+<span class="sig-name descname"><span class="pre">__POS_CB_HORIZONTAL</span></span><a class="headerlink" href="#warehouse.Warehouse.__POS_CB_HORIZONTAL" title="Link to this definition">¶</a></dt>
+<dd><p>Horizontal position of conveyor belt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__POS_CB_VERTICAL">
+<span class="sig-name descname"><span class="pre">__POS_CB_VERTICAL</span></span><a class="headerlink" href="#warehouse.Warehouse.__POS_CB_VERTICAL" title="Link to this definition">¶</a></dt>
+<dd><p>Vertical position of conveyor belt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__MOVE_THRESHOLD_HOR">
+<span class="sig-name descname"><span class="pre">__MOVE_THRESHOLD_HOR</span></span><a class="headerlink" href="#warehouse.Warehouse.__MOVE_THRESHOLD_HOR" title="Link to this definition">¶</a></dt>
+<dd><p>Only moves the horizontal axis if movement is more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__MOVE_THRESHOLD_VER">
+<span class="sig-name descname"><span class="pre">__MOVE_THRESHOLD_VER</span></span><a class="headerlink" href="#warehouse.Warehouse.__MOVE_THRESHOLD_VER" title="Link to this definition">¶</a></dt>
+<dd><p>Only moves the vertical axis if movement is more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__content_file">
+<span class="sig-name descname"><span class="pre">__content_file</span></span><a class="headerlink" href="#warehouse.Warehouse.__content_file" title="Link to this definition">¶</a></dt>
+<dd><p>File path to the file that saves the inventory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.ready_for_product">
+<span class="sig-name descname"><span class="pre">ready_for_product</span></span><a class="headerlink" href="#warehouse.Warehouse.ready_for_product" title="Link to this definition">¶</a></dt>
+<dd><p>True if a carrier is at input for store.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__ref_sw_arm_front">
+<span class="sig-name descname"><span class="pre">__ref_sw_arm_front</span></span><a class="headerlink" href="#warehouse.Warehouse.__ref_sw_arm_front" title="Link to this definition">¶</a></dt>
+<dd><p>Referenz switch name for arm in extended state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__ref_sw_arm_back">
+<span class="sig-name descname"><span class="pre">__ref_sw_arm_back</span></span><a class="headerlink" href="#warehouse.Warehouse.__ref_sw_arm_back" title="Link to this definition">¶</a></dt>
+<dd><p>Referenz switch name for arm in retracted state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__cb">
+<span class="sig-name descname"><span class="pre">__cb</span></span><a class="headerlink" href="#warehouse.Warehouse.__cb" title="Link to this definition">¶</a></dt>
+<dd><p>Conveyor object for in-/output conveyor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="conveyor.html#conveyor.Conveyor" title="conveyor.Conveyor">Conveyor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__encoder_hor">
+<span class="sig-name descname"><span class="pre">__encoder_hor</span></span><a class="headerlink" href="#warehouse.Warehouse.__encoder_hor" title="Link to this definition">¶</a></dt>
+<dd><p>Encoder for horizontal axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor">Sensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__encoder_ver">
+<span class="sig-name descname"><span class="pre">__encoder_ver</span></span><a class="headerlink" href="#warehouse.Warehouse.__encoder_ver" title="Link to this definition">¶</a></dt>
+<dd><p>Encoder for vertical axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor">Sensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__motor_loading">
+<span class="sig-name descname"><span class="pre">__motor_loading</span></span><a class="headerlink" href="#warehouse.Warehouse.__motor_loading" title="Link to this definition">¶</a></dt>
+<dd><p>Motor for arm front-back axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="actuator.html#actuator.Actuator" title="actuator.Actuator">Actuator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__motor_hor">
+<span class="sig-name descname"><span class="pre">__motor_hor</span></span><a class="headerlink" href="#warehouse.Warehouse.__motor_hor" title="Link to this definition">¶</a></dt>
+<dd><p>Motor for horizontal axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="actuator.html#actuator.Actuator" title="actuator.Actuator">Actuator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__motor_ver">
+<span class="sig-name descname"><span class="pre">__motor_ver</span></span><a class="headerlink" href="#warehouse.Warehouse.__motor_ver" title="Link to this definition">¶</a></dt>
+<dd><p>Motor for vertical axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="actuator.html#actuator.Actuator" title="actuator.Actuator">Actuator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="warehouse.Warehouse.__color">
+<span class="sig-name descname"><span class="pre">__color</span></span><a class="headerlink" href="#warehouse.Warehouse.__color" title="Link to this definition">¶</a></dt>
+<dd><p>Color of product.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="warehouse.Warehouse.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">for_store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">for_retrieve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/warehouse.html#Warehouse.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#warehouse.Warehouse.init" title="Link to this definition">¶</a></dt>
+<dd><p>Move to init position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>for_store</strong> (<em>bool</em>) – Moves a carrier to input/output.</p></li>
+<li><p><strong>for_retrieve</strong> (<em>bool</em>) – Removes carrier from input/output.</p></li>
+<li><p><strong>to_end</strong> (<em>bool</em>) – If True ends machine after completion of init.</p></li>
+<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="warehouse.Warehouse.retrieve_product">
+<span class="sig-name descname"><span class="pre">retrieve_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">1540</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">200</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1540</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">900</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1540</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1650</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2675</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">200</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">2675</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">900</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">2675</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1650</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">3840</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">200</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">3840</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">900</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">3840</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1650</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/warehouse.html#Warehouse.retrieve_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#warehouse.Warehouse.retrieve_product" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a product from given position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>position</strong> (<em>POSITIONS</em>) – Position of a shelf defined in POSITIONS, can be None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – Color of the wanted Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier).</p></li>
+<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="warehouse.Warehouse.store_product">
+<span class="sig-name descname"><span class="pre">store_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">1540</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">200</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1540</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">900</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1540</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1650</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2675</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">200</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">2675</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">900</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">2675</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1650</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">3840</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">200</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">3840</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">900</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">3840</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1650</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/warehouse.html#Warehouse.store_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#warehouse.Warehouse.store_product" title="Link to this definition">¶</a></dt>
+<dd><p>Stores a product at given position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>position</strong> (<em>POSITIONS</em>) – Position of a shelf defined in POSITIONS, can be None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – Color of the Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier).</p></li>
+<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">warehouse module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#warehouse.State"><code class="docutils literal notranslate"><span class="pre">State</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.State.CB_BWD"><code class="docutils literal notranslate"><span class="pre">State.CB_BWD</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.State.CB_FWD"><code class="docutils literal notranslate"><span class="pre">State.CB_FWD</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.State.END"><code class="docutils literal notranslate"><span class="pre">State.END</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.State.ERROR"><code class="docutils literal notranslate"><span class="pre">State.ERROR</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.State.GETTING_PRODUCT"><code class="docutils literal notranslate"><span class="pre">State.GETTING_PRODUCT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.State.INIT"><code class="docutils literal notranslate"><span class="pre">State.INIT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.State.MOVING_TO_CB"><code class="docutils literal notranslate"><span class="pre">State.MOVING_TO_CB</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.State.MOVING_TO_RACK"><code class="docutils literal notranslate"><span class="pre">State.MOVING_TO_RACK</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.State.SETTING_PRODUCT"><code class="docutils literal notranslate"><span class="pre">State.SETTING_PRODUCT</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#warehouse.Warehouse"><code class="docutils literal notranslate"><span class="pre">Warehouse</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__POS_CB_HORIZONTAL"><code class="docutils literal notranslate"><span class="pre">Warehouse.__POS_CB_HORIZONTAL</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__POS_CB_VERTICAL"><code class="docutils literal notranslate"><span class="pre">Warehouse.__POS_CB_VERTICAL</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__MOVE_THRESHOLD_HOR"><code class="docutils literal notranslate"><span class="pre">Warehouse.__MOVE_THRESHOLD_HOR</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__MOVE_THRESHOLD_VER"><code class="docutils literal notranslate"><span class="pre">Warehouse.__MOVE_THRESHOLD_VER</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__content_file"><code class="docutils literal notranslate"><span class="pre">Warehouse.__content_file</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.ready_for_product"><code class="docutils literal notranslate"><span class="pre">Warehouse.ready_for_product</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__ref_sw_arm_front"><code class="docutils literal notranslate"><span class="pre">Warehouse.__ref_sw_arm_front</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__ref_sw_arm_back"><code class="docutils literal notranslate"><span class="pre">Warehouse.__ref_sw_arm_back</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__cb"><code class="docutils literal notranslate"><span class="pre">Warehouse.__cb</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__encoder_hor"><code class="docutils literal notranslate"><span class="pre">Warehouse.__encoder_hor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__encoder_ver"><code class="docutils literal notranslate"><span class="pre">Warehouse.__encoder_ver</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__motor_loading"><code class="docutils literal notranslate"><span class="pre">Warehouse.__motor_loading</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__motor_hor"><code class="docutils literal notranslate"><span class="pre">Warehouse.__motor_hor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__motor_ver"><code class="docutils literal notranslate"><span class="pre">Warehouse.__motor_ver</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.__color"><code class="docutils literal notranslate"><span class="pre">Warehouse.__color</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.init"><code class="docutils literal notranslate"><span class="pre">Warehouse.init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.retrieve_product"><code class="docutils literal notranslate"><span class="pre">Warehouse.retrieve_product()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warehouse.Warehouse.store_product"><code class="docutils literal notranslate"><span class="pre">Warehouse.store_product()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="vac_robot.html" title="previous chapter">vac_robot module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/warehouse.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

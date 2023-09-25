@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>conveyor &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for conveyor</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;This module controls a Conveyor, it inherits from Machine&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;st166506@stud.uni-stuttgart.de&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;GPL&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2023.09.21&quot;</span>
+
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="kn">from</span> <span class="nn">logger</span> <span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">machine</span> <span class="kn">import</span> <span class="n">Machine</span>
+<span class="kn">from</span> <span class="nn">sensor</span> <span class="kn">import</span> <span class="n">Sensor</span><span class="p">,</span> <span class="n">SensorTimeoutError</span><span class="p">,</span> <span class="n">NoDetectionError</span>
+<span class="kn">from</span> <span class="nn">actuator</span> <span class="kn">import</span> <span class="n">Actuator</span>
+
+
+<div class="viewcode-block" id="State">
+<a class="viewcode-back" href="../conveyor.html#conveyor.State">[docs]</a>
+<span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">WAIT</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">RUN</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">END</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">999</span></div>
+
+
+
+<div class="viewcode-block" id="Conveyor">
+<a class="viewcode-back" href="../conveyor.html#conveyor.Conveyor">[docs]</a>
+<span class="k">class</span> <span class="nc">Conveyor</span><span class="p">(</span><span class="n">Machine</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Controls a conveyor. If conveyor isn&#39;t run with end_machine=True, the flag has to be set manually.</span>
+<span class="sd">    </span>
+<span class="sd">    Methodes:</span>
+<span class="sd">        run_to_stop_sensor(): Runs the Conveyor until the product has reached the stop sensor</span>
+<span class="sd">        run_to_counter_value(): Runs the Conveyor until the trigger_value of encoder is reached</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        exception (Exception): Holds exception if exception was raised.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">line_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Initializes Conveyor.</span>
+<span class="sd">        </span>
+<span class="sd">        Args</span>
+<span class="sd">            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
+<span class="sd">            name (str): Exact name of the machine in PiCtory (everything bevor first &#39;_&#39;).</span>
+<span class="sd">            line_name (str): Name of current line.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">line_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">global</span> <span class="n">log</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="si">}</span><span class="s2">(Conv)&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Conveyor.run_to_stop_sensor">
+<a class="viewcode-back" href="../conveyor.html#conveyor.Conveyor.run_to_stop_sensor">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_to_stop_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_sensor</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop_delay_in_ms</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">end_machine</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Runs the Conveyor until the product has reached the stop sensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            direction (str): Conveyor direction, (last part of whole name).</span>
+<span class="sd">            stop_sensor (str): Stops Conveyor if detection occurs at this Sensor.</span>
+<span class="sd">            start_sensor (str): Waits with starting until detection occurs at Sensor.</span>
+<span class="sd">            stop_delay_in_ms (int): Runs for given ms after detection of stop_sensor.</span>
+<span class="sd">            timeout_in_s (int): Time after which an exception is raised.</span>
+<span class="sd">            end_machine (bool): Ends the machine if this function completes, set to false to keep machine.</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Only if called from other Machine.</span>
+<span class="sd">            SensorTimeoutError: Timeout is reached (no detection happened).</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="p">,</span> <span class="n">start_sensor</span><span class="p">,</span> <span class="n">stop_delay_in_ms</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="p">,</span> <span class="n">end_machine</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Running to: </span><span class="si">{</span><span class="n">stop_sensor</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">start_sensor</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># wait for start sensor to detect product</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">WAIT</span><span class="p">)</span>
+                <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="n">start_sensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">wait_for_detect</span><span class="p">(</span><span class="n">timeout_in_s</span><span class="o">=</span><span class="p">(</span><span class="n">timeout_in_s</span><span class="o">//</span><span class="mi">2</span><span class="p">))</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">RUN</span><span class="p">)</span>
+            <span class="n">motor</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+            <span class="n">motor</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">stop_sensor</span><span class="p">,</span> <span class="n">stop_delay_in_ms</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">SensorTimeoutError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__error_propagation</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__error_propagation</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Reached: </span><span class="si">{</span><span class="n">stop_sensor</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">end_machine</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_conveyor</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="Conveyor.run_to_counter_value">
+<a class="viewcode-back" href="../conveyor.html#conveyor.Conveyor.run_to_counter_value">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_to_counter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">counter</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">end_machine</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Runs the Conveyor until the trigger_value of encoder is reached.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            direction (str): Actuator direction, (last part of whole name).</span>
+<span class="sd">            counter (str): Counter sensor that is checked with trigger_value.</span>
+<span class="sd">            trigger_value (int): Value at which to stop Conveyor.</span>
+<span class="sd">            timeout_in_s (int): Time after which an exception is raised.</span>
+<span class="sd">            end_machine (bool): Ends the machine if this function completes, set to false to keep machine.</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Only if called from other Machine.</span>
+<span class="sd">            SensorTimeoutError: Timeout is reached (no detection happened).</span>
+<span class="sd">            EncoderOverflowError: Encoder value negativ.</span>
+<span class="sd">            ValueError: Counter jumped values.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_to_counter_value</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="p">,</span> <span class="n">end_machine</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Running to value: </span><span class="si">{</span><span class="n">trigger_value</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">RUN</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">encoder</span> <span class="o">=</span> <span class="n">Sensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+            <span class="n">encoder</span><span class="o">.</span><span class="n">reset_encoder</span><span class="p">()</span>
+            <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_to_encoder_value</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">,</span> <span class="n">timeout_in_s</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">SensorTimeoutError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__error_propagation</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__error_propagation</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Reached value: </span><span class="si">{</span><span class="n">trigger_value</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">end_machine</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_conveyor</span><span class="p">()</span></div>
+
+                
+<div class="viewcode-block" id="Conveyor.run_for_time">
+<a class="viewcode-back" href="../conveyor.html#conveyor.Conveyor.run_for_time">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_for_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">wait_time_in_s</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">check_sensor</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_machine</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Runs the Conveyor for the given time, can check for sensor detection.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            direction (str): Actuator direction, (last part of whole name).</span>
+<span class="sd">            wait_time_in_s (int): Time after which the actuator stops.</span>
+<span class="sd">            check_sensor (str): If given, checks if detection occurred.</span>
+<span class="sd">            end_machine (bool): Ends the machine if this function completes, set to false to keep machine.</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Only if called from other Machine.</span>
+<span class="sd">            SensorTimeoutError: Timeout is reached (no detection happened).</span>
+<span class="sd">            EncoderOverflowError: Encoder value negativ.</span>
+<span class="sd">            ValueError: Counter jumped values.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_to_counter_value</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">wait_time_in_s</span><span class="p">,</span> <span class="n">check_sensor</span><span class="p">,</span> <span class="n">end_machine</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Running for time: </span><span class="si">{</span><span class="n">wait_time_in_s</span><span class="si">}</span><span class="s2"> s&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">RUN</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">wait_time_in_s</span><span class="p">,</span> <span class="n">check_sensor</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">NoDetectionError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__error_propagation</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__error_propagation</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> :Reached time: </span><span class="si">{</span><span class="n">wait_time_in_s</span><span class="si">}</span><span class="s2"> s&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">end_machine</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_conveyor</span><span class="p">()</span></div>
+
+                
+
+<div class="viewcode-block" id="Conveyor.join">
+<a class="viewcode-back" href="../conveyor.html#conveyor.Conveyor.join">[docs]</a>
+    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Joins the current thread and reraise Exceptions.</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Exceptions that a thrown in thread function.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">exception</span></div>
+
+        
+<div class="viewcode-block" id="Conveyor.end_conveyor">
+<a class="viewcode-back" href="../conveyor.html#conveyor.Conveyor.end_conveyor">[docs]</a>
+    <span class="k">def</span> <span class="nf">end_conveyor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Ends conveyor.&#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">END</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">__error_propagation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Throws raised exceptions if called from Module is called from other Machine.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            error: Error to be raised.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># if called from another module as a thread</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="n">error</span>
+            <span class="k">raise</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

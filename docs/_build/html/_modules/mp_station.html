@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mp_station &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mp_station</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;This module controls the Multi Purpose Station, it inherits from Machine&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;st166506@stud.uni-stuttgart.de&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Lukas Beck&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;GPL&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2023.09.21&quot;</span>
+
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+
+<span class="kn">from</span> <span class="nn">logger</span> <span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">machine</span> <span class="kn">import</span> <span class="n">Machine</span>
+<span class="kn">from</span> <span class="nn">actuator</span> <span class="kn">import</span> <span class="n">Actuator</span><span class="p">,</span> <span class="n">SensorTimeoutError</span>
+<span class="kn">from</span> <span class="nn">conveyor</span> <span class="kn">import</span> <span class="n">Conveyor</span>
+
+<div class="viewcode-block" id="State">
+<a class="viewcode-back" href="../mp_station.html#mp_station.State">[docs]</a>
+<span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">INIT</span> <span class="o">=</span> <span class="mi">0</span>  
+    <span class="n">START</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> 
+    <span class="n">OVEN</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> 
+    <span class="n">TO_TABLE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> 
+    <span class="n">TO_SAW</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> 
+    <span class="n">SAWING</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> 
+    <span class="n">TO_CB</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> 
+    <span class="n">CB</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> 
+    <span class="n">END</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">999</span></div>
+
+
+<div class="viewcode-block" id="MPStation">
+<a class="viewcode-back" href="../mp_station.html#mp_station.MPStation">[docs]</a>
+<span class="k">class</span> <span class="nc">MPStation</span><span class="p">(</span><span class="n">Machine</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Controls the Multi Purpose Station.</span>
+
+<span class="sd">    Methodes:</span>
+<span class="sd">        init(): Move to init position.</span>
+<span class="sd">        run(): Runs the Multi Purpose Station routine.</span>
+<span class="sd">        run_to_out(): Runs the Conveyor to move the product out.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        __TIME_OVEN (int): Time that the oven should be active.</span>
+<span class="sd">        __TIME_SAW (int): Time that the saw should be active.</span>
+<span class="sd">        table (Actuator): Actuator object for the table.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">__TIME_OVEN</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">__TIME_SAW</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">line_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Initializes the Multi Purpose Station.</span>
+<span class="sd">        </span>
+<span class="sd">        Args</span>
+<span class="sd">            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
+<span class="sd">            name (str): Exact name of the machine in PiCtory (everything bevor first &#39;_&#39;).</span>
+<span class="sd">            line_name (str): Name of current line.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">revpi</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">line_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_TABLE&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_TABLE_PWM&quot;</span><span class="p">)</span>
+
+        <span class="k">global</span> <span class="n">log</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="si">}</span><span class="s2">(Mps)&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="MPStation.init">
+<a class="viewcode-back" href="../mp_station.html#mp_station.MPStation.init">[docs]</a>
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Move to init position.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">as_thread</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="kc">False</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;_INIT&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">INIT</span><span class="p">)</span>
+            <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_VG&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;TO_TABLE&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_VG_TABLE&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">SensorTimeoutError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="MPStation.run">
+<a class="viewcode-back" href="../mp_station.html#mp_station.MPStation.run">[docs]</a>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_oven</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">with_saw</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Runs the Multi Purpose Station routine.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            with_oven (bool): Product goes through oven.</span>
+<span class="sd">            with_saw (bool): Product goes through saw.</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">with_oven</span><span class="p">,</span> <span class="n">with_saw</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">START</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">compressor</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_COMPRESSOR&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+            <span class="n">vg_motor</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_VG&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+            <span class="n">vg_motor</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;TO_OVEN&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_VG_OVEN&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># move vg to oven</span>
+
+            <span class="k">if</span> <span class="n">with_oven</span><span class="p">:</span>
+                <span class="c1"># Move oven tray into oven and close door</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">OVEN</span><span class="p">)</span>
+                <span class="n">tray</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_OVEN_TRAY&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+                <span class="n">oven_door_valve</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_VALVE_OVEN_DOOR&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+
+                <span class="n">compressor</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">oven_door_valve</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="c1"># open door</span>
+                <span class="c1"># sleep(0.2)</span>
+                <span class="n">tray</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;IN&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_OVEN_TRAY_IN&quot;</span><span class="p">)</span> <span class="c1"># move tray in</span>
+                <span class="n">oven_door_valve</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span> <span class="c1"># close door</span>
+                <span class="n">compressor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+                <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_LIGHT_OVEN&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__TIME_OVEN</span><span class="p">)</span> <span class="c1"># turn light on for time</span>
+                <span class="n">compressor</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">oven_door_valve</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="c1"># open door</span>
+                <span class="n">tray</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;OUT&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_OVEN_TRAY_OUT&quot;</span><span class="p">)</span> <span class="c1"># move tray out</span>
+                <span class="k">del</span> <span class="n">tray</span>
+                <span class="n">oven_door_valve</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span> <span class="c1"># close door</span>
+                <span class="k">del</span> <span class="n">oven_door_valve</span>
+                <span class="n">compressor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+            <span class="n">vg_motor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+
+            <span class="c1"># move product to table with vacuum gripper</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">TO_TABLE</span><span class="p">)</span>
+            <span class="n">vg_valve</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_VALVE_VG_VACUUM&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+            <span class="n">vg_lower_valve</span> <span class="o">=</span> <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_VALVE_VG_LOWER&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;CCW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_TABLE_VG&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># move table to vg</span>
+
+            <span class="n">vg_motor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span> <span class="c1"># wait for the vg to be at oven</span>
+            <span class="n">compressor</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">vg_lower_valve</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># lower gripper</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+            <span class="n">vg_valve</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="c1"># create vacuum at gripper</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="c1"># wait for gripper to be at top</span>
+            <span class="n">compressor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="n">vg_lower_valve</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="n">vg_motor</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;TO_TABLE&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_VG_TABLE&quot;</span><span class="p">)</span> <span class="c1"># move vg to table</span>
+            <span class="k">del</span> <span class="n">vg_motor</span>
+
+            <span class="n">compressor</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">vg_lower_valve</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># lower gripper</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">vg_valve</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span> <span class="c1"># stop vacuum at gripper</span>
+            <span class="k">del</span> <span class="n">vg_valve</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">compressor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="n">vg_lower_valve</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="k">del</span> <span class="n">vg_lower_valve</span>
+
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">with_saw</span><span class="p">:</span>
+                <span class="c1"># rotate table to saw</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">TO_SAW</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">set_pwm</span><span class="p">(</span><span class="mi">75</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;CW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_TABLE_SAW&quot;</span><span class="p">)</span>
+
+                <span class="c1"># sawing</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">SAWING</span><span class="p">)</span>
+                <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_SAW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__TIME_SAW</span><span class="p">)</span>
+
+
+            <span class="c1"># move product to cb</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">TO_CB</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;CW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_TABLE_CB&quot;</span><span class="p">)</span> <span class="c1"># rotate table to cb</span>
+            <span class="n">compressor</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">Actuator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_VALVE_TABLE_PISTON&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_for_time</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">compressor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="k">del</span> <span class="n">compressor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">run_to_sensor</span><span class="p">(</span><span class="s2">&quot;CCW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_REF_SW_TABLE_VG&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># move table back to vg</span>
+
+
+            <span class="c1"># run cb</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB</span><span class="p">)</span>
+            <span class="n">Conveyor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_CB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="s2">&quot;MPS_SENS_CB&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">SensorTimeoutError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="MPStation.run_to_out">
+<a class="viewcode-back" href="../mp_station.html#mp_station.MPStation.run_to_out">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_to_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Runs the Conveyor to move the product out.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            as_thread (bool): Runs the function as a thread.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># call this function again as a thread</span>
+        <span class="k">if</span> <span class="n">as_thread</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_to_out</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">return</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">CB</span><span class="p">)</span>
+            <span class="n">Conveyor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">revpi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_CB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_name</span><span class="p">)</span><span class="o">.</span><span class="n">run_to_stop_sensor</span><span class="p">(</span><span class="s2">&quot;FWD&quot;</span><span class="p">,</span> <span class="s2">&quot;CB1_SENS_START&quot;</span><span class="p">,</span> <span class="n">as_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span>
+
+        <span class="k">except</span> <span class="n">SensorTimeoutError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_exception_in_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_machine</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_state</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">END</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

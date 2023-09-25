@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>mp_station module &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="punch_mach module" href="punch_mach.html" />
+    <link rel="prev" title="mainline module" href="mainline.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-mp_station">
+<span id="mp-station-module"></span><h1>mp_station module<a class="headerlink" href="#module-mp_station" title="Link to this heading">¶</a></h1>
+<p>This module controls the Multi Purpose Station, it inherits from Machine</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mp_station.MPStation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mp_station.</span></span><span class="sig-name descname"><span class="pre">MPStation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mp_station.html#MPStation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mp_station.MPStation" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="machine.html#machine.Machine" title="machine.Machine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Machine</span></code></a></p>
+<p>Controls the Multi Purpose Station.</p>
+<dl class="simple">
+<dt>Methodes:</dt><dd><p>init(): Move to init position.
+run(): Runs the Multi Purpose Station routine.
+run_to_out(): Runs the Conveyor to move the product out.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.MPStation.__TIME_OVEN">
+<span class="sig-name descname"><span class="pre">__TIME_OVEN</span></span><a class="headerlink" href="#mp_station.MPStation.__TIME_OVEN" title="Link to this definition">¶</a></dt>
+<dd><p>Time that the oven should be active.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.MPStation.__TIME_SAW">
+<span class="sig-name descname"><span class="pre">__TIME_SAW</span></span><a class="headerlink" href="#mp_station.MPStation.__TIME_SAW" title="Link to this definition">¶</a></dt>
+<dd><p>Time that the saw should be active.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.MPStation.table">
+<span class="sig-name descname"><span class="pre">table</span></span><a class="headerlink" href="#mp_station.MPStation.table" title="Link to this definition">¶</a></dt>
+<dd><p>Actuator object for the table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="actuator.html#actuator.Actuator" title="actuator.Actuator">Actuator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mp_station.MPStation.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mp_station.html#MPStation.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mp_station.MPStation.init" title="Link to this definition">¶</a></dt>
+<dd><p>Move to init position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mp_station.MPStation.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">with_oven</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_saw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mp_station.html#MPStation.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mp_station.MPStation.run" title="Link to this definition">¶</a></dt>
+<dd><p>Runs the Multi Purpose Station routine.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>with_oven</strong> (<em>bool</em>) – Product goes through oven.</p></li>
+<li><p><strong>with_saw</strong> (<em>bool</em>) – Product goes through saw.</p></li>
+<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mp_station.MPStation.run_to_out">
+<span class="sig-name descname"><span class="pre">run_to_out</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mp_station.html#MPStation.run_to_out"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mp_station.MPStation.run_to_out" title="Link to this definition">¶</a></dt>
+<dd><p>Runs the Conveyor to move the product out.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mp_station.State">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mp_station.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mp_station.html#State"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mp_station.State" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.CB">
+<span class="sig-name descname"><span class="pre">CB</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">7</span></em><a class="headerlink" href="#mp_station.State.CB" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.END">
+<span class="sig-name descname"><span class="pre">END</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></em><a class="headerlink" href="#mp_station.State.END" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.ERROR">
+<span class="sig-name descname"><span class="pre">ERROR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">999</span></em><a class="headerlink" href="#mp_station.State.ERROR" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.INIT">
+<span class="sig-name descname"><span class="pre">INIT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#mp_station.State.INIT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.OVEN">
+<span class="sig-name descname"><span class="pre">OVEN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#mp_station.State.OVEN" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.SAWING">
+<span class="sig-name descname"><span class="pre">SAWING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#mp_station.State.SAWING" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.START">
+<span class="sig-name descname"><span class="pre">START</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#mp_station.State.START" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.TO_CB">
+<span class="sig-name descname"><span class="pre">TO_CB</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#mp_station.State.TO_CB" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.TO_SAW">
+<span class="sig-name descname"><span class="pre">TO_SAW</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#mp_station.State.TO_SAW" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mp_station.State.TO_TABLE">
+<span class="sig-name descname"><span class="pre">TO_TABLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#mp_station.State.TO_TABLE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">mp_station module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mp_station.MPStation"><code class="docutils literal notranslate"><span class="pre">MPStation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.MPStation.__TIME_OVEN"><code class="docutils literal notranslate"><span class="pre">MPStation.__TIME_OVEN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.MPStation.__TIME_SAW"><code class="docutils literal notranslate"><span class="pre">MPStation.__TIME_SAW</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.MPStation.table"><code class="docutils literal notranslate"><span class="pre">MPStation.table</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.MPStation.init"><code class="docutils literal notranslate"><span class="pre">MPStation.init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.MPStation.run"><code class="docutils literal notranslate"><span class="pre">MPStation.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.MPStation.run_to_out"><code class="docutils literal notranslate"><span class="pre">MPStation.run_to_out()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mp_station.State"><code class="docutils literal notranslate"><span class="pre">State</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.CB"><code class="docutils literal notranslate"><span class="pre">State.CB</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.END"><code class="docutils literal notranslate"><span class="pre">State.END</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.ERROR"><code class="docutils literal notranslate"><span class="pre">State.ERROR</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.INIT"><code class="docutils literal notranslate"><span class="pre">State.INIT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.OVEN"><code class="docutils literal notranslate"><span class="pre">State.OVEN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.SAWING"><code class="docutils literal notranslate"><span class="pre">State.SAWING</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.START"><code class="docutils literal notranslate"><span class="pre">State.START</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.TO_CB"><code class="docutils literal notranslate"><span class="pre">State.TO_CB</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.TO_SAW"><code class="docutils literal notranslate"><span class="pre">State.TO_SAW</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mp_station.State.TO_TABLE"><code class="docutils literal notranslate"><span class="pre">State.TO_TABLE</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="mainline.html" title="previous chapter">mainline module</a></li>
+      <li>Next: <a href="punch_mach.html" title="next chapter">punch_mach module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/mp_station.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

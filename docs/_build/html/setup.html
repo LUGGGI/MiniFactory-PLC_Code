@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>setup module &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="sort_line module" href="sort_line.html" />
+    <link rel="prev" title="sensor module" href="sensor.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-setup">
+<span id="setup-module"></span><h1>setup module<a class="headerlink" href="#module-setup" title="Link to this heading">¶</a></h1>
+<p>Factory setup for MiniFactory project</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="setup.Setup">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">setup.</span></span><span class="sig-name descname"><span class="pre">Setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">states</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_class</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/setup.html#Setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#setup.Setup" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Setup for Factory.</p>
+<dl class="simple">
+<dt>Methodes:</dt><dd><p>run_factory(): Starts the factory, adds and updates the lines.
+__update_factory(): Updates the factory and starts every line.
+__save_status(): Puts the states, factory status and line status into output.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.LOOP_TIME">
+<span class="sig-name descname"><span class="pre">LOOP_TIME</span></span><a class="headerlink" href="#setup.Setup.LOOP_TIME" title="Link to this definition">¶</a></dt>
+<dd><p>How often a new iteration is started (in seconds).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.revpi">
+<span class="sig-name descname"><span class="pre">revpi</span></span><a class="headerlink" href="#setup.Setup.revpi" title="Link to this definition">¶</a></dt>
+<dd><p>RevPiModIO Object to control the motors and sensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>RevPiModIO</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.states">
+<span class="sig-name descname"><span class="pre">states</span></span><a class="headerlink" href="#setup.Setup.states" title="Link to this definition">¶</a></dt>
+<dd><p>All possible States of the line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="conveyor.html#conveyor.State" title="conveyor.State">State</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.line_class">
+<span class="sig-name descname"><span class="pre">line_class</span></span><a class="headerlink" href="#setup.Setup.line_class" title="Link to this definition">¶</a></dt>
+<dd><p>Class of the current line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mainline</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.exception">
+<span class="sig-name descname"><span class="pre">exception</span></span><a class="headerlink" href="#setup.Setup.exception" title="Link to this definition">¶</a></dt>
+<dd><p>True if exception in factory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.loop_start_time">
+<span class="sig-name descname"><span class="pre">loop_start_time</span></span><a class="headerlink" href="#setup.Setup.loop_start_time" title="Link to this definition">¶</a></dt>
+<dd><p>Current loop start time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.last_config_update_time">
+<span class="sig-name descname"><span class="pre">last_config_update_time</span></span><a class="headerlink" href="#setup.Setup.last_config_update_time" title="Link to this definition">¶</a></dt>
+<dd><p>Time of last config update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.lines">
+<span class="sig-name descname"><span class="pre">lines</span></span><a class="headerlink" href="#setup.Setup.lines" title="Link to this definition">¶</a></dt>
+<dd><p>All Line objects currently active.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.exit_handler">
+<span class="sig-name descname"><span class="pre">exit_handler</span></span><a class="headerlink" href="#setup.Setup.exit_handler" title="Link to this definition">¶</a></dt>
+<dd><p>Object for Exit Handler.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="exit_handler.html#exit_handler.ExitHandler" title="exit_handler.ExitHandler">ExitHandler</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="setup.Setup.io_interface">
+<span class="sig-name descname"><span class="pre">io_interface</span></span><a class="headerlink" href="#setup.Setup.io_interface" title="Link to this definition">¶</a></dt>
+<dd><p>Object for IO Interface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="io_interface.html#io_interface.IOInterface" title="io_interface.IOInterface">IOInterface</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">LOOP_TIME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.02</span></em><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="setup.Setup.run_factory">
+<span class="sig-name descname"><span class="pre">run_factory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/setup.html#Setup.run_factory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#setup.Setup.run_factory" title="Link to this definition">¶</a></dt>
+<dd><p>Starts the factory, adds and updates the lines.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">setup module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#setup.Setup"><code class="docutils literal notranslate"><span class="pre">Setup</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.LOOP_TIME"><code class="docutils literal notranslate"><span class="pre">Setup.LOOP_TIME</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.revpi"><code class="docutils literal notranslate"><span class="pre">Setup.revpi</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.states"><code class="docutils literal notranslate"><span class="pre">Setup.states</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.line_class"><code class="docutils literal notranslate"><span class="pre">Setup.line_class</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.exception"><code class="docutils literal notranslate"><span class="pre">Setup.exception</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.loop_start_time"><code class="docutils literal notranslate"><span class="pre">Setup.loop_start_time</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.last_config_update_time"><code class="docutils literal notranslate"><span class="pre">Setup.last_config_update_time</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.lines"><code class="docutils literal notranslate"><span class="pre">Setup.lines</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.exit_handler"><code class="docutils literal notranslate"><span class="pre">Setup.exit_handler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.io_interface"><code class="docutils literal notranslate"><span class="pre">Setup.io_interface</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Setup.LOOP_TIME</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup.Setup.run_factory"><code class="docutils literal notranslate"><span class="pre">Setup.run_factory()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="sensor.html" title="previous chapter">sensor module</a></li>
+      <li>Next: <a href="sort_line.html" title="next chapter">sort_line module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/setup.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

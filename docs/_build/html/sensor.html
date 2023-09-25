@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>sensor module &#8212; MiniFactory  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="setup module" href="setup.html" />
+    <link rel="prev" title="robot_3d module" href="robot_3d.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-sensor">
+<span id="sensor-module"></span><h1>sensor module<a class="headerlink" href="#module-sensor" title="Link to this heading">¶</a></h1>
+<p>This module handles communication with Sensors</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="sensor.EncoderOverflowError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sensor.</span></span><span class="sig-name descname"><span class="pre">EncoderOverflowError</span></span><a class="reference internal" href="_modules/sensor.html#EncoderOverflowError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.EncoderOverflowError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></p>
+<p>Encoder had a ‘negativ’ value.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="sensor.NoDetectionError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sensor.</span></span><span class="sig-name descname"><span class="pre">NoDetectionError</span></span><a class="reference internal" href="_modules/sensor.html#NoDetectionError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.NoDetectionError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></p>
+<p>No detection at Sensor.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sensor.Sensor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sensor.</span></span><span class="sig-name descname"><span class="pre">Sensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">RevPiModIO</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#sensor.SensorType" title="sensor.SensorType"><span class="pre">SensorType</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sensor.html#Sensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.Sensor" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Control-methods for Senors.</p>
+<dl class="simple">
+<dt>Methodes:</dt><dd><p>get_current_value(): Returns the current value of the sensor.
+start_monitor(): Start monitoring sensor for detection.
+remove_monitor(): Stop monitoring sensor.
+is_detected(): Returns True if product was detected. If True removes monitor.
+wait_for_detect(): Waits for detection at sensor.
+wait_for_encoder(): Waits for the encoder/counter to reach the trigger_value.
+reset_encoder(): Resets the encoder or counter to 0.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.Sensor.CYCLE_TIME">
+<span class="sig-name descname"><span class="pre">CYCLE_TIME</span></span><a class="headerlink" href="#sensor.Sensor.CYCLE_TIME" title="Link to this definition">¶</a></dt>
+<dd><p>how often encoder/counter ar checked for new values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.Sensor.__revpi">
+<span class="sig-name descname"><span class="pre">__revpi</span></span><a class="headerlink" href="#sensor.Sensor.__revpi" title="Link to this definition">¶</a></dt>
+<dd><p>RevPiModIO Object to control the motors and sensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>RevPiModIO</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.Sensor.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#sensor.Sensor.name" title="Link to this definition">¶</a></dt>
+<dd><p>Exact name of the sensor in PiCtory (everything bevor first ‘_’).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.Sensor.line_name">
+<span class="sig-name descname"><span class="pre">line_name</span></span><a class="headerlink" href="#sensor.Sensor.line_name" title="Link to this definition">¶</a></dt>
+<dd><p>Name of current line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.Sensor.type">
+<span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#sensor.Sensor.type" title="Link to this definition">¶</a></dt>
+<dd><p>Type of the sensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#sensor.SensorType" title="sensor.SensorType">SensorType</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.Sensor.counter_offset">
+<span class="sig-name descname"><span class="pre">counter_offset</span></span><a class="headerlink" href="#sensor.Sensor.counter_offset" title="Link to this definition">¶</a></dt>
+<dd><p>Offset for counter so that counter can be used like encoder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.Sensor.log">
+<span class="sig-name descname"><span class="pre">log</span></span><a class="headerlink" href="#sensor.Sensor.log" title="Link to this definition">¶</a></dt>
+<dd><p>Log object to print to log.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">CYCLE_TIME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.005</span></em><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sensor.Sensor.get_current_value">
+<span class="sig-name descname"><span class="pre">get_current_value</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sensor.html#Sensor.get_current_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.Sensor.get_current_value" title="Link to this definition">¶</a></dt>
+<dd><p>Get the current value of the sensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Value depending on SensorType.
+True if detection at LIGHT_BARRIER or REF_SWITCH.
+Int value of ENCODER or COUNTER.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sensor.Sensor.is_detected">
+<span class="sig-name descname"><span class="pre">is_detected</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">33</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/sensor.html#Sensor.is_detected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.Sensor.is_detected" title="Link to this definition">¶</a></dt>
+<dd><p>Check if product was detected. If True removes monitor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edge</strong> – trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if product was detected, else false.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sensor.Sensor.remove_monitor">
+<span class="sig-name descname"><span class="pre">remove_monitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">33</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sensor.html#Sensor.remove_monitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.Sensor.remove_monitor" title="Link to this definition">¶</a></dt>
+<dd><p>Stop monitoring sensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edge</strong> – trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sensor.Sensor.reset_encoder">
+<span class="sig-name descname"><span class="pre">reset_encoder</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sensor.html#Sensor.reset_encoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.Sensor.reset_encoder" title="Link to this definition">¶</a></dt>
+<dd><p>Resets the encoder or counter to 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>TimeoutError</strong> – Encoder/counter could not be reset in time”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sensor.Sensor.start_monitor">
+<span class="sig-name descname"><span class="pre">start_monitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">33</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sensor.html#Sensor.start_monitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.Sensor.start_monitor" title="Link to this definition">¶</a></dt>
+<dd><p>Start monitoring sensor for detection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edge</strong> – trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sensor.Sensor.wait_for_detect">
+<span class="sig-name descname"><span class="pre">wait_for_detect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">33</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_in_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sensor.html#Sensor.wait_for_detect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.Sensor.wait_for_detect" title="Link to this definition">¶</a></dt>
+<dd><p>Waits for detection at sensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edge</strong> – trigger edge of the sensor, can be BOTH, RAISING, FALLING (from revpimodio2).</p></li>
+<li><p><strong>timeout_in_s</strong> (<em>int</em>) – Time after which an exception is raised.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#sensor.SensorTimeoutError" title="sensor.SensorTimeoutError"><strong>SensorTimeoutError</strong></a> – Timeout is reached (no detection happened)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sensor.Sensor.wait_for_encoder">
+<span class="sig-name descname"><span class="pre">wait_for_encoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trigger_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_in_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/sensor.html#Sensor.wait_for_encoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.Sensor.wait_for_encoder" title="Link to this definition">¶</a></dt>
+<dd><p>Waits for the encoder/counter to reach the trigger_value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trigger_value</strong> (<em>int</em>) – The value the motor would end up if it started from reverence switch.</p></li>
+<li><p><strong>trigger_threshold</strong> (<em>int</em>) – The value around the trigger_value where a trigger can happen.</p></li>
+<li><p><strong>timeout_in_s</strong> (<em>int</em>) – Time after which an exception is raised.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reached encoder_value</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#sensor.SensorTimeoutError" title="sensor.SensorTimeoutError"><strong>SensorTimeoutError</strong></a> – Timeout is reached (no detection happened).</p></li>
+<li><p><a class="reference internal" href="#sensor.EncoderOverflowError" title="sensor.EncoderOverflowError"><strong>EncoderOverflowError</strong></a> – Encoder value negativ.</p></li>
+<li><p><strong>ValueError</strong> – Counter jumped values.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="sensor.SensorTimeoutError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sensor.</span></span><span class="sig-name descname"><span class="pre">SensorTimeoutError</span></span><a class="reference internal" href="_modules/sensor.html#SensorTimeoutError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.SensorTimeoutError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TimeoutError</span></code></p>
+<p>Timeout occurred while waiting for Sensor.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sensor.SensorType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sensor.</span></span><span class="sig-name descname"><span class="pre">SensorType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sensor.html#SensorType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.SensorType" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.SensorType.COUNTER">
+<span class="sig-name descname"><span class="pre">COUNTER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#sensor.SensorType.COUNTER" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.SensorType.ENCODER">
+<span class="sig-name descname"><span class="pre">ENCODER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#sensor.SensorType.ENCODER" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.SensorType.LIGHT_BARRIER">
+<span class="sig-name descname"><span class="pre">LIGHT_BARRIER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#sensor.SensorType.LIGHT_BARRIER" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sensor.SensorType.REF_SWITCH">
+<span class="sig-name descname"><span class="pre">REF_SWITCH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#sensor.SensorType.REF_SWITCH" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sensor.event_det_at_sensor">
+<span class="sig-prename descclassname"><span class="pre">sensor.</span></span><span class="sig-name descname"><span class="pre">event_det_at_sensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">io_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">__</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sensor.html#event_det_at_sensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sensor.event_det_at_sensor" title="Link to this definition">¶</a></dt>
+<dd><p>Set detection to True</p>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MiniFactory</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="actuator.html">actuator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exit_handler.html">exit_handler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logger.html">logger module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="machine.html">machine module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">sensor module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sensor.EncoderOverflowError"><code class="docutils literal notranslate"><span class="pre">EncoderOverflowError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sensor.NoDetectionError"><code class="docutils literal notranslate"><span class="pre">NoDetectionError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sensor.Sensor"><code class="docutils literal notranslate"><span class="pre">Sensor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.CYCLE_TIME"><code class="docutils literal notranslate"><span class="pre">Sensor.CYCLE_TIME</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.__revpi"><code class="docutils literal notranslate"><span class="pre">Sensor.__revpi</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.name"><code class="docutils literal notranslate"><span class="pre">Sensor.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.line_name"><code class="docutils literal notranslate"><span class="pre">Sensor.line_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.type"><code class="docutils literal notranslate"><span class="pre">Sensor.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.counter_offset"><code class="docutils literal notranslate"><span class="pre">Sensor.counter_offset</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.log"><code class="docutils literal notranslate"><span class="pre">Sensor.log</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Sensor.CYCLE_TIME</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.get_current_value"><code class="docutils literal notranslate"><span class="pre">Sensor.get_current_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.is_detected"><code class="docutils literal notranslate"><span class="pre">Sensor.is_detected()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.remove_monitor"><code class="docutils literal notranslate"><span class="pre">Sensor.remove_monitor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.reset_encoder"><code class="docutils literal notranslate"><span class="pre">Sensor.reset_encoder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.start_monitor"><code class="docutils literal notranslate"><span class="pre">Sensor.start_monitor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.wait_for_detect"><code class="docutils literal notranslate"><span class="pre">Sensor.wait_for_detect()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.Sensor.wait_for_encoder"><code class="docutils literal notranslate"><span class="pre">Sensor.wait_for_encoder()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#sensor.SensorTimeoutError"><code class="docutils literal notranslate"><span class="pre">SensorTimeoutError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sensor.SensorType"><code class="docutils literal notranslate"><span class="pre">SensorType</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.SensorType.COUNTER"><code class="docutils literal notranslate"><span class="pre">SensorType.COUNTER</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.SensorType.ENCODER"><code class="docutils literal notranslate"><span class="pre">SensorType.ENCODER</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.SensorType.LIGHT_BARRIER"><code class="docutils literal notranslate"><span class="pre">SensorType.LIGHT_BARRIER</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensor.SensorType.REF_SWITCH"><code class="docutils literal notranslate"><span class="pre">SensorType.REF_SWITCH</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#sensor.event_det_at_sensor"><code class="docutils literal notranslate"><span class="pre">event_det_at_sensor()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="robot_3d.html" title="previous chapter">robot_3d module</a></li>
+      <li>Next: <a href="setup.html" title="next chapter">setup module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Lukas Beck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/sensor.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
