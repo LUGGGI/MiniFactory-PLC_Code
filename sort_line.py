@@ -26,8 +26,8 @@ class State(Enum):
     ERROR = 999
 
 class SortLine(Machine):
-    '''Controls the Sorting Line
-
+    '''Controls the Sorting Line.'''
+    '''
     Methodes:
         run(): Runs the Sorting Line routine.
     Attributes:

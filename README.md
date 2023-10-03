@@ -1,6 +1,7 @@
 # MiniFactory
 
-Repository for my code
+Documentation found in doc [/docs/_build/html/index.html](/docs/_build/html/index.html "/docs/_build/html/index.html").
+
 
 ## Command for uploading new software to right factory
 

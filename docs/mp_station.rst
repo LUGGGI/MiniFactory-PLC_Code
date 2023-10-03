@@ -1,4 +1,4 @@
-mp\_station module
+mp\_station
 ==================
 
 .. automodule:: mp_station

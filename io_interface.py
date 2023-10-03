@@ -13,8 +13,8 @@ from copy import deepcopy
 from logger import log
 
 class IOInterface():
-    '''Handels json config read and program status update.
-    
+    '''Handels json config read and program status update.'''
+    '''
     Methodes:
         update_configs_with_input(): Reads input file and appends the new configs to the configs list.
         __check_if_config_already_exists(): Returns True if the given config already exist.

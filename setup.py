@@ -19,8 +19,8 @@ from mainline import MainLine
 
 
 class Setup():
-    '''Setup for Factory.
-    
+    '''Setup for Factory.'''
+    '''
     Methodes:
         run_factory(): Starts the factory, adds and updates the lines.
         __update_factory(): Updates the factory and starts every line.

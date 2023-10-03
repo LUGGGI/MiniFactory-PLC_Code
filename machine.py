@@ -15,8 +15,8 @@ from revpimodio2 import RevPiModIO
 from logger import log
 
 class Machine:
-    '''Parent class for all machine modules.
-    
+    '''Parent class for all machine modules.'''
+    '''
     Methodes:
         get_run_time(): Get run time of machine.
         get_state_time(): Get run time of current state.

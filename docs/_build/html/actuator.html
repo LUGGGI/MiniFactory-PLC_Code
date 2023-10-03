@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>actuator module &#8212; MiniFactory  documentation</title>
+    <title>actuator &#8212; MiniFactory  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
     <script src="_static/documentation_options.js?v=5929fcd5"></script>
@@ -13,8 +13,8 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="conveyor module" href="conveyor.html" />
-    <link rel="prev" title="Welcome to MiniFactory’s documentation!" href="index.html" />
+    <link rel="next" title="sensor" href="sensor.html" />
+    <link rel="prev" title="mainline" href="mainline.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -32,186 +32,65 @@
           <div class="body" role="main">
             
   <section id="module-actuator">
-<span id="actuator-module"></span><h1>actuator module<a class="headerlink" href="#module-actuator" title="Link to this heading">¶</a></h1>
+<span id="actuator"></span><h1>actuator<a class="headerlink" href="#module-actuator" title="Link to this heading">¶</a></h1>
 <p>This module handles communication with Actuators</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="actuator.Actuator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">actuator.</span></span><span class="sig-name descname"><span class="pre">Actuator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">RevPiModIO</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pwm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Control for Actuators, can also call Sensors</p>
-<dl class="simple">
-<dt>Methodes:</dt><dd><p>run_to_sensor(): Run Actuator until product is detected.
-run_for_time(): Run Actuator for certain amount of time.
-move_axis(): Moves an axis to the given trigger value.
-run_to_encoder_value(): Run Actuator until the trigger_value of encoder is reached.
-run_to_encoder_start(): Run Actuator to the encoder reference switch and resets the counter to 0.
-start(): Start actuator.
-stop(): Stop actuator.
-set_pwm(): Set PWM to percentage.
-join(): Joins the current thread and raises Exceptions.</p>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__ENCODER_TRIGGER_THRESHOLD">
-<span class="sig-name descname"><span class="pre">__ENCODER_TRIGGER_THRESHOLD</span></span><a class="headerlink" href="#actuator.Actuator.__ENCODER_TRIGGER_THRESHOLD" title="Link to this definition">¶</a></dt>
-<dd><p>Range around trigger value where trigger happens for encoder.</p>
+<p>Control for Actuators, can also call Sensors.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="actuator.Actuator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">RevPiModIO</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pwm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes Actuator.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__COUNTER_TRIGGER_THRESHOLD">
-<span class="sig-name descname"><span class="pre">__COUNTER_TRIGGER_THRESHOLD</span></span><a class="headerlink" href="#actuator.Actuator.__COUNTER_TRIGGER_THRESHOLD" title="Link to this definition">¶</a></dt>
-<dd><p>Range around trigger value where trigger happens for counter.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__PWM_TRIGGER_THRESHOLD">
-<span class="sig-name descname"><span class="pre">__PWM_TRIGGER_THRESHOLD</span></span><a class="headerlink" href="#actuator.Actuator.__PWM_TRIGGER_THRESHOLD" title="Link to this definition">¶</a></dt>
-<dd><p>Range around trigger value where trigger happens while actuator is slowed down.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__PWM_WINDOW">
-<span class="sig-name descname"><span class="pre">__PWM_WINDOW</span></span><a class="headerlink" href="#actuator.Actuator.__PWM_WINDOW" title="Link to this definition">¶</a></dt>
-<dd><p>Range around the trigger value where the actuator is slowed down from the start.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__PWM_DURATION">
-<span class="sig-name descname"><span class="pre">__PWM_DURATION</span></span><a class="headerlink" href="#actuator.Actuator.__PWM_DURATION" title="Link to this definition">¶</a></dt>
-<dd><p>Range around the trigger value where the actuator is slowed down.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__revpi">
-<span class="sig-name descname"><span class="pre">__revpi</span></span><a class="headerlink" href="#actuator.Actuator.__revpi" title="Link to this definition">¶</a></dt>
-<dd><p>RevPiModIO Object to control the motors and sensors.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>RevPiModIO</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#actuator.Actuator.name" title="Link to this definition">¶</a></dt>
-<dd><p>Exact name of the sensor in PiCtory (everything bevor first ‘_’).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.line_name">
-<span class="sig-name descname"><span class="pre">line_name</span></span><a class="headerlink" href="#actuator.Actuator.line_name" title="Link to this definition">¶</a></dt>
-<dd><p>Name of current line.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__pwm">
-<span class="sig-name descname"><span class="pre">__pwm</span></span><a class="headerlink" href="#actuator.Actuator.__pwm" title="Link to this definition">¶</a></dt>
-<dd><p>Name of PWM-pin, Slows motor down, bevor reaching the value.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__type">
-<span class="sig-name descname"><span class="pre">__type</span></span><a class="headerlink" href="#actuator.Actuator.__type" title="Link to this definition">¶</a></dt>
-<dd><p>Specifier for motor name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__thread">
-<span class="sig-name descname"><span class="pre">__thread</span></span><a class="headerlink" href="#actuator.Actuator.__thread" title="Link to this definition">¶</a></dt>
-<dd><p>Thread object if a function is called as thread.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Thread</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.exception">
-<span class="sig-name descname"><span class="pre">exception</span></span><a class="headerlink" href="#actuator.Actuator.exception" title="Link to this definition">¶</a></dt>
-<dd><p>Holdes exception if exception was raised.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Exception</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.__pwm_value">
-<span class="sig-name descname"><span class="pre">__pwm_value</span></span><a class="headerlink" href="#actuator.Actuator.__pwm_value" title="Link to this definition">¶</a></dt>
-<dd><p>Value for pwm, the percentage of the speed.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="actuator.Actuator.log">
-<span class="sig-name descname"><span class="pre">log</span></span><a class="headerlink" href="#actuator.Actuator.log" title="Link to this definition">¶</a></dt>
-<dd><p>Log object to print to log.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Logger</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>revpi</strong> (<em>RevPiModIO</em>) – RevPiModIO Object to control the motors and sensors.</p></li>
+<li><p><strong>name</strong> – Exact name of the machine in PiCtory (everything bevor first ‘_’).</p></li>
+<li><p><strong>line_name</strong> – Name of current line.</p></li>
+<li><p><strong>pwm</strong> – Name of PWM-pin, Slows motor down, bevor reaching the value.</p></li>
+<li><p><strong>type</strong> (<em>str</em>) – Specifier for motor name.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="actuator.Actuator.join">
-<span class="sig-name descname"><span class="pre">join</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.join"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.join" title="Link to this definition">¶</a></dt>
-<dd><p>Joins the current thread and raises Exceptions.</p>
+<dt class="sig sig-object py" id="actuator.Actuator.run_to_sensor">
+<span class="sig-name descname"><span class="pre">run_to_sensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_sensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_delay_in_ms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_in_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.run_to_sensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.run_to_sensor" title="Link to this definition">¶</a></dt>
+<dd><p>Run Actuator until product is detected by a Sensor, panics if nothing was detected.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>Exception</strong> – Exceptions that a thrown in thread function.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>direction</strong> (<em>str</em>) – Actuator direction, (last part of whole name).</p></li>
+<li><p><strong>stop_sensor</strong> (<em>str</em>) – Stops Actuator if detection occurs at this Sensor.</p></li>
+<li><p><strong>stop_delay_in_ms</strong> (<em>int</em>) – Runs the Actuator this much longer after detection.</p></li>
+<li><p><strong>timeout_in_s</strong> (<em>int</em>) – Time after which an exception is raised.</p></li>
+<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="sensor.html#sensor.SensorTimeoutError" title="sensor.SensorTimeoutError"><strong>SensorTimeoutError</strong></a> – Timeout is reached (no detection happened).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="actuator.Actuator.run_for_time">
+<span class="sig-name descname"><span class="pre">run_for_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_time_in_s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_sensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.run_for_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.run_for_time" title="Link to this definition">¶</a></dt>
+<dd><p>Run Actuator for certain amount of time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>direction</strong> (<em>str</em>) – Actuator direction, (last part of whole name).</p></li>
+<li><p><strong>wait_time_in_s</strong> (<em>int</em>) – Time after which the actuator stops.</p></li>
+<li><p><strong>check_sensor</strong> (<em>str</em>) – If given, checks if detection occurred.</p></li>
+<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="sensor.html#sensor.NoDetectionError" title="sensor.NoDetectionError"><strong>NoDetectionError</strong></a> – No detection at check_sensor.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -244,45 +123,6 @@ join(): Joins the current thread and raises Exceptions.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="actuator.Actuator.run_for_time">
-<span class="sig-name descname"><span class="pre">run_for_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_time_in_s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_sensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.run_for_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.run_for_time" title="Link to this definition">¶</a></dt>
-<dd><p>Run Actuator for certain amount of time.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>direction</strong> (<em>str</em>) – Actuator direction, (last part of whole name).</p></li>
-<li><p><strong>wait_time_in_s</strong> (<em>int</em>) – Time after which the actuator stops.</p></li>
-<li><p><strong>check_sensor</strong> (<em>str</em>) – If given, checks if detection occurred.</p></li>
-<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="sensor.html#sensor.NoDetectionError" title="sensor.NoDetectionError"><strong>NoDetectionError</strong></a> – No detection at check_sensor.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="actuator.Actuator.run_to_encoder_start">
-<span class="sig-name descname"><span class="pre">run_to_encoder_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_sw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor"><span class="pre">Sensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_in_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.run_to_encoder_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.run_to_encoder_start" title="Link to this definition">¶</a></dt>
-<dd><p>Run Actuator to the encoder reference switch and resets the encoder to 0.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>direction</strong> (<em>str</em>) – Actuator direction, (last part of whole name).</p></li>
-<li><p><strong>ref_sw</strong> (<em>str</em>) – Reference Switch at which the motor stops if it runs to the encoder start.</p></li>
-<li><p><strong>encoder</strong> (<a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor"><em>Sensor</em></a>) – Sensor object for the used encoder.</p></li>
-<li><p><strong>timeout_in_s</strong> (<em>int</em>) – Time after which an exception is raised.</p></li>
-<li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="sensor.html#sensor.SensorTimeoutError" title="sensor.SensorTimeoutError"><strong>SensorTimeoutError</strong></a> – Timeout is reached (no detection happened).</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="actuator.Actuator.run_to_encoder_value">
 <span class="sig-name descname"><span class="pre">run_to_encoder_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor"><span class="pre">Sensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">trigger_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_in_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.run_to_encoder_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.run_to_encoder_value" title="Link to this definition">¶</a></dt>
 <dd><p>Run Actuator until the trigger_value of encoder is reached.
@@ -308,35 +148,21 @@ join(): Joins the current thread and raises Exceptions.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="actuator.Actuator.run_to_sensor">
-<span class="sig-name descname"><span class="pre">run_to_sensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_sensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_delay_in_ms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_in_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.run_to_sensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.run_to_sensor" title="Link to this definition">¶</a></dt>
-<dd><p>Run Actuator until product is detected by a Sensor, panics if nothing was detected.</p>
+<dt class="sig sig-object py" id="actuator.Actuator.run_to_encoder_start">
+<span class="sig-name descname"><span class="pre">run_to_encoder_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_sw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor"><span class="pre">Sensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_in_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.run_to_encoder_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.run_to_encoder_start" title="Link to this definition">¶</a></dt>
+<dd><p>Run Actuator to the encoder reference switch and resets the encoder to 0.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>direction</strong> (<em>str</em>) – Actuator direction, (last part of whole name).</p></li>
-<li><p><strong>stop_sensor</strong> (<em>str</em>) – Stops Actuator if detection occurs at this Sensor.</p></li>
-<li><p><strong>stop_delay_in_ms</strong> (<em>int</em>) – Runs the Actuator this much longer after detection.</p></li>
+<li><p><strong>ref_sw</strong> (<em>str</em>) – Reference Switch at which the motor stops if it runs to the encoder start.</p></li>
+<li><p><strong>encoder</strong> (<a class="reference internal" href="sensor.html#sensor.Sensor" title="sensor.Sensor"><em>Sensor</em></a>) – Sensor object for the used encoder.</p></li>
 <li><p><strong>timeout_in_s</strong> (<em>int</em>) – Time after which an exception is raised.</p></li>
 <li><p><strong>as_thread</strong> (<em>bool</em>) – Runs the function as a thread.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="sensor.html#sensor.SensorTimeoutError" title="sensor.SensorTimeoutError"><strong>SensorTimeoutError</strong></a> – Timeout is reached (no detection happened).</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="actuator.Actuator.set_pwm">
-<span class="sig-name descname"><span class="pre">set_pwm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">percentage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.set_pwm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.set_pwm" title="Link to this definition">¶</a></dt>
-<dd><p>Set PWM value to percentage.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>percentage</strong> (<em>int</em>) – speed of motor, (0..100) on is over 20.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – Percentage out of range (0-100)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -359,6 +185,31 @@ join(): Joins the current thread and raises Exceptions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>direction</strong> (<em>str</em>) – Actuator direction, (last part of whole name).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="actuator.Actuator.set_pwm">
+<span class="sig-name descname"><span class="pre">set_pwm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">percentage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.set_pwm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.set_pwm" title="Link to this definition">¶</a></dt>
+<dd><p>Set PWM value to percentage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>percentage</strong> (<em>int</em>) – speed of motor, (0..100) on is over 20.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Percentage out of range (0-100)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="actuator.Actuator.join">
+<span class="sig-name descname"><span class="pre">join</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/actuator.html#Actuator.join"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#actuator.Actuator.join" title="Link to this definition">¶</a></dt>
+<dd><p>Joins the current thread and raises Exceptions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Exceptions that a thrown in thread function.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -386,61 +237,48 @@ join(): Joins the current thread and raises Exceptions.</p>
 <h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">actuator module</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">actuator</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#actuator.Actuator"><code class="docutils literal notranslate"><span class="pre">Actuator</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__ENCODER_TRIGGER_THRESHOLD"><code class="docutils literal notranslate"><span class="pre">Actuator.__ENCODER_TRIGGER_THRESHOLD</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__COUNTER_TRIGGER_THRESHOLD"><code class="docutils literal notranslate"><span class="pre">Actuator.__COUNTER_TRIGGER_THRESHOLD</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__PWM_TRIGGER_THRESHOLD"><code class="docutils literal notranslate"><span class="pre">Actuator.__PWM_TRIGGER_THRESHOLD</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__PWM_WINDOW"><code class="docutils literal notranslate"><span class="pre">Actuator.__PWM_WINDOW</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__PWM_DURATION"><code class="docutils literal notranslate"><span class="pre">Actuator.__PWM_DURATION</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__revpi"><code class="docutils literal notranslate"><span class="pre">Actuator.__revpi</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.name"><code class="docutils literal notranslate"><span class="pre">Actuator.name</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.line_name"><code class="docutils literal notranslate"><span class="pre">Actuator.line_name</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__pwm"><code class="docutils literal notranslate"><span class="pre">Actuator.__pwm</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__type"><code class="docutils literal notranslate"><span class="pre">Actuator.__type</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__thread"><code class="docutils literal notranslate"><span class="pre">Actuator.__thread</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.exception"><code class="docutils literal notranslate"><span class="pre">Actuator.exception</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__pwm_value"><code class="docutils literal notranslate"><span class="pre">Actuator.__pwm_value</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.log"><code class="docutils literal notranslate"><span class="pre">Actuator.log</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.join"><code class="docutils literal notranslate"><span class="pre">Actuator.join()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.move_axis"><code class="docutils literal notranslate"><span class="pre">Actuator.move_axis()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.run_for_time"><code class="docutils literal notranslate"><span class="pre">Actuator.run_for_time()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.run_to_encoder_start"><code class="docutils literal notranslate"><span class="pre">Actuator.run_to_encoder_start()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.run_to_encoder_value"><code class="docutils literal notranslate"><span class="pre">Actuator.run_to_encoder_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.__init__"><code class="docutils literal notranslate"><span class="pre">Actuator.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.run_to_sensor"><code class="docutils literal notranslate"><span class="pre">Actuator.run_to_sensor()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.set_pwm"><code class="docutils literal notranslate"><span class="pre">Actuator.set_pwm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.run_for_time"><code class="docutils literal notranslate"><span class="pre">Actuator.run_for_time()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.move_axis"><code class="docutils literal notranslate"><span class="pre">Actuator.move_axis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.run_to_encoder_value"><code class="docutils literal notranslate"><span class="pre">Actuator.run_to_encoder_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.run_to_encoder_start"><code class="docutils literal notranslate"><span class="pre">Actuator.run_to_encoder_start()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.start"><code class="docutils literal notranslate"><span class="pre">Actuator.start()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.stop"><code class="docutils literal notranslate"><span class="pre">Actuator.stop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.set_pwm"><code class="docutils literal notranslate"><span class="pre">Actuator.set_pwm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#actuator.Actuator.join"><code class="docutils literal notranslate"><span class="pre">Actuator.join()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="exit_handler.html">exit_handler module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="logger.html">logger module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="machine.html">machine module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="machine.html">machine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station</a></li>
+<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach</a></li>
+<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exit_handler.html">exit_handler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logger.html">logger</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to MiniFactory’s documentation!</a></li>
-      <li>Next: <a href="conveyor.html" title="next chapter">conveyor module</a></li>
+      <li>Previous: <a href="mainline.html" title="previous chapter">mainline</a></li>
+      <li>Next: <a href="sensor.html" title="next chapter">sensor</a></li>
   </ul></li>
 </ul>
 </div>

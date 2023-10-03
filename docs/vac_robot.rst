@@ -1,4 +1,4 @@
-vac\_robot module
+vac\_robot
 =================
 
 .. automodule:: vac_robot

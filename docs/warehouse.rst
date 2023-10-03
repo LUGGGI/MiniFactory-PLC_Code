@@ -1,4 +1,4 @@
-warehouse module
+warehouse
 ================
 
 .. automodule:: warehouse

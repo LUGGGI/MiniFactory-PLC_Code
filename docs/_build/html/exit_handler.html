@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>exit_handler module &#8212; MiniFactory  documentation</title>
+    <title>exit_handler &#8212; MiniFactory  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
     <script src="_static/documentation_options.js?v=5929fcd5"></script>
@@ -13,8 +13,8 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="grip_robot module" href="grip_robot.html" />
-    <link rel="prev" title="conveyor module" href="conveyor.html" />
+    <link rel="next" title="io_interface" href="io_interface.html" />
+    <link rel="prev" title="warehouse" href="warehouse.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -32,35 +32,20 @@
           <div class="body" role="main">
             
   <section id="module-exit_handler">
-<span id="exit-handler-module"></span><h1>exit_handler module<a class="headerlink" href="#module-exit_handler" title="Link to this heading">¶</a></h1>
+<span id="exit-handler"></span><h1>exit_handler<a class="headerlink" href="#module-exit_handler" title="Link to this heading">¶</a></h1>
 <p>This handles exit/stop of factory</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="exit_handler.ExitHandler">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">exit_handler.</span></span><span class="sig-name descname"><span class="pre">ExitHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">RevPiModIO</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/exit_handler.html#ExitHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exit_handler.ExitHandler" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Stops the factory, and handles CTRL+C.</p>
-<dl class="simple">
-<dt>Methodes:</dt><dd><p>stop_factory: Disables the API for factory and stops all Actuators.</p>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="exit_handler.ExitHandler.revpi">
-<span class="sig-name descname"><span class="pre">revpi</span></span><a class="headerlink" href="#exit_handler.ExitHandler.revpi" title="Link to this definition">¶</a></dt>
-<dd><p>RevPiModIO Object to control the motors and sensors.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="exit_handler.ExitHandler.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">RevPiModIO</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/exit_handler.html#ExitHandler.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exit_handler.ExitHandler.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the ExitHandler</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>RevPiModIO</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="exit_handler.ExitHandler.was_called">
-<span class="sig-name descname"><span class="pre">was_called</span></span><a class="headerlink" href="#exit_handler.ExitHandler.was_called" title="Link to this definition">¶</a></dt>
-<dd><p>Is set to true if exit handler was called.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>revpi</strong> (<em>RevPiModIO</em>) – RevPiModIO Object to control the motors and sensors</p>
 </dd>
 </dl>
 </dd></dl>
@@ -94,41 +79,40 @@
 <h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="actuator.html">actuator module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor module</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">exit_handler module</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="actuator.html">actuator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conveyor.html">conveyor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="machine.html">machine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station</a></li>
+<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach</a></li>
+<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">exit_handler</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#exit_handler.ExitHandler"><code class="docutils literal notranslate"><span class="pre">ExitHandler</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#exit_handler.ExitHandler.revpi"><code class="docutils literal notranslate"><span class="pre">ExitHandler.revpi</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#exit_handler.ExitHandler.was_called"><code class="docutils literal notranslate"><span class="pre">ExitHandler.was_called</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exit_handler.ExitHandler.__init__"><code class="docutils literal notranslate"><span class="pre">ExitHandler.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#exit_handler.ExitHandler.stop_factory"><code class="docutils literal notranslate"><span class="pre">ExitHandler.stop_factory()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="grip_robot.html">grip_robot module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="index_line.html">index_line module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="leftline.html">leftline module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="logger.html">logger module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="machine.html">machine module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mainline.html">mainline module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mp_station.html">mp_station module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="punch_mach.html">punch_mach module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="rightline.html">rightline module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="robot_3d.html">robot_3d module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sensor.html">sensor module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sort_line.html">sort_line module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="vac_robot.html">vac_robot module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="warehouse.html">warehouse module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io_interface.html">io_interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logger.html">logger</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="conveyor.html" title="previous chapter">conveyor module</a></li>
-      <li>Next: <a href="grip_robot.html" title="next chapter">grip_robot module</a></li>
+      <li>Previous: <a href="warehouse.html" title="previous chapter">warehouse</a></li>
+      <li>Next: <a href="io_interface.html" title="next chapter">io_interface</a></li>
   </ul></li>
 </ul>
 </div>

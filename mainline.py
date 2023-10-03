@@ -21,8 +21,8 @@ class Status(Enum):
     WAITING = 4
 
 class MainLine(Machine):
-    '''Controls the MiniFactory.
-    
+    '''Controls the MiniFactory.'''
+    '''
     Methodes:
         update(): Updates the line
         line_config(): Config functionality

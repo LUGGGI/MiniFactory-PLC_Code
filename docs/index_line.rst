@@ -1,4 +1,4 @@
-index\_line module
+index\_line
 ==================
 
 .. automodule:: index_line

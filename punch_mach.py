@@ -24,8 +24,8 @@ class State(Enum):
     ERROR = 999
 
 class PunchMach(Machine):
-    '''Controls the Punching Maschine.
-    
+    '''Controls the Punching Maschine.'''
+    '''
     Methodes:
         run(): Runs the Punching Maschine routine.
     Attributes:

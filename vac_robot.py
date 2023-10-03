@@ -16,8 +16,8 @@ from robot_3d import Robot3D, Position, State
 
 
 class VacRobot(Robot3D):
-    '''Controls the Vacuum Robot
-    
+    '''Controls the Vacuum Robot'''
+    '''
     Methodes:
         grip(): Grip Product.
         release(): Release Product.

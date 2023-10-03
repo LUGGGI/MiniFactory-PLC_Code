@@ -1,4 +1,4 @@
-robot\_3d module
+robot\_3d
 ================
 
 .. automodule:: robot_3d

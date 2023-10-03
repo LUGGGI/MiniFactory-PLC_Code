@@ -1,4 +1,4 @@
-machine module
+machine
 ==============
 
 .. automodule:: machine

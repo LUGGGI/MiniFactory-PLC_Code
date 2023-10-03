@@ -1,4 +1,4 @@
-actuator module
+actuator
 ===============
 
 .. automodule:: actuator

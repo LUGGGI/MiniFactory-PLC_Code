@@ -32,14 +32,28 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 language = 'en'
 
+# -- Autodoc configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+
+autodoc_default_options = {
+    'member-order': 'bysource',
+    'undoc-members': False,
+    'private-members': False,
+    'exclude-members': 'Attributes',
+    'special-members': '__init__'
+}
+
+# Napoleon
+napoleon_include_private_with_doc = False
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'alabaster'
 # html_static_path = ['_static']
 html_theme_options = {
-    "sidebarwidth": 200,
-    "fixed_sidebar": False
+    "sidebarwidth": "20%",
+    "fixed_sidebar": False,
 }
 
 # -- Options for todo extension ----------------------------------------------

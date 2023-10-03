@@ -1,4 +1,4 @@
-exit\_handler module
+exit\_handler
 ====================
 
 .. automodule:: exit_handler

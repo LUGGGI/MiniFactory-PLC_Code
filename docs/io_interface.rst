@@ -1,4 +1,4 @@
-io\_interface module
+io\_interface
 ====================
 
 .. automodule:: io_interface

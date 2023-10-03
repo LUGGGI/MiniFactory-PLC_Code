@@ -29,8 +29,8 @@ class State(Enum):
     ERROR = 999
 
 class MPStation(Machine):
-    '''Controls the Multi Purpose Station.
-
+    '''Controls the Multi Purpose Station.'''
+    '''
     Methodes:
         init(): Move to init position.
         run(): Runs the Multi Purpose Station routine.

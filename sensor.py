@@ -22,8 +22,8 @@ class SensorType(Enum):
     COUNTER = 3
 
 class Sensor():
-    '''Control-methods for Senors.
-    
+    '''Control-methods for Senors.'''
+    '''
     Methodes:
         get_current_value(): Returns the current value of the sensor.
         start_monitor(): Start monitoring sensor for detection.

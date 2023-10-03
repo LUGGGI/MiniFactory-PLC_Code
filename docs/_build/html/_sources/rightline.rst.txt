@@ -1,4 +1,4 @@
-rightline module
+rightline
 ================
 
 .. automodule:: rightline

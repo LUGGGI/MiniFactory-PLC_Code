@@ -15,8 +15,8 @@ from logger import log
 from sensor import Sensor, SensorType, SensorTimeoutError, EncoderOverflowError, NoDetectionError
 
 class Actuator():
-    '''Control for Actuators, can also call Sensors
-    
+    '''Control for Actuators, can also call Sensors.'''
+    '''
     Methodes:
         run_to_sensor(): Run Actuator until product is detected.
         run_for_time(): Run Actuator for certain amount of time.

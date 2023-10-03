@@ -1,4 +1,4 @@
-sort\_line module
+sort\_line
 =================
 
 .. automodule:: sort_line

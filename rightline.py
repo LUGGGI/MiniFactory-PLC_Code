@@ -61,8 +61,8 @@ class State(Enum):
 
 
 class RightLine(MainLine):
-    '''State loop and functions for right Factory.
-    
+    '''State loop and functions for right Factory.'''
+    '''
     Methodes:
         run_...(): Calls the different modules.
         mainloop(): Switches between machines.

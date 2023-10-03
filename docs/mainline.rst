@@ -1,4 +1,4 @@
-mainline module
+mainline
 ===============
 
 .. automodule:: mainline

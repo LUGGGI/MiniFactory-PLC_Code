@@ -28,8 +28,8 @@ class State(Enum):
     ERROR = 999
 
 class IndexLine(Machine):
-    '''Controls the Index Line.
-
+    '''Controls the Index Line.'''
+    '''
     Methodes:
         run(): Runs the Index Line routine.
     Attributes:

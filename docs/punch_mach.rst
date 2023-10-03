@@ -1,4 +1,4 @@
-punch\_mach module
+punch\_mach
 ==================
 
 .. automodule:: punch_mach

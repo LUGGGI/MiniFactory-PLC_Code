@@ -48,8 +48,8 @@ POSITIONS: "list[list[tuple]]" = [
 ]
 
 class Warehouse(Machine):
-    '''Controls the Warehouse
-    
+    '''Controls the Warehouse'''
+    '''
     Methodes:
         init(): Move to init Position
         store_product(): Stores a product at given position.

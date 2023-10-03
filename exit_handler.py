@@ -15,8 +15,8 @@ import signal
 from logger import log
 
 class ExitHandler:
-    '''Stops the factory, and handles CTRL+C.
-    
+    '''Stops the factory, and handles CTRL+C.'''
+    '''
     Methodes:
         stop_factory: Disables the API for factory and stops all Actuators.
     Attributes:

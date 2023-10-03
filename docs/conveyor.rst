@@ -1,4 +1,4 @@
-conveyor module
+conveyor
 ===============
 
 .. automodule:: conveyor

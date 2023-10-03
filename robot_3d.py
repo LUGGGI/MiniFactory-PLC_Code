@@ -27,8 +27,8 @@ class State(Enum):
     ERROR = 999
 
 class Position:
-    '''Holds a int value for each axis.
-    
+    '''Holds a int value for each axis.'''
+    '''
     Attributes:
         rotation (int): Rotation position.
         horizontal (int): Horizontal position.
@@ -55,8 +55,8 @@ class Position:
         return f"(r:{self.rotation if self.rotation != -1 else '-'}, h:{self.horizontal if self.horizontal != -1 else '-'}, v:{self.vertical if self.vertical != -1 else '-'})"  
 
 class Robot3D(Machine):
-    '''Controls the 3D Robot.
-    
+    '''Controls the 3D Robot.'''
+    '''
     Methodes:
         init(): Move to init position.
         move_to_position(): Moves to given position.

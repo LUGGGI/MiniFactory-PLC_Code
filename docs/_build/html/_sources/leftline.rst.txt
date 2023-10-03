@@ -1,4 +1,4 @@
-leftline module
+leftline
 ===============
 
 .. automodule:: leftline

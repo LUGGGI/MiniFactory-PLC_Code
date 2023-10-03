@@ -16,8 +16,8 @@ from robot_3d import Robot3D, Position, State
 
 
 class GripRobot(Robot3D):
-    '''Controls the Gripper Robot.
-    
+    '''Controls the Gripper Robot.'''
+    '''
     Methodes:
         grip(): Grip Product.
         release(): Release Product.

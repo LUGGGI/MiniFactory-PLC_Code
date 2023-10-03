@@ -24,8 +24,8 @@ class State(Enum):
 
 
 class Conveyor(Machine):
-    '''Controls a conveyor. If conveyor isn't run with end_machine=True, the flag has to be set manually.
-    
+    '''Controls a conveyor. If conveyor isn't run with end_machine=True, the flag has to be set manually.'''
+    '''
     Methodes:
         run_to_stop_sensor(): Runs the Conveyor until the product has reached the stop sensor
         run_to_counter_value(): Runs the Conveyor until the trigger_value of encoder is reached

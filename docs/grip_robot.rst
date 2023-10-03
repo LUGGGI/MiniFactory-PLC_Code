@@ -1,4 +1,4 @@
-grip\_robot module
+grip\_robot
 ==================
 
 .. automodule:: grip_robot
