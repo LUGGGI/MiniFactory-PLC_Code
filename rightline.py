@@ -14,21 +14,21 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.21"
+__version__ = "2023.11.22"
 
 from enum import Enum
 
-from logger import log
-from sensor import Sensor
-from conveyor import Conveyor
-from punch_mach import PunchMach
-from mp_station import MPStation
-from grip_robot import GripRobot, Position
-from vac_robot import VacRobot
-from sort_line import SortLine
-from warehouse import Warehouse
-from mainline import MainLine, Status
-from setup import Setup
+from lib.logger import log
+from lib.sensor import Sensor
+from lib.conveyor import Conveyor
+from lib.punch_mach import PunchMach
+from lib.mp_station import MPStation
+from lib.grip_robot import GripRobot, Position
+from lib.vac_robot import VacRobot
+from lib.sort_line import SortLine
+from lib.warehouse import Warehouse
+from lib.mainline import MainLine, Status
+from lib.setup import Setup
 
 class State(Enum):
     '''NAME = [ID, Status, Used_by]'''
@@ -69,7 +69,7 @@ class RightLine(MainLine):
     Attributes:
         WAREHOUSE_CONTENT_FILE (str): File path to the file that saves the warehouse inventory.
     '''
-    WAREHOUSE_CONTENT_FILE = "right_wh_content.json"
+    WAREHOUSE_CONTENT_FILE = "../right_wh_content.json"
 
     def __init__(self, revpi, config: dict):
         '''Initializes MiniFactory control loop.'''
@@ -541,5 +541,5 @@ class RightLine(MainLine):
 
 if __name__ == "__main__":
     # Start and run the factory
-    setup = Setup("right_config.json", "states.json", State, RightLine)
+    setup = Setup("../right_config.json", "states.json", State, RightLine)
     setup.run_factory()
