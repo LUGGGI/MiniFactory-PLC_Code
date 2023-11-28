@@ -11,11 +11,11 @@ import threading
 from enum import Enum
 import json
 
-from logger import log
-from machine import Machine
-from sensor import Sensor, SensorTimeoutError, EncoderOverflowError
-from actuator import Actuator
-from conveyor import Conveyor
+from lib.logger import log
+from lib.machine import Machine
+from lib.sensor import Sensor, SensorTimeoutError, EncoderOverflowError
+from lib.actuator import Actuator
+from lib.conveyor import Conveyor
 
 class State(Enum):
     INIT = 0

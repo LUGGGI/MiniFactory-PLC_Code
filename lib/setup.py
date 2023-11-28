@@ -12,10 +12,10 @@ __version__ = "2023.09.15"
 from time import sleep, time
 from revpimodio2 import RevPiModIO
 
-from exit_handler import ExitHandler
-from io_interface import IOInterface
-from logger import log
-from mainline import MainLine
+from lib.exit_handler import ExitHandler
+from lib.io_interface import IOInterface
+from lib.logger import log
+from lib.mainline import MainLine
 
 
 class Setup():

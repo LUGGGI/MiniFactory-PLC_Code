@@ -10,8 +10,9 @@ __license__ = "GPL"
 __version__ = "2023.09.15"
 
 from enum import Enum
-from logger import log
-from machine import Machine
+
+from lib.logger import log
+from lib.machine import Machine
 
 class Status(Enum):
     NONE = 0
