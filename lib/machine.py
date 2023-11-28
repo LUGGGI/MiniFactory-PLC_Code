@@ -10,9 +10,9 @@ __version__ = "2023.09.21"
 import threading
 from datetime import datetime
 from time import time
-
 from revpimodio2 import RevPiModIO
-from logger import log
+
+from lib.logger import log
 
 class Machine:
     '''Parent class for all machine modules.'''

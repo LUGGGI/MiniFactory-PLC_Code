@@ -9,10 +9,10 @@ __version__ = "2023.09.15"
 
 import threading
 
-from logger import log
-from sensor import Sensor, SensorType
-from actuator import Actuator, SensorTimeoutError, EncoderOverflowError
-from robot_3d import Robot3D, Position, State
+from lib.logger import log
+from lib.sensor import Sensor, SensorType
+from lib.actuator import Actuator, SensorTimeoutError, EncoderOverflowError
+from lib.robot_3d import Robot3D, Position, State
 
 
 class GripRobot(Robot3D):

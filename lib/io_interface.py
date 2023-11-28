@@ -10,7 +10,7 @@ __version__ = "2023.09.15"
 import json
 from copy import deepcopy
 
-from logger import log
+from lib.logger import log
 
 class IOInterface():
     '''Handels json config read and program status update.'''

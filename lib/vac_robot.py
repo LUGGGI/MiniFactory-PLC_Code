@@ -10,9 +10,9 @@ __version__ = "2023.09.15"
 import threading
 from time import sleep
 
-from logger import log
-from actuator import Actuator
-from robot_3d import Robot3D, Position, State
+from lib.logger import log
+from lib.actuator import Actuator
+from lib.robot_3d import Robot3D, Position, State
 
 
 class VacRobot(Robot3D):

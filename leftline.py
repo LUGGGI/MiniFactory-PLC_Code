@@ -67,7 +67,7 @@ class LeftLine(MainLine):
     Attributes:
         WAREHOUSE_CONTENT_FILE (str): File path to the file that saves the warehouse inventory.
     '''
-    WAREHOUSE_CONTENT_FILE = "../left_wh_content.json"
+    WAREHOUSE_CONTENT_FILE = "left_wh_content.json"
 
     def __init__(self, revpi, config: dict):
         '''Initializes MiniFactory control loop.'''
@@ -504,5 +504,5 @@ class LeftLine(MainLine):
 
 if __name__ == "__main__":
     # Start and run the factory
-    setup = Setup("../left_config.json", "states.json", State, LeftLine)
+    setup = Setup("left_config.json", "states.json", State, LeftLine)
     setup.run_factory()

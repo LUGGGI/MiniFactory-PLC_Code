@@ -11,7 +11,7 @@ import time
 from enum import Enum
 from revpimodio2 import RevPiModIO, BOTH
 
-from logger import log
+from lib.logger import log
 
 detection = False
 

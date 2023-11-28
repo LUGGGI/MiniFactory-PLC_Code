@@ -11,11 +11,11 @@ import threading
 from time import sleep
 from enum import Enum
 
-from logger import log
-from machine import Machine
-from sensor import Sensor, SensorTimeoutError
-from actuator import Actuator
-from conveyor import Conveyor
+from lib.logger import log
+from lib.machine import Machine
+from lib.sensor import Sensor, SensorTimeoutError
+from lib.actuator import Actuator
+from lib.conveyor import Conveyor
 
 class State(Enum):
     START = 0

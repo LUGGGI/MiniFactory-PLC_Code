@@ -12,7 +12,7 @@ from time import sleep
 from revpimodio2 import RevPiModIO
 import signal
 
-from logger import log
+from lib.logger import log
 
 class ExitHandler:
     '''Stops the factory, and handles CTRL+C.'''

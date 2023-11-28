@@ -10,10 +10,10 @@ __version__ = "2023.09.21"
 import threading
 from enum import Enum
 
-from logger import log
-from machine import Machine
-from sensor import Sensor, SensorTimeoutError, NoDetectionError
-from actuator import Actuator
+from lib.logger import log
+from lib.machine import Machine
+from lib.sensor import Sensor, SensorTimeoutError, NoDetectionError
+from lib.actuator import Actuator
 
 
 class State(Enum):

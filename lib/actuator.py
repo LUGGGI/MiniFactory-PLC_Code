@@ -11,8 +11,8 @@ import threading
 import time
 from revpimodio2 import RevPiModIO
 
-from logger import log
-from sensor import Sensor, SensorType, SensorTimeoutError, EncoderOverflowError, NoDetectionError
+from lib.logger import log
+from lib.sensor import Sensor, SensorType, SensorTimeoutError, EncoderOverflowError, NoDetectionError
 
 class Actuator():
     '''Control for Actuators, can also call Sensors.'''
