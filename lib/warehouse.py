@@ -247,7 +247,7 @@ class Warehouse(Machine):
             with open(self.__content_file, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
-        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError, LookupError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
@@ -337,7 +337,7 @@ class Warehouse(Machine):
             with open(self.__content_file, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
             
-        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError, LookupError) as error:
             self.problem_in_machine = True
             self.switch_state(State.ERROR)
             self.log.exception(error)
