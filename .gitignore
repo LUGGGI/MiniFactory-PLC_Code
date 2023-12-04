@@ -1,4 +1,5 @@
-/__pycache__
+*__pycache__
+
 plc*.log
 !plc_all.log
 *states.json

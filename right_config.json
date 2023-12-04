@@ -18,7 +18,7 @@
             "with_saw": true,
             "with_PM": false,
             "with_WH": false,
-            "color": "RED"
+            "color": "WHITE"
         },
         {
             "name": "Main2", 
@@ -46,20 +46,6 @@
             "start_at": "storage",
             "end_at": "END",
             "color": "RED"
-        },
-        {
-            "name": "Main5", 
-            "run": true,
-            "start_at": "storage",
-            "end_at": "END",
-            "color": "BLUE"
-        },
-        {
-            "name": "Main6", 
-            "run": true,
-            "start_at": "storage",
-            "end_at": "END",
-            "color": "WHITE"
         }
     ],
     "states": ["CB1", "CB3_TO_WH", "CB3_TO_CB4", "CB4", "CB5", "GR1", "GR2_CB1_TO_CB3", "GR2_CB1_TO_PM", "GR2_PM_TO_CB3", "GR3", "VG2", "MPS", "PM", "SL", "WH_STORE", "WH_RETRIEVE", "END", "start", "storage"]
