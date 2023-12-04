@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.11.29"
+__version__ = "2023.12.04"
 
 from enum import Enum
 
@@ -212,7 +212,7 @@ class RightLine(MainLine):
         if self.state == State.CB4_TO_WH:
             if cb.is_position(1) and State.WH_STORE.value[1] == Status.FREE:
                 self.product_at = cb.name
-                cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=75)
+                cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=45)
             elif cb.is_position(2):
                 cb.end_conveyor()
                 return True
@@ -353,7 +353,7 @@ class RightLine(MainLine):
             self.product_at = gr.name
             # move to cb5
             gr.move_to_position(Position(1970, 62, 1800))
-        elif gr.is_position(4) and State.CB5.value[1] == Status.FREE:
+        elif gr.is_position(4) and State.SL.value[1] == Status.FREE:
             # move down
             gr.move_to_position(Position(-1, -1, 2300))
         elif gr.is_position(5):
@@ -462,7 +462,7 @@ class RightLine(MainLine):
         elif vg.is_position(3):
             self.product_at = vg.name
             # move to wh
-            vg.move_to_position(Position(1800, 100, 0))
+            vg.move_to_position(Position(1810, 100, 0))
 
         # wait for warehouse to have a carrier
         elif vg.is_position(4) and wh.ready_for_product == True:
