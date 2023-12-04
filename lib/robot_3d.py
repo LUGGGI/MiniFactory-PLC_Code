@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2023.12.04"
 
 import threading
 from enum import Enum
@@ -78,12 +78,11 @@ class Robot3D(Machine):
         __motor_ver (Actuator): Motor for vertical axis.
 
     '''
-    __MOVE_THRESHOLD_ROT = 40
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
     __MAX_PICKUP_TRIES = 3
 
-    def __init__(self, revpi, name: str, line_name: str, moving_position: Position):
+    def __init__(self, revpi, name: str, line_name: str, moving_position: Position, move_threshold_rot: int = 40):
         '''Initializes the 3D Robot
         
         Args:
@@ -91,8 +90,10 @@ class Robot3D(Machine):
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
             line_name (str): Name of current line.
             moving_position (Position): Position where the axes should be to allow save moving.
+            move_threshold_rot (int): Set the move threshold for the rotation axis (defaults to 40).
         '''
         super().__init__(revpi, name, line_name)
+        self.__move_threshold_rot = move_threshold_rot
 
         global log
         self.log = log.getChild(f"{self.line_name}(Rob)")
@@ -316,7 +317,7 @@ class Robot3D(Machine):
             dir_ver = "UP"
 
         # move to position
-        self.__motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.__MOVE_THRESHOLD_ROT, self.__encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
+        self.__motor_rot.move_axis(dir_rot, position.rotation, current_position.rotation, self.__move_threshold_rot, self.__encoder_rot, self.name + "_REF_SW_ROTATION", timeout_in_s=20, as_thread=True)
         self.__motor_hor.move_axis(dir_hor, position.horizontal, current_position.horizontal, self.__MOVE_THRESHOLD_HOR, self.__encoder_hor, self.name + "_REF_SW_HORIZONTAL", as_thread=True)
         self.__motor_ver.move_axis(dir_ver, position.vertical, current_position.vertical, self.__MOVE_THRESHOLD_VER, self.__encoder_ver, self.name + "_REF_SW_VERTICAL", timeout_in_s=15, as_thread=True)
 
