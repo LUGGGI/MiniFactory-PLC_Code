@@ -28,6 +28,8 @@ class MainLine(Machine):
         update(): Updates the line
         line_config(): Config functionality
         mainloop(): Calls the different states
+        state_is_free(): Check if given state is FREE or used by current line.
+        is_end_state: Check if current state is the end state of current line.
         switch_state(): Switches state to given state if not BLOCKED or RUNNING
         switch_status(): Switch status in states
         end(): Waits for any machines left running.
@@ -82,7 +84,7 @@ class MainLine(Machine):
         '''Config functionality.
         
         Returns:
-            False if error occurred else returns True.
+            bool: False if error occurred else returns True.
         '''
         for machine in self.machines.values():
             # look for errors in the machines
@@ -134,6 +136,32 @@ class MainLine(Machine):
     def mainloop(self):
         '''Abstract function should never be called'''
         raise Exception("Abstract function called")
+    
+
+    def state_is_free(self, state):
+        '''Check if given state is FREE or used by current line.
+        
+        Args:
+            state (State): State Enum to check.
+        Returns:
+            bool: True if given state is FREE or used by current line, else False.
+        '''
+        if state.value[1] == Status.FREE or state.value[2] == self.name:
+            return True
+        else:
+            return False
+        
+    
+    def is_end_state(self):
+        '''Check if current state is the end state of current line.
+        
+        Returns:
+            bool: True if current state is end state, else False.
+        '''
+        if self.state == self.config["end_at"]:
+            return True
+        else:
+            return False
 
 
     def switch_state(self, state, wait=False):
@@ -146,7 +174,7 @@ class MainLine(Machine):
         if self.state == self.config["end_at"] and state != self.states.END:
             self.switch_status(self.state, Status.FREE)
             self.switch_state(self.states.END, wait)
-        elif state.value[1] == Status.FREE or state.value[2] == self.name:
+        elif self.state_is_free(state):
             if wait:
                 input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
             self.log.critical(self.name + ": Switching state to: " + str(state.name))

@@ -1,8 +1,24 @@
 {
     "available": true,
-    "exit_if_end": false,
+    "exit_if_end": true,
     "run": true,
     "configs": [
+        {
+            "name": "Test",
+            "run": true,
+            "start_at": "CB3",
+            "end_at": "CB5",
+            "with_PM": false
+        },
+        {
+            "name": "Test2",
+            "run": true,
+            "start_at": "CB4_TO_CB5",
+            "end_at": "CB5",
+            "with_PM": false
+        }
+    ],
+    "configs1": [
         {
             "name": "Init", 
             "run": true,
