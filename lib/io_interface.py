@@ -11,10 +11,11 @@ import json
 from copy import deepcopy
 
 from lib.logger import log
+from lib.mqtt_handler import MqttHandler
 
 class IOInterface():
-    '''Handels json config read and program status update.'''
-    '''
+    '''Handels json config read and program status update.
+
     Methodes:
         update_configs_with_input(): Reads input file and appends the new configs to the configs list.
         __check_if_config_already_exists(): Returns True if the given config already exist.
@@ -23,6 +24,7 @@ class IOInterface():
         __input_file (str): Config json file where the lines are configured.
         __output_file (str): Json file where the states are logged.
         __states (State): Possible States of line.
+        __debug (bool): If True the config file will be read instead of mqtt. (Defaults to False)
         input_dict (dict): Current input.
         new_configs (list): New line configs.
         factory_run (bool): If False the factory stops.
@@ -31,25 +33,35 @@ class IOInterface():
         __update_num (inz): Counts the number of output updates.
     '''
 
-    def __init__(self, input_file, output_file, states):
+    def __init__(self, input_file, output_file, states, factory_name, configs, debug=False):
         '''Init IOInterface.
         
         Args:
             input_file (str): Config json file where the lines are configured.
             output_file (str): Json file where the states are logged.
             states (State): Possible States of line.
+            factory_name (str): Name of the factory (for example Right)
+            configs (Configs): Object where all config data can be saved.
+            debug (bool): If True the config file will be read instead of mqtt. (Defaults to False)
         '''
         self.__input_file = input_file
         self.__output_file = output_file
         self.__states = states
+        self.__factory_name = factory_name
+        self.configs = configs
+        self.__debug = debug
 
         self.input_dict = {}
         self.new_configs = []
         self.factory_run = False
+        self.factory_stop = False
         self.factory_end = False
 
         self.__output_dict = {}
         self.__update_num = 0
+
+        if self.__debug == False:
+            self.mqtt = MqttHandler(self.__factory_name, self.configs)
 
         global log
         self.log = log.getChild(f"IO_Com")

@@ -10,12 +10,17 @@ __license__ = "GPL"
 __version__ = "2023.09.15"
 
 from time import sleep, time
+from threading import Semaphore
 from revpimodio2 import RevPiModIO
 
 from lib.exit_handler import ExitHandler
 from lib.io_interface import IOInterface
+from lib.mqtt_handler import Configs, MqttHandler
 from lib.logger import log
 from lib.mainline import MainLine
+
+
+
 
 
 class Setup():
@@ -30,6 +35,7 @@ class Setup():
         revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
         states (State): All possible States of the line.
         line_class (Mainline): Class of the current line.
+        factory_name (str): Name of the factory (for example Right).
         exception (bool): True if exception in factory.
         loop_start_time (float): Current loop start time.
         last_config_update_time (float): Time of last config update.
@@ -39,7 +45,7 @@ class Setup():
     '''
     LOOP_TIME = 0.02 # in seconds
     
-    def __init__(self, input_file, output_file, states, line_class):
+    def __init__(self, input_file: str, output_file: str, states, line_class: MainLine, factory_name: str):
         '''Init setup and setup of RevpiModIO.
         
         Args:
@@ -47,27 +53,31 @@ class Setup():
             output_file (str): Json file path where the states are logged.
             states (State): All possible States of the line.
             line_class (Mainline): Class of the current line.
+            factory_name (str): Name of the factory (for example Right).
         '''
         # setup RevpiModIO
         try:
             self.revpi = RevPiModIO(autorefresh=True)
         except:
             # load simulation if not connected to factory
-            self.revpi = RevPiModIO(autorefresh=True, configrsc="../RevPi/RevPi82247.rsc", procimg="../RevPi/RevPi82247.img")
+            self.revpi = RevPiModIO(autorefresh=True, configrsc="../RevPi/right.rsc", procimg="../RevPi/right.img")
         
         self.revpi.mainloop(blocking=False)
 
         self.states = states
         self.line_class = line_class
+        self.factory_name = factory_name
         
         self.exception = False
         self.loop_start_time: float = 0
         self.last_config_update_time: float = 0
 
         self.lines: dict = {}
+        self.configs = Configs()
 
         self.exit_handler = ExitHandler(self.revpi)
-        self.io_interface = IOInterface(input_file, output_file, states)
+        # self.io_interface = IOInterface(input_file, output_file, states, self.factory_name, self.configs)
+        self.mqtt_handler = MqttHandler(self.factory_name, self.states, self.configs)
 
 
     def run_factory(self):
@@ -79,21 +89,14 @@ class Setup():
             try:
                 # update the config
                 if time() > self.last_config_update_time + 1:
-                    self.io_interface.update_configs_with_input()
                     self.last_config_update_time = time()
 
-                    for config in self.io_interface.new_configs:
+                    config: dict
+                    for config in self.configs.line_configs.values():
                         # add line if it doesn't exists
-                        if self.lines.get(config["name"]) == None:
-                            if config["run"] == False:
-                                continue
+                        if config.pop("new", False) == True:
                             self.lines[config["name"]] = self.line_class(self.revpi, config)
                             log.warning(f"Added new line: {config['name']}")
-                        # update config in existing line
-                        else:
-                            self.lines[config["name"]].config = config
-                            log.warning(f"Updated line: {config['name']}")
-                    self.io_interface.new_configs.clear()
             
                 self.__update_factory()
             except Exception as e:
@@ -101,12 +104,12 @@ class Setup():
                 self.exception = True
 
             # save Status of factory and every running machine
-            self.__save_status()
+            # self.__save_status()
             
             # exit the factory if error occurred or end has ben reached
             if self.exception:
                 break
-            if self.lines.__len__() <= 0 and self.io_interface.factory_end:
+            if self.lines.__len__() <= 0 and self.configs.factory_config.get("exit_if_end"):
                 break
 
 
@@ -118,6 +121,7 @@ class Setup():
                 log.debug(f"Long Loop run time: {(loop_run_time*1000).__round__()}ms")
 
         log.critical("End of program")
+        self.mqtt_handler.disconnect()
         self.revpi.exit()
 
 
@@ -133,11 +137,11 @@ class Setup():
                 break
 
             if line.problem_in_machine:
-                if self.io_interface.factory_run == False:
+                if self.configs.factory_commands.get("run") == False:
                     line.state = self.states.END
                 else:
                     log.error(f"Problem in line {line.name}")
-                    self.io_interface.factory_run = False
+                    self.configs.factory_commands.update({"run", False})
             
             # handel exception in line
             if line.error_exception_in_machine:
@@ -148,20 +152,24 @@ class Setup():
             
             # run an iteration if the line
             if line.running:
-                line.update(self.io_interface.factory_run)
+                line.update(self.configs.factory_commands.get("run"))
             # start the line
             elif line.config["run"] == True and (self.lines.get("Init") == None or self.lines.get("Init").running == False):
                 log.critical(f"Start: {line.name}")
                 line.switch_state(line.config["start_at"], False)
                 line.running = True
-                line.update(self.io_interface.factory_run)
+                line.update(self.configs.factory_commands.get("run"))
+
+        # stop factory if stop command was issued
+        if self.configs.factory_commands.get("stop") == True:
+            self.exit_handler.stop_factory()
 
         # end all lines if error occurred
         if self.exit_handler.was_called or self.exception:
             for line in self.lines.values():
                 log.critical(f"Ending line: {line.name}")
                 line.end_machine = True
-                self.exception = True
+            self.exception = True
             return
 
 

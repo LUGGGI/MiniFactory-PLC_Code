@@ -544,5 +544,5 @@ class RightLine(MainLine):
 
 if __name__ == "__main__":
     # Start and run the factory
-    setup = Setup("right_config.json", "states.json", State, RightLine)
+    setup = Setup("right_config.json", "states.json", State, RightLine, "Right")
     setup.run_factory()
