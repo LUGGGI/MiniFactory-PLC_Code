@@ -110,7 +110,8 @@ class MqttHandler():
         print(f"LineConfig: {line_config}")
         if self.__configs.line_configs.get(line_config["name"]) == None:
             line_config.update({"new": True})
-        
+        else:
+            line_config.update({"changed": True})
         self.__configs.line_configs.update({line_config["name"]: line_config})
 
 

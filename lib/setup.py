@@ -55,6 +55,7 @@ class Setup():
             line_class (Mainline): Class of the current line.
             factory_name (str): Name of the factory (for example Right).
         '''
+        log.critical(f"Initializing {factory_name}-Factory")
         # setup RevpiModIO
         try:
             self.revpi = RevPiModIO(autorefresh=True)
@@ -130,20 +131,24 @@ class Setup():
         # check for error in lines
         line: MainLine
         for line in self.lines.values():
+            # update the line config with new data from mqtt_handler
+            if self.configs.line_configs.get(line.name).pop("changed", False):
+                line.config = self.configs.line_configs.get(line.name)
+                log.warning(f"Changed line: {line.name}")
             # end the line
             if line.end_machine or line.config["run"] == False:
                 log.critical(f"Stop: {line.name}")
                 self.lines.pop(line.name)
                 break
-
+            # handle problems in the line
             if line.problem_in_machine:
-                if self.configs.factory_commands.get("run") == False:
+                if self.configs.factory_commands["run"] == False:
                     line.state = self.states.END
                 else:
                     log.error(f"Problem in line {line.name}")
                     self.configs.factory_commands.update({"run", False})
             
-            # handel exception in line
+            # handel exception in the line
             if line.error_exception_in_machine:
                 log.error(f"Error in line {line.name}")
                 self.exit_handler.stop_factory()
@@ -154,11 +159,11 @@ class Setup():
             if line.running:
                 line.update(self.configs.factory_commands.get("run"))
             # start the line
-            elif line.config["run"] == True and (self.lines.get("Init") == None or self.lines.get("Init").running == False):
+            elif line.config["run"] == True and (self.lines.get("Init") == None or self.lines.get("Init").running == False) and self.configs.factory_commands.get("run"):
                 log.critical(f"Start: {line.name}")
                 line.switch_state(line.config["start_at"], False)
                 line.running = True
-                line.update(self.configs.factory_commands.get("run"))
+                line.update(True)
 
         # stop factory if stop command was issued
         if self.configs.factory_commands.get("stop") == True:
