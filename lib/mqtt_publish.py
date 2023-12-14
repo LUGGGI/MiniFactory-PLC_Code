@@ -10,11 +10,12 @@ port = 1883
 
 topic_start = f"MiniFactory/Right/Factory"
 topic_line_config_set = f"{topic_start}/LineConfig/Set"
-topic_factory2_config_set = f"{topic_start}/FactoryConfig/Set"
+topic_factory_config_set = f"{topic_start}/FactoryConfig/Set"
 topic_factory_command_set = f"{topic_start}/FactoryCommand/Set"
 topic_wh_content_set = f"{topic_start}/WHContent/Set"
 
 topic_wh_content_get = f"{topic_start}/WHContent/Get"
+topic_line_config_get = f"{topic_start}/LineConfig/Get"
 
 client = mqtt.Client("Sender")
 client.connect(mqttBroker,port)
@@ -107,13 +108,15 @@ while True:
     # client.publish(topic_factory_config, json.dumps(factory_config))
     # print(f"Just published message to topic {topic_factory_config}")
     # time.sleep(1)
-    # client.publish(topic_factory_command, json.dumps(factory_command))
-    # print(f"Just published message to topic {topic_factory_command}")
+    client.publish(topic_factory_command_set, json.dumps(factory_command))
+    print(f"Just published message to topic {topic_factory_command_set}")
     # time.sleep(1)
     # client.publish(topic_wh_content_set, json.dumps(wh_content))
     # print(f"Just published message to topic {topic_wh_content_set}")
     # client.publish(topic_wh_content_get)
     # print(f"Just published message to topic {topic_wh_content_get}")
+    # client.publish(topic_line_config_get)
+    # print(f"Just published message to topic {topic_line_config_get}")
     # time.sleep(1)
 
     break

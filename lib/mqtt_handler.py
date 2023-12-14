@@ -1,6 +1,4 @@
 '''Handels Communication with mqtt broker.
-
-Topics: MiniFactory/Right/Factory/LineConfig
 '''
 
 __author__ = "Lukas Beck"
@@ -8,7 +6,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.12.06"
+__version__ = "2023.14.06"
 
 import json
 import paho.mqtt.client as mqtt
@@ -30,6 +28,14 @@ class Configs():
         "stop": False
     }
 
+class Status():
+    '''Holds the current status of the different factory parts.'''
+
+    status_update_num = 0
+    machines_status = {}
+    factory_status = {}
+    line_status = {}
+
 
 class MqttHandler():
     '''Handels Communication with mqtt broker.
@@ -46,19 +52,20 @@ class MqttHandler():
     __TOPIC_FACTORY_COMMANDS = "FactoryCommand"
 
     __TOPIC_WH_CONTENT = "WHContent"
-    __TOPIC_MACHINES_STATUS = "MachinesStatus"
-    __TOPIC_FACTORY_STATUS = "FactoryStatus"
-    __TOPIC_lINE_STATUS = "LineStatus"
+    TOPIC_MACHINES_STATUS = "MachinesStatus"
+    TOPIC_FACTORY_STATUS = "FactoryStatus"
+    TOPIC_LINE_STATUS = "LineStatus"
     
     
 
-    def __init__(self, factory_name: str, states, configs: Configs) -> None:
+    def __init__(self, factory_name: str, states, configs: Configs, status: Status) -> None:
         '''Init MqttInterface.
         
         Args:
             factory_name (str): Name of the factory (for example Right).
             states (State): Possible States of line.
             configs (Configs): Object where all config data can be saved.
+            status (Status): Holds the current status of the different factory parts.
         '''
 
         self.__BROKER_ADDR = "test.mosquitto.org"
@@ -70,9 +77,16 @@ class MqttHandler():
         self.__wh_content_file = f"{factory_name.lower()}_wh_content.json"
         self.__states = states
         self.__configs = configs
+        self.__status = status
 
         self.__topics = {
-            self.__TOPIC_LINE_CONFIG: [f"{self.__topic_start}/{self.__TOPIC_LINE_CONFIG}", self.__configs.line_configs]
+            self.__TOPIC_LINE_CONFIG: self.__configs.line_configs,
+            self.__TOPIC_FACTORY_CONFIG: self.__configs.factory_config,
+            self.__TOPIC_FACTORY_COMMANDS: self.__configs.factory_commands,
+
+            self.TOPIC_MACHINES_STATUS: self.__status.machines_status,
+            self.TOPIC_FACTORY_STATUS: self.__status.factory_status,
+            self.TOPIC_LINE_STATUS: self.__status.line_status
         }
 
 
@@ -85,8 +99,8 @@ class MqttHandler():
         self.__client.message_callback_add(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Set", self.__on_message_wh_content_set)
 
 
-        self.__client.message_callback_add(f"{self.__topic_start}/{self.__TOPIC_LINE_CONFIG}/Get", self.__on_message_line_config_get)
-        self.__client.message_callback_add(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Get", self.__on_message_wh_content_get)
+        self.__client.message_callback_add(f"{self.__topic_start}/+/Get", self.__on_message_get)
+        self.__client.message_callback_add(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Get", self.send_wh_content_data)
 
         self.__client.on_message = self.__on_message_fallback
 
@@ -139,14 +153,14 @@ class MqttHandler():
         Args:
             msg: The received MQTTMessage.
         '''
-        line_config: dict = json.loads(msg.payload)
-        line_config = self.__convert_to_states(line_config)
-        print(f"LineConfig/Set: {line_config}")
-        if self.__configs.line_configs.get(line_config["name"]) == None:
-            line_config.update({"new": True})
+        decoded_msg: dict = json.loads(msg.payload)
+        decoded_msg = self.__convert_to_states(decoded_msg)
+        print(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
+        if self.__configs.line_configs.get(decoded_msg["name"]) == None:
+            decoded_msg.update({"new": True})
         else:
-            line_config.update({"changed": True})
-        self.__configs.line_configs.update({line_config["name"]: line_config})
+            decoded_msg.update({"changed": True})
+        self.__configs.line_configs.update({decoded_msg["name"]: decoded_msg})
 
     def __convert_to_states(self, config: dict) -> dict:
         '''Converts all the state names to actual states'''
@@ -176,7 +190,7 @@ class MqttHandler():
             msg: The received MQTTMessage.
         '''
         decoded_msg = json.loads(msg.payload)
-        print(f"FactoryConfig/Set: {decoded_msg}")
+        print(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
         self.__configs.factory_config.update(decoded_msg)
 
 
@@ -187,7 +201,7 @@ class MqttHandler():
             msg: The received MQTTMessage.
         '''
         decoded_msg = json.loads(msg.payload)
-        print(f"FactoryCommand/Set: {decoded_msg}")
+        print(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
         self.__configs.factory_commands.update(decoded_msg)
 
 
@@ -198,7 +212,7 @@ class MqttHandler():
             msg: The received MQTTMessage.
         '''
         decoded_msg = json.loads(msg.payload)
-        print(f"WHContent/Set: {decoded_msg}")
+        print(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
         try:
             with open(self.__wh_content_file, "r+") as fp:
                 json_str = json.load(fp)
@@ -211,56 +225,42 @@ class MqttHandler():
 
 # Methodes for sending Data or handling data requests
 ###################################################################################################
-    def __on_message_get_value(self, _client, _userdata, msg: mqtt.MQTTMessage):
+    def __on_message_get(self, _client, _userdata, msg: mqtt.MQTTMessage):
         '''Callback for new get massage, gets the value for the given topic and publishes it.
+
+        Args:
+            msg: The received MQTTMessage.
         '''
         topic = msg.topic.removesuffix("/Get")
-        print(f"Get {msg.topic}")
-        self.__client.publish(f"{topic}/Data", json.dumps(self.__configs.line_configs))
+        topic_end = topic.removeprefix(f"{self.__topic_start}/")
+        print(f"Get {topic}/Data")
+        if topic_end == self.__TOPIC_WH_CONTENT:
+            self.send_wh_content_data()
+        else:
+            self.__client.publish(f"{topic}/Data", json.dumps(self.__topics[topic_end]))
         print(f"Published message to topic {topic}/Data")
 
 
-    def __on_message_line_config_get(self, _client, _userdata, _msg):
-        '''Callback for new massage under the LineConfig/Get topic.\n
-        Publishes the current line_configs.
+    def send_status_data(self, topic):
+        '''Gets the value for the given topic and publishes it.
+
+        Args:
+            topic: The topic of the Status to send.
         '''
-        print(f"Get LineConfig")
-        self.__client.publish(f"{self.__topic_start}/{self.__TOPIC_LINE_CONFIG}/Data", json.dumps(self.__configs.line_configs))
-        print(f"Published message to topic {self.__topic_start}/{self.__TOPIC_LINE_CONFIG}/Data")
+        print(f"Send {topic}/Data")
+        self.__client.publish(f"{self.__topic_start}/{topic}/Data", json.dumps(self.__topics[topic]))
+        print(f"Published message to topic {topic}/Data")
 
 
-    def __on_message_factory_config_get(self, _client, _userdata, _msg):
-        '''Callback for new massage under the FactoryConfig/Get topic.\n
-        Publishes the current factory_config.
+    def send_wh_content_data(self):
+        '''Publishes the current wh_content.
         '''
-        print(f"Get LineConfig")
-        self.__client.publish(f"{self.__topic_start}/{self.__TOPIC_FACTORY_CONFIG}/Data", json.dumps(self.__configs.factory_config))
-        print(f"Published message to topic {self.__topic_start}/{self.__TOPIC_FACTORY_CONFIG}/Data")
-
-
-    def __on_message_factory_commands_get(self, _client, _userdata, _msg):
-        '''Callback for new massage under the FactoryCommand/Get topic.\n
-        Publishes the current factory_commands.
-        '''
-        print(f"Get FactoryCommands")
-        self.__client.publish(f"{self.__topic_start}/{self.__TOPIC_FACTORY_COMMANDS}/Data", json.dumps(self.__configs.factory_commands))
-        print(f"Published message to topic {self.__topic_start}/{self.__TOPIC_FACTORY_COMMANDS}/Data")
-
-
-    def __on_message_wh_content_get(self, _client, _userdata, _msg):
-        '''Callback for new massage under the WHContent/Get topic.\n
-        Publishes the current wh_content.
-        '''
-        print(f"Get WHContent")
         try:
             with open(self.__wh_content_file, "r") as fp:
                 content = json.load(fp)["content"]
                 self.__client.publish(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Data", json.dumps(content))
-                print(f"Published message to topic {self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Data")
         except Exception as e:
             log.error(e)
-
-
 
 
 if __name__ == "__main__":

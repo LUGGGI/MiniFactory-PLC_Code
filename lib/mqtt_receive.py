@@ -30,7 +30,7 @@ class MqttReceive():
             states (State): Possible States of line.
         '''
 
-        # self.__BROKER_ADDR = "test.mosquitto.org"
+        self.__BROKER_ADDR = "test.mosquitto.org"
 
         self.__topic_start = f"MiniFactory/{factory_name}/Factory"
 
@@ -68,8 +68,11 @@ class MqttReceive():
 
     def __on_message_fallback(self, _client, _userdata, msg: mqtt.MQTTMessage):
         '''Callback for new message that couldn't be filtered in other callbacks.'''
-
-        print(f"Message received for topic {msg.topic}: \n\t\t{msg.payload}")
+        try:
+            decoded_msg = json.loads(msg.payload)
+        except Exception:
+            decoded_msg = msg.payload
+        print(f"Message received for topic {msg.topic}: \n\t{decoded_msg}")
 
 
     def __on_disconnect(self, client, userdata, rc):

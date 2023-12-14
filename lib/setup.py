@@ -15,7 +15,7 @@ from revpimodio2 import RevPiModIO
 
 from lib.exit_handler import ExitHandler
 from lib.io_interface import IOInterface
-from lib.mqtt_handler import Configs, MqttHandler
+from lib.mqtt_handler import Configs, Status, MqttHandler
 from lib.logger import log
 from lib.mainline import MainLine
 
@@ -75,10 +75,10 @@ class Setup():
 
         self.lines: dict = {}
         self.configs = Configs()
+        self.status = Status()
 
         self.exit_handler = ExitHandler(self.revpi)
-        # self.io_interface = IOInterface(input_file, output_file, states, self.factory_name, self.configs)
-        self.mqtt_handler = MqttHandler(self.factory_name, self.states, self.configs)
+        self.mqtt_handler = MqttHandler(self.factory_name, self.states, self.configs, self.status)
 
 
     def run_factory(self):
@@ -104,8 +104,8 @@ class Setup():
                 log.exception(e)
                 self.exception = True
 
-            # save Status of factory and every running machine
-            # self.__save_status()
+            # save Status of factory, lines and every running machine
+            self.__save_status()
             
             # exit the factory if error occurred or end has ben reached
             if self.exception:
@@ -179,29 +179,37 @@ class Setup():
 
 
     def __save_status(self):
-        '''Puts the states, factory status and line status into output.'''
+        '''Saves the machines status, factory status and line status.'''
 
-        main_states = []
-        factory_status = {}
-        lines = {}
+        self.old_factory_status = {}
+        self.old_line_status = {}
         
         # get the line states
+        changed = False
         for state in self.states:
-            main_states.append(state)
+            if self.status.machines_status.get(state.name) != [state.value[1].name, state.value[2]]:
+                self.status.machines_status.update({state.name: [state.value[1].name, state.value[2]]})
+                changed = True
+        if changed:
+            self.status.status_update_num += 1
+            self.mqtt_handler.send_status_data(self.mqtt_handler.TOPIC_MACHINES_STATUS)
 
-        # get factory status
-        factory_status["running"] = self.io_interface.factory_run
-        factory_status["exit_if_end"] = self.io_interface.factory_end
+
+        # get factory status TODO
         
         # get the status dictionaries of all machines in all active lines
+        changed = False
         line: MainLine
         for line in self.lines.values():
             if line.config["run"] == False:
                 continue
-            dictionary = {"self": line.status_dict}
+            line_status = {"self": line.status_dict}
             for machine in line.machines.values():
-                dictionary[machine.name] = machine.get_status_dict()
-            lines[line.name] = dictionary
-
-
-        self.io_interface.update_output(main_states, factory_status, lines)
+                line_status.update({machine.name: machine.get_status_dict()})
+            self.old_line_status[line.name] = line_status
+            if self.status.line_status.get(line.name) != line_status:
+                self.status.line_status.update({line.name: line_status})
+                changed = True
+        if changed:
+            self.status.status_update_num += 1
+            self.mqtt_handler.send_status_data(self.mqtt_handler.TOPIC_LINE_STATUS)
