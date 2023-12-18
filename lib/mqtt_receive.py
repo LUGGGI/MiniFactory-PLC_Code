@@ -62,9 +62,9 @@ class MqttReceive():
         client.subscribe("Debug")
         client.subscribe("Status")
         client.subscribe(f"{self.__topic_start}/#")
-        # client.subscribe(f"{self.__topic_start}/WHContent")
-        # client.subscribe(f"{self.__topic_start}/WHContent/Get")
-        # client.subscribe(f"{self.__topic_start}/WHContent/Data")
+        # client.subscribe(f"{self.__topic_start}/+/Get")
+        # client.subscribe(f"{self.__topic_start}/+/Set")
+        # client.subscribe(f"{self.__topic_start}/+/Data")
 
     def __on_message_fallback(self, _client, _userdata, msg: mqtt.MQTTMessage):
         '''Callback for new message that couldn't be filtered in other callbacks.'''
@@ -72,7 +72,7 @@ class MqttReceive():
             decoded_msg = json.loads(msg.payload)
         except Exception:
             decoded_msg = msg.payload
-        print(f"Message received for topic {msg.topic}: \n\t{decoded_msg}")
+        print(f"{msg.topic.removeprefix(f"{self.__topic_start}/")}:\n\t{decoded_msg}")
 
 
     def __on_disconnect(self, client, userdata, rc):
