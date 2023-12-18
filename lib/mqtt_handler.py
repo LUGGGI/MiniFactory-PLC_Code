@@ -33,7 +33,6 @@ class Status():
 
     status_update_num = 0
     machines_status = {}
-    factory_status = {}
     line_status = {}
 
 
@@ -85,7 +84,6 @@ class MqttHandler():
             self.__TOPIC_FACTORY_COMMANDS: self.__configs.factory_commands,
 
             self.TOPIC_MACHINES_STATUS: self.__status.machines_status,
-            self.TOPIC_FACTORY_STATUS: self.__status.factory_status,
             self.TOPIC_LINE_STATUS: self.__status.line_status
         }
 
@@ -100,7 +98,6 @@ class MqttHandler():
 
 
         self.__client.message_callback_add(f"{self.__topic_start}/+/Get", self.__on_message_get)
-        self.__client.message_callback_add(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Get", self.send_wh_content_data)
 
         self.__client.on_message = self.__on_message_fallback
 
@@ -118,12 +115,6 @@ class MqttHandler():
         self.__client.disconnect()
 
 
-    def __on_message_fallback(self, _client, _userdata, msg: mqtt.MQTTMessage):
-        '''Callback for new message that couldn't be filtered in other callbacks.'''
-
-        log.warning(f"Message received for topic {msg.topic}: {msg.payload}")
-
-
     def __on_disconnect(self, client, userdata, rc):
         '''Disconnection callback.'''
         log.warning("Connection to MQTT-Broker disconnected")
@@ -139,11 +130,14 @@ class MqttHandler():
 
         client.subscribe("Debug")
         client.subscribe("Status")
-        client.subscribe(f"{self.__topic_start}/{self.__TOPIC_LINE_CONFIG}/#")
-        client.subscribe(f"{self.__topic_start}/{self.__TOPIC_FACTORY_CONFIG}")
-        client.subscribe(f"{self.__topic_start}/{self.__TOPIC_FACTORY_COMMANDS}")
-        client.subscribe(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}")
-        client.subscribe(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Get")
+        client.subscribe(f"{self.__topic_start}/+/Get")
+        client.subscribe(f"{self.__topic_start}/+/Set")
+
+
+    def __on_message_fallback(self, _client, _userdata, msg: mqtt.MQTTMessage):
+        '''Callback for new message that couldn't be filtered in other callbacks.'''
+
+        log.warning(f"Message received for topic {msg.topic}: {msg.payload}")
 
 # Methodes for receiving config or controls
 ###################################################################################################
@@ -237,8 +231,10 @@ class MqttHandler():
         if topic_end == self.__TOPIC_WH_CONTENT:
             self.send_wh_content_data()
         else:
-            self.__client.publish(f"{topic}/Data", json.dumps(self.__topics[topic_end]))
-        print(f"Published message to topic {topic}/Data")
+            try:
+                self.__client.publish(f"{topic}/Data", json.dumps(self.__topics[topic_end]))
+            except TypeError as e:
+                self.log.error(f"Error for publish of {topic_end}/Data: {e}")
 
 
     def send_status_data(self, topic):
@@ -249,7 +245,6 @@ class MqttHandler():
         '''
         print(f"Send {topic}/Data")
         self.__client.publish(f"{self.__topic_start}/{topic}/Data", json.dumps(self.__topics[topic]))
-        print(f"Published message to topic {topic}/Data")
 
 
     def send_wh_content_data(self):
