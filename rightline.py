@@ -525,7 +525,7 @@ class RightLine(MainLine):
 
         elif vg.is_position(4) and State.CB4_TO_CB5.value[1] == Status.FREE:
             # move down
-            vg.move_to_position(Position(-1, -1, 1150))
+            vg.move_to_position(Position(-1, -1, 1400))
         elif vg.is_position(5):
             # release product
             vg.release()
