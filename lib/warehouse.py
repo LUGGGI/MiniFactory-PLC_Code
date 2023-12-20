@@ -36,9 +36,9 @@ POSITIONS: "list[list[tuple]]" = [
         (1540, 1650)
     ],
     [ # second column
-        (2675, 200),
-        (2675, 900),
-        (2675, 1650)
+        (2700, 200),
+        (2700, 900),
+        (2700, 1650)
     ],
     [ # third column
         (3840, 200),
@@ -60,6 +60,8 @@ class Warehouse(Machine):
         __POS_CB_VERTICAL (int): Vertical position of conveyor belt.
         __MOVE_THRESHOLD_HOR (int): Only moves the horizontal axis if movement is more.
         __MOVE_THRESHOLD_VER (int): Only moves the vertical axis if movement is more.
+        __LIFT_VALUE_RACK (int): Value that the arm lifts a Carrier at rack.
+        __LIFT_VALUE_CB (int): Value that the arm lifts a Carrier at cb.
         __content_file (str): File path to the file that saves the inventory.
         ready_for_product (bool): True if a carrier is at input for store.
         __ref_sw_arm_front (str): Referenz switch name for arm in extended state.
@@ -76,6 +78,8 @@ class Warehouse(Machine):
     __POS_CB_VERTICAL = 1450
     __MOVE_THRESHOLD_HOR = 40
     __MOVE_THRESHOLD_VER = 40
+    __LIFT_VALUE_RACK = 150
+    __LIFT_VALUE_CB = 150
 
     def __init__(self, revpi, name: str, line_name: str, content_file: str):
         '''Initializes the Warehouse.
@@ -220,12 +224,12 @@ class Warehouse(Machine):
 
             # get product from cb
             self.switch_state(State.GETTING_PRODUCT)
-            self.__move_to_position(-1, self.__POS_CB_VERTICAL - 150)
+            self.__move_to_position(-1, self.__POS_CB_VERTICAL - self.__LIFT_VALUE_CB)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
 
             # move crane to given rack
             self.switch_state(State.MOVING_TO_RACK)
-            self.__move_to_position(horizontal, vertical - 100)
+            self.__move_to_position(horizontal, vertical - self.__LIFT_VALUE_RACK)
 
             # store product in rack
             self.switch_state(State.SETTING_PRODUCT)
@@ -306,12 +310,12 @@ class Warehouse(Machine):
             # get product from rack
             self.switch_state(State.GETTING_PRODUCT)
             self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
-            self.__move_to_position(-1, vertical - 100)
+            self.__move_to_position(-1, vertical - self.__LIFT_VALUE_RACK)
             self.__motor_loading.run_to_sensor("BWD", self.__ref_sw_arm_back)
 
             # move to cb
             self.switch_state(State.MOVING_TO_CB)
-            self.__move_to_position(0, self.__POS_CB_VERTICAL - 100)
+            self.__move_to_position(0, self.__POS_CB_VERTICAL - self.__LIFT_VALUE_CB)
             self.__move_to_position(self.__POS_CB_HORIZONTAL, -1)
 
             # put product on cb
