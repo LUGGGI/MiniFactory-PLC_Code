@@ -136,11 +136,11 @@ class MqttPublish():
             self.__client.publish(self.topic_line_config_set, json.dumps(config))
             print(f"{self.topic_line_config_set.removeprefix(f"{self.__topic_start}/")}")
 
-        # self.__client.publish(self.topic_factory_command_set, json.dumps(factory_command))
-        # print(f"{self.topic_factory_command_set.removeprefix(f"{self.__topic_start}/")}")
+        self.__client.publish(self.topic_factory_command_set, json.dumps(factory_command))
+        print(f"{self.topic_factory_command_set.removeprefix(f"{self.__topic_start}/")}")
 
-        # self.__client.publish(self.topic_factory_config_set, json.dumps(factory_config))
-        # print(f"{self.topic_factory_config_set.removeprefix(f"{self.__topic_start}/")}")
+        self.__client.publish(self.topic_factory_config_set, json.dumps(factory_config))
+        print(f"{self.topic_factory_config_set.removeprefix(f"{self.__topic_start}/")}")
 
 
         time.sleep(1)
