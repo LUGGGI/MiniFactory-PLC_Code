@@ -227,7 +227,7 @@ class MqttHandler():
         '''
         topic = msg.topic.removesuffix("/Get")
         topic_end = topic.removeprefix(f"{self.__topic_start}/")
-        print(f"Get {topic}/Data")
+        print(f"Get {topic_end}/Data")
         if topic_end == self.__TOPIC_WH_CONTENT:
             self.send_wh_content_data()
         else:
@@ -256,7 +256,6 @@ class MqttHandler():
                 self.__client.publish(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Data", json.dumps(content))
         except Exception as e:
             log.error(e)
-
 
 if __name__ == "__main__":
     MqttHandler(factory_name="Right")
