@@ -36,3 +36,12 @@ sudo rm python
 Link the version you intend to use instead:
 sudo ln -s /usr/local/bin/python3.12 python
 ```
+
+upload config if revpicommand is not working
+
+```
+copy file to /tmp
+move into /tmp
+sudo cp _config.rsc /var/www/revpi/pictory/projects
+
+```
