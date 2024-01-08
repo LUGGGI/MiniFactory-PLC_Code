@@ -133,7 +133,7 @@ class Setup():
         for line in self.lines.values():
             # update the line config with new data from mqtt_handler
             if self.configs.line_configs.get(line.name).pop("changed", False):
-                line.config = self.configs.line_configs.get(line.name)
+                line.config = self.convert_to_states(self.configs.line_configs.get(line.name))
                 log.warning(f"Changed line: {line.name}")
             # end the line
             if line.end_machine or line.config["run"] == False:
@@ -213,3 +213,24 @@ class Setup():
         if changed:
             self.status.status_update_num += 1
             self.mqtt_handler.send_status_data(self.mqtt_handler.TOPIC_LINE_STATUS)
+
+
+    def convert_to_states(self, config: dict) -> dict:
+        '''Converts all the state names to actual states'''
+        if config["start_at"].lower() == "start":
+                config["start_at"] = "GR1"
+        if config["start_at"].lower() == "storage":
+            config["start_at"] = "WH_RETRIEVE"
+        if config["end_at"].lower() == "storage":
+            config["end_at"] = "WH_STORE"
+        for state in self.states:
+            if state.name == config["start_at"]:
+                config["start_at"] = state
+            if state.name == config["end_at"]:
+                config["end_at"] = state
+            if type(config["start_at"]) != str and type(config["end_at"]) != str:
+                break
+        else:
+            raise LookupError(f"Config {config['name']} could not be parsed.")
+        
+        return config

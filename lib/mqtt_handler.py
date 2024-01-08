@@ -57,12 +57,11 @@ class MqttHandler():
     
     
 
-    def __init__(self, factory_name: str, states, configs: Configs, status: Status) -> None:
+    def __init__(self, factory_name: str, configs: Configs, status: Status) -> None:
         '''Init MqttInterface.
         
         Args:
             factory_name (str): Name of the factory (for example Right).
-            states (State): Possible States of line.
             configs (Configs): Object where all config data can be saved.
             status (Status): Holds the current status of the different factory parts.
         '''
@@ -74,7 +73,6 @@ class MqttHandler():
 
         self.__topic_start = f"MiniFactory/{factory_name}/Factory"
         self.__wh_content_file = f"{factory_name.lower()}_wh_content.json"
-        self.__states = states
         self.__configs = configs
         self.__status = status
 
@@ -148,33 +146,12 @@ class MqttHandler():
             msg: The received MQTTMessage.
         '''
         decoded_msg: dict = json.loads(msg.payload)
-        decoded_msg = self.__convert_to_states(decoded_msg)
         print(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
         if self.__configs.line_configs.get(decoded_msg["name"]) == None:
             decoded_msg.update({"new": True})
         else:
             decoded_msg.update({"changed": True})
         self.__configs.line_configs.update({decoded_msg["name"]: decoded_msg})
-
-    def __convert_to_states(self, config: dict) -> dict:
-        '''Converts all the state names to actual states'''
-        if config["start_at"].lower() == "start":
-                config["start_at"] = "GR1"
-        if config["start_at"].lower() == "storage":
-            config["start_at"] = "WH_RETRIEVE"
-        if config["end_at"].lower() == "storage":
-            config["end_at"] = "WH_STORE"
-        for state in self.__states:
-            if state.name == config["start_at"]:
-                config["start_at"] = state
-            if state.name == config["end_at"]:
-                config["end_at"] = state
-            if type(config["start_at"]) != str and type(config["end_at"]) != str:
-                break
-        else:
-            raise LookupError(f"Config {config['name']} could not be parsed.")
-        
-        return config
 
 
     def __on_message_factory_config_set(self, _client, _userdata, msg: mqtt.MQTTMessage):
