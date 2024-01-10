@@ -154,11 +154,12 @@ class Setup():
                 else:
                     log.error(f"Problem in line {line.name}")
                     self.configs.factory_commands.update({"run": False})
+                    self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_COMMANDS, {"run": False})
             
             # handel exception in the line
             if line.error_exception_in_machine:
                 log.error(f"Error in line {line.name}")
-                self.exit_handler.stop_factory()
+                self.__save_status()
                 self.exception = True
                 break
             
@@ -172,15 +173,18 @@ class Setup():
                 line.running = True
                 line.update(True)
 
-        # stop factory if stop command was issued
-        if self.configs.factory_commands.get("stop") == True:
-            self.exit_handler.stop_factory()
+        # end all lines if error occurred or if stop command was issued
+        if self.exit_handler.was_called or self.exception or self.configs.factory_commands.get("stop"):
+            self.configs.factory_commands.update({"stop": True})
+            self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_COMMANDS, {"stop": True})
 
-        # end all lines if error occurred
-        if self.exit_handler.was_called or self.exception:
             for line in self.lines.values():
                 log.critical(f"Ending line: {line.name}")
                 line.end_machine = True
+
+            if not self.exit_handler.was_called:
+                self.exit_handler.stop_factory()
+
             self.exception = True
             return
 
@@ -190,17 +194,17 @@ class Setup():
         
         # get the machine states
         for state in self.states:
+            if state.name == "END":
+                # don't send anything for end state
+                continue
             state_data = {state.name: [state.value[1].name, state.value[2]]}
             if self.status.machines_status.get(state.name) != state_data[state.name]:
                 # if state changed update status and send the state_data
                 self.status.machines_status.update(state_data)
                 self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_MACHINES_STATUS, state_data)
                 self.status.status_update_num += 1
-
-
-        # get factory status TODO
         
-        # get the status dictionaries of all machines in all active lines
+        # get the status of all lines and its machines
         changed = False
         line: MainLine
         for line in self.lines.values():
@@ -248,6 +252,7 @@ class Setup():
             raise LookupError(f"Config {config['name']} could not be parsed.")
         
         return config
+
 
     def convert_exception_to_str(self, exception: Exception) -> str:
         '''Converts an exception into a formatted string.
