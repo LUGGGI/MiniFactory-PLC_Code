@@ -46,11 +46,11 @@ class MqttHandler():
     __BROKER_ADDR = "192.168.0.59"
     __PORT = 1883
 
-    __TOPIC_LINE_CONFIG = "LineConfig"
-    __TOPIC_FACTORY_CONFIG = "FactoryConfig"
-    __TOPIC_FACTORY_COMMANDS = "FactoryCommand"
+    TOPIC_LINE_CONFIG = "LineConfig"
+    TOPIC_FACTORY_CONFIG = "FactoryConfig"
+    TOPIC_FACTORY_COMMANDS = "FactoryCommand"
 
-    __TOPIC_WH_CONTENT = "WHContent"
+    TOPIC_WH_CONTENT = "WHContent"
     TOPIC_MACHINES_STATUS = "MachinesStatus"
     TOPIC_FACTORY_STATUS = "FactoryStatus"
     TOPIC_LINE_STATUS = "LineStatus"
@@ -77,9 +77,9 @@ class MqttHandler():
         self.__status = status
 
         self.__topics = {
-            self.__TOPIC_LINE_CONFIG: self.__configs.line_configs,
-            self.__TOPIC_FACTORY_CONFIG: self.__configs.factory_config,
-            self.__TOPIC_FACTORY_COMMANDS: self.__configs.factory_commands,
+            self.TOPIC_LINE_CONFIG: self.__configs.line_configs,
+            self.TOPIC_FACTORY_CONFIG: self.__configs.factory_config,
+            self.TOPIC_FACTORY_COMMANDS: self.__configs.factory_commands,
 
             self.TOPIC_MACHINES_STATUS: self.__status.machines_status,
             self.TOPIC_LINE_STATUS: self.__status.line_status
@@ -89,10 +89,10 @@ class MqttHandler():
         self.__client = mqtt.Client()
         self.__client.on_connect = self.__on_connect
 
-        self.__client.message_callback_add(f"{self.__topic_start}/{self.__TOPIC_LINE_CONFIG}/Set", self.__on_message_line_config_set)
-        self.__client.message_callback_add(f"{self.__topic_start}/{self.__TOPIC_FACTORY_CONFIG}/Set", self.__on_message_factory_config_set)
-        self.__client.message_callback_add(f"{self.__topic_start}/{self.__TOPIC_FACTORY_COMMANDS}/Set", self.__on_message_factory_command_set)
-        self.__client.message_callback_add(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Set", self.__on_message_wh_content_set)
+        self.__client.message_callback_add(f"{self.__topic_start}/{self.TOPIC_LINE_CONFIG}/Set", self.__on_message_line_config_set)
+        self.__client.message_callback_add(f"{self.__topic_start}/{self.TOPIC_FACTORY_CONFIG}/Set", self.__on_message_factory_config_set)
+        self.__client.message_callback_add(f"{self.__topic_start}/{self.TOPIC_FACTORY_COMMANDS}/Set", self.__on_message_factory_command_set)
+        self.__client.message_callback_add(f"{self.__topic_start}/{self.TOPIC_WH_CONTENT}/Set", self.__on_message_wh_content_set)
 
 
         self.__client.message_callback_add(f"{self.__topic_start}/+/Get", self.__on_message_get)
@@ -205,7 +205,7 @@ class MqttHandler():
         topic = msg.topic.removesuffix("/Get")
         topic_end = topic.removeprefix(f"{self.__topic_start}/")
         print(f"Get {topic_end}/Data")
-        if topic_end == self.__TOPIC_WH_CONTENT:
+        if topic_end == self.TOPIC_WH_CONTENT:
             self.send_wh_content_data()
         else:
             try:
@@ -214,14 +214,17 @@ class MqttHandler():
                 self.log.error(f"Error for publish of {topic_end}/Data: {e}")
 
 
-    def send_status_data(self, topic):
-        '''Gets the value for the given topic and publishes it.
+    def send_data(self, topic, data:str=None):
+        '''Send data to given topic, if data==None default data for the given topic will be sent
 
         Args:
-            topic: The topic of the Status to send.
+            topic: The topic of the data to send.
+            data: The data to send, if None the default data for the given topic will be sent.
         '''
         print(f"Send {topic}/Data")
-        self.__client.publish(f"{self.__topic_start}/{topic}/Data", json.dumps(self.__topics[topic]))
+        if data == None:
+            data = self.__topics[topic]
+        self.__client.publish(f"{self.__topic_start}/{topic}/Data", json.dumps(data))
 
 
     def send_wh_content_data(self):
@@ -230,7 +233,7 @@ class MqttHandler():
         try:
             with open(self.__wh_content_file, "r") as fp:
                 content = json.load(fp)["content"]
-                self.__client.publish(f"{self.__topic_start}/{self.__TOPIC_WH_CONTENT}/Data", json.dumps(content))
+                self.__client.publish(f"{self.__topic_start}/{self.TOPIC_WH_CONTENT}/Data", json.dumps(content))
         except Exception as e:
             log.error(e)
 

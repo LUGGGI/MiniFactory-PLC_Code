@@ -41,7 +41,7 @@ class Conveyor(Machine):
             name (str): Exact name of the machine in PiCtory (everything bevor first '_').
             line_name (str): Name of current line.
         '''
-        super().__init__(revpi, name, line_name)
+        super().__init__(revpi, name, line_name, states=State)
         self.position = 1
         self.exception = None
 
@@ -83,11 +83,11 @@ class Conveyor(Machine):
             motor = Actuator(self.revpi, self.name, self.line_name)
             motor.run_to_sensor(direction, stop_sensor, stop_delay_in_ms, timeout_in_s)
 
-        except SensorTimeoutError as error:
-            self.problem_in_machine = True
-            self.__error_propagation(error)
+        except SensorTimeoutError as problem:
+            self.problem_handler(problem)
+            self.__error_propagation(problem)
         except Exception as error:
-            self.error_exception_in_machine = True
+            self.error_handler(error)
             self.__error_propagation(error)
         else:
             self.log.warning(f"{self.name} :Reached: {stop_sensor}")
@@ -125,11 +125,11 @@ class Conveyor(Machine):
             encoder.reset_encoder()
             Actuator(self.revpi, self.name, self.line_name).run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s)
 
-        except SensorTimeoutError as error:
-            self.problem_in_machine = True
-            self.__error_propagation(error)
+        except SensorTimeoutError as problem:
+            self.problem_handler(problem)
+            self.__error_propagation(problem)
         except Exception as error:
-            self.error_exception_in_machine = True
+            self.error_handler(error)
             self.__error_propagation(error)
         else:
             self.log.warning(f"{self.name} :Reached value: {trigger_value} at {counter}")
@@ -163,11 +163,11 @@ class Conveyor(Machine):
         try:
             Actuator(self.revpi, self.name, self.line_name).run_for_time(direction, wait_time_in_s, check_sensor)
 
-        except NoDetectionError as error:
-            self.problem_in_machine = True
-            self.__error_propagation(error)
+        except NoDetectionError as problem:
+            self.problem_handler(problem)
+            self.__error_propagation(problem)
         except Exception as error:
-            self.error_exception_in_machine = True
+            self.error_handler(error)
             self.__error_propagation(error)
         else:
             self.log.warning(f"{self.name} :Reached time: {wait_time_in_s} s")
@@ -197,9 +197,6 @@ class Conveyor(Machine):
         Args:
             error: Error to be raised.
         '''
-        self.switch_state(State.ERROR)
         if self.name.find("_") != -1: # if called from another module as a thread
             self.exception = error
             raise
-        else:
-            self.log.exception(error)

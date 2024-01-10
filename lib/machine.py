@@ -37,17 +37,19 @@ class Machine:
         log (Logger): Log object to print to log.
     '''
 
-    def __init__(self, revpi: RevPiModIO, name: str, line_name: str):
+    def __init__(self, revpi: RevPiModIO, name: str, line_name: str, states):
         '''Parent class for all machine modules.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
             line_name (str): Name of current line.
+            states (State): All possible States of the machine.
         '''
         self.revpi = revpi
         self.name = name
         self.line_name = line_name
+        self.states = states
 
         self.__time_start = time()
         self.__state_time_start = time()
@@ -60,6 +62,10 @@ class Machine:
 
         self.position = 0
         self.state = None
+
+        self.status_dict = {
+            self.name: None
+        }
 
         global log
         self.log = log.getChild(f"{self.line_name}(Mach)")
@@ -101,6 +107,7 @@ class Machine:
             input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
         self.__state_time_start = datetime.now()
         self.state = state
+        self.status_dict["state"] = state
 
         self.log.warning(self.name + ": Switching state to: " + str(state.name))
 
@@ -125,17 +132,22 @@ class Machine:
 
         return True
 
-
-    def get_status_dict(self) -> dict:
-        '''Returns a dictionary with the machine status.
+    def problem_handler(self, problem_msg):
+        '''Handler for problems.
         
-        Returns:
-            dict: Status dictionary
+        Args:
+            problem_msg: message that is thrown by the machine.
         '''
-        return {
-            "state": self.state.name if self.state else None,
-            "position": self.position,
-            "end_machine": False if not self.end_machine else f"true, Runtime: {self.get_run_time()} s",
-            "error_exception_in_machine": self.error_exception_in_machine,
-            "problem_in_machine": self.problem_in_machine
-        }
+        self.problem_in_machine = problem_msg
+        self.switch_state(self.states.ERROR)
+        self.log.exception(problem_msg)
+
+    def error_handler(self, error_msg):
+        '''Handler for errors.
+        
+        Args:
+            error_msg: message that is thrown by the machine.
+        '''
+        self.error_exception_in_machine = error_msg
+        self.switch_state(self.states.ERROR)
+        self.log.exception(error_msg)

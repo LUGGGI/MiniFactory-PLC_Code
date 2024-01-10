@@ -78,11 +78,17 @@ class Setup():
         self.status = Status()
 
         self.exit_handler = ExitHandler(self.revpi)
-        self.mqtt_handler = MqttHandler(self.factory_name, self.states, self.configs, self.status)
+        self.mqtt_handler = MqttHandler(self.factory_name, self.configs, self.status)
 
 
     def run_factory(self):
         '''Starts the factory, adds and updates the lines.'''
+        
+        # send all the machineStatus-Data
+        for state in self.states:
+            state_data = {state.name: [state.value[1].name, state.value[2]]}
+            self.status.machines_status.update(state_data)
+        self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_MACHINES_STATUS)
 
         while(True):
             self.loop_start_time = time()
@@ -96,7 +102,7 @@ class Setup():
                     for config in self.configs.line_configs.values():
                         # add line if it doesn't exists
                         if config.pop("new", False) == True:
-                            self.lines[config["name"]] = self.line_class(self.revpi, config)
+                            self.lines[config["name"]] = self.line_class(self.revpi, self.convert_to_states(config))
                             log.warning(f"Added new line: {config['name']}")
             
                 self.__update_factory()
@@ -139,6 +145,7 @@ class Setup():
             if line.end_machine or line.config["run"] == False:
                 log.critical(f"Stop: {line.name}")
                 self.lines.pop(line.name)
+                self.configs.line_configs.pop(line.name)
                 break
             # handle problems in the line
             if line.problem_in_machine:
@@ -146,7 +153,7 @@ class Setup():
                     line.state = self.states.END
                 else:
                     log.error(f"Problem in line {line.name}")
-                    self.configs.factory_commands.update({"run", False})
+                    self.configs.factory_commands.update({"run": False})
             
             # handel exception in the line
             if line.error_exception_in_machine:
@@ -180,19 +187,15 @@ class Setup():
 
     def __save_status(self):
         '''Saves the machines status, factory status and line status.'''
-
-        self.old_factory_status = {}
-        self.old_line_status = {}
         
-        # get the line states
-        changed = False
+        # get the machine states
         for state in self.states:
-            if self.status.machines_status.get(state.name) != [state.value[1].name, state.value[2]]:
-                self.status.machines_status.update({state.name: [state.value[1].name, state.value[2]]})
-                changed = True
-        if changed:
-            self.status.status_update_num += 1
-            self.mqtt_handler.send_status_data(self.mqtt_handler.TOPIC_MACHINES_STATUS)
+            state_data = {state.name: [state.value[1].name, state.value[2]]}
+            if self.status.machines_status.get(state.name) != state_data[state.name]:
+                # if state changed update status and send the state_data
+                self.status.machines_status.update(state_data)
+                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_MACHINES_STATUS, state_data)
+                self.status.status_update_num += 1
 
 
         # get factory status TODO
@@ -203,25 +206,36 @@ class Setup():
         for line in self.lines.values():
             if line.config["run"] == False:
                 continue
-            line_status = {"self": line.status_dict}
+            line_status = {"self": {
+                "state": line.state.name if line.state else None, 
+                "product_at": line.product_at
+                }}
+            if line.waiting_for_state:
+                line_status.update({"waiting_for": line.waiting_for_state.name})
+            
             for machine in line.machines.values():
-                line_status.update({machine.name: machine.get_status_dict()})
-            self.old_line_status[line.name] = line_status
-            if self.status.line_status.get(line.name) != line_status:
+                line_status.update({machine.name: {"status": machine.state.name if machine.state else None}})
+                if machine.problem_in_machine:
+                    line_status[machine.name].update({"problem": self.convert_exception_to_str(machine.problem_in_machine)})
+                if machine.error_exception_in_machine:
+                    line_status[machine.name].update({"error": self.convert_exception_to_str(machine.error_exception_in_machine)})
+
+            if line_status != self.status.line_status.get(line.name):
                 self.status.line_status.update({line.name: line_status})
                 changed = True
         if changed:
             self.status.status_update_num += 1
-            self.mqtt_handler.send_status_data(self.mqtt_handler.TOPIC_LINE_STATUS)
+            self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_LINE_STATUS)
 
 
-    def convert_to_states(self, config: dict) -> dict:
+    def convert_to_states(self, config_dict: dict) -> dict:
         '''Converts all the state names to actual states'''
-        if config["start_at"].lower() == "start":
+        config = config_dict.copy()
+        if config.get("start_at", "start").lower() == "start":
                 config["start_at"] = "GR1"
-        if config["start_at"].lower() == "storage":
+        elif config["start_at"].lower() == "storage":
             config["start_at"] = "WH_RETRIEVE"
-        if config["end_at"].lower() == "storage":
+        if config.get("end_at", "storage").lower() == "storage":
             config["end_at"] = "WH_STORE"
         for state in self.states:
             if state.name == config["start_at"]:
@@ -234,3 +248,15 @@ class Setup():
             raise LookupError(f"Config {config['name']} could not be parsed.")
         
         return config
+
+    def convert_exception_to_str(self, exception: Exception) -> str:
+        '''Converts an exception into a formatted string.
+        
+        Args:
+            exception(Exception): exception to be converted.
+        '''
+        severity = ""
+        if exception.args.__len__() > 1:
+            severity = f": {exception.args[0]}"
+
+        return f"{type(exception).__name__}{severity}: {exception.args[-1]}"

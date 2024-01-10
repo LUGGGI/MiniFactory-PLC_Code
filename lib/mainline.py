@@ -20,6 +20,7 @@ class Status(Enum):
     RUNNING = 2
     BLOCKED = 3
     WAITING = 4
+    ERROR = 999
 
 class MainLine(Machine):
     '''Controls the MiniFactory.'''
@@ -51,15 +52,13 @@ class MainLine(Machine):
             config (dict): Config for the line.
             states (State): States from Subclass.
         '''
-        super().__init__(revpi, config["name"], config["name"])
+        super().__init__(revpi, config["name"], config["name"], states)
 
         self.config = config
-        self.states = states
         self.machines: "dict[str, Machine]" = {}
         self.product_at: str = None
         self.waiting_for_state = None
         self.running = False
-        self.status_dict = {}
 
         global log
         self.log = log.getChild(f"{self.line_name}")
@@ -122,14 +121,6 @@ class MainLine(Machine):
 
             return False
         
-        # update line status for status
-        self.status_dict = {
-            "state": self.state.name if self.state else None,
-            "product_at": self.product_at,
-            "waiting_for_state": self.waiting_for_state.name if self.waiting_for_state else None,
-            "error_exception_in_machine": self.error_exception_in_machine,
-            "problem_in_machine": self.problem_in_machine
-        }
         return True
 
         
@@ -250,3 +241,4 @@ class MainLine(Machine):
             # all machines have ended
             self.end_machine
             return True
+
