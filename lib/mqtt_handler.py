@@ -6,7 +6,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.14.06"
+__version__ = "2024.01.12"
 
 import json
 import paho.mqtt.client as mqtt
@@ -146,7 +146,7 @@ class MqttHandler():
             msg: The received MQTTMessage.
         '''
         decoded_msg: dict = json.loads(msg.payload)
-        print(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
+        log.warning(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
         if self.__configs.line_configs.get(decoded_msg["name"]) == None:
             decoded_msg.update({"new": True})
         else:
@@ -161,7 +161,7 @@ class MqttHandler():
             msg: The received MQTTMessage.
         '''
         decoded_msg = json.loads(msg.payload)
-        print(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
+        log.warning(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
         self.__configs.factory_config.update(decoded_msg)
 
 
@@ -172,7 +172,7 @@ class MqttHandler():
             msg: The received MQTTMessage.
         '''
         decoded_msg = json.loads(msg.payload)
-        print(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
+        log.warning(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
         self.__configs.factory_commands.update(decoded_msg)
 
 
@@ -183,7 +183,7 @@ class MqttHandler():
             msg: The received MQTTMessage.
         '''
         decoded_msg = json.loads(msg.payload)
-        print(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
+        log.warning(f"{msg.topic.removeprefix(self.__topic_start)}: {decoded_msg}")
         try:
             with open(self.__wh_content_file, "r+") as fp:
                 json_str = json.load(fp)
@@ -204,7 +204,7 @@ class MqttHandler():
         '''
         topic = msg.topic.removesuffix("/Get")
         topic_end = topic.removeprefix(f"{self.__topic_start}/")
-        print(f"Get {topic_end}/Data")
+        self.log.warning(f"Get {topic_end}/Data")
         if topic_end == self.TOPIC_WH_CONTENT:
             self.send_wh_content_data()
         else:
@@ -221,7 +221,7 @@ class MqttHandler():
             topic: The topic of the data to send.
             data: The data to send, if None the default data for the given topic will be sent.
         '''
-        print(f"Send {topic}/Data")
+        self.log.warning(f"Send {topic}/Data")
         if data == None:
             data = self.__topics[topic]
         self.__client.publish(f"{self.__topic_start}/{topic}/Data", json.dumps(data))

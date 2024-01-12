@@ -5,14 +5,13 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.21"
+__version__ = "2024.01.12"
 
 import threading
-from time import sleep
 from enum import Enum
 
 from lib.logger import log
-from lib.machine import Machine
+from lib.machine import Machine, MainState
 from lib.sensor import Sensor, SensorTimeoutError
 from lib.actuator import Actuator
 from lib.conveyor import Conveyor
@@ -23,9 +22,7 @@ class State(Enum):
     MILLING = 2        
     TO_DRILL = 3
     DRILLING = 4
-    TO_OUT = 5      
-    END = 100
-    ERROR = 999
+    TO_OUT = 5
 
 class IndexLine(Machine):
     '''Controls the Index Line.'''
@@ -143,14 +140,9 @@ class IndexLine(Machine):
             del cb_end
             
         except SensorTimeoutError as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
-
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.position += 1
-            self.switch_state(State.END)
+            self.switch_state(MainState.END)

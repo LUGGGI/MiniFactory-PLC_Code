@@ -5,13 +5,13 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2024.01.12"
 
 import threading
 from enum import Enum
 
 from lib.logger import log
-from lib.machine import Machine
+from lib.machine import Machine, MainState
 from lib.actuator import Actuator, SensorTimeoutError
 from lib.conveyor import Conveyor
 
@@ -20,8 +20,6 @@ class State(Enum):
     CB_TO_PUNCH = 1
     PUNCHING = 2
     CB_TO_OUT = 3
-    END = 100
-    ERROR = 999
 
 class PunchMach(Machine):
     '''Controls the Punching Maschine.'''
@@ -93,14 +91,9 @@ class PunchMach(Machine):
             del cb_punch
 
         except SensorTimeoutError as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.position += 1
-            # self.end_machine = True # only if not called in the same functions as other cb
-            self.switch_state(State.END)
+            self.switch_state(MainState.END)

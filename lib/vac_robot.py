@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2024.01.12"
 
 import threading
 from time import sleep
@@ -65,9 +65,7 @@ class VacRobot(Robot3D):
             self.__compressor.join()
 
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.position += 1
 
@@ -87,8 +85,6 @@ class VacRobot(Robot3D):
             self.__valve.stop()
 
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.position += 1

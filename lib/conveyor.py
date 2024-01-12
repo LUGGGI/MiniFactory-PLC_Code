@@ -5,23 +5,20 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.21"
+__version__ = "2024.01.12"
 
 import threading
 from enum import Enum
 
 from lib.logger import log
-from lib.machine import Machine
-from lib.sensor import Sensor, SensorTimeoutError, NoDetectionError
+from lib.machine import Machine, MainState
+from lib.sensor import Sensor, SensorTimeoutError, NoDetectionError, EncoderOverflowError
 from lib.actuator import Actuator
 
 
 class State(Enum):
-    WAIT = 0
-    RUN = 1
-    END = 100
-    ERROR = 999
-
+    WAIT = 2
+    RUN = 3
 
 class Conveyor(Machine):
     '''Controls a conveyor. If conveyor isn't run with end_machine=True, the flag has to be set manually.'''
@@ -43,7 +40,6 @@ class Conveyor(Machine):
         '''
         super().__init__(revpi, name, line_name, states=State)
         self.position = 1
-        self.exception = None
 
         global log
         self.log = log.getChild(f"{self.line_name}(Conv)")
@@ -85,15 +81,13 @@ class Conveyor(Machine):
 
         except SensorTimeoutError as problem:
             self.problem_handler(problem)
-            self.__error_propagation(problem)
         except Exception as error:
             self.error_handler(error)
-            self.__error_propagation(error)
         else:
             self.log.warning(f"{self.name} :Reached: {stop_sensor}")
             self.position += 1
             if end_machine:
-                self.end_conveyor()
+                self.switch_state(MainState.END)
 
 
     def run_to_counter_value(self, direction: str, counter: str, trigger_value: int, timeout_in_s=10, end_machine=False, as_thread=True):
@@ -125,18 +119,17 @@ class Conveyor(Machine):
             encoder.reset_encoder()
             Actuator(self.revpi, self.name, self.line_name).run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s)
 
-        except SensorTimeoutError as problem:
+        except (TimeoutError, SensorTimeoutError, EncoderOverflowError, ValueError) as problem:
             self.problem_handler(problem)
-            self.__error_propagation(problem)
         except Exception as error:
             self.error_handler(error)
-            self.__error_propagation(error)
         else:
             self.log.warning(f"{self.name} :Reached value: {trigger_value} at {counter}")
             self.position += 1
             if end_machine:
-                self.end_conveyor()
-                
+                self.switch_state(MainState.END)
+
+
     def run_for_time(self, direction: str, wait_time_in_s: int, check_sensor: str=None, end_machine=False, as_thread=True):
         '''Runs the Conveyor for the given time, can check for sensor detection.
         
@@ -165,15 +158,13 @@ class Conveyor(Machine):
 
         except NoDetectionError as problem:
             self.problem_handler(problem)
-            self.__error_propagation(problem)
         except Exception as error:
             self.error_handler(error)
-            self.__error_propagation(error)
         else:
             self.log.warning(f"{self.name} :Reached time: {wait_time_in_s} s")
             self.position += 1
             if end_machine:
-                self.end_conveyor()
+                self.switch_state(MainState.END)
                 
 
     def join(self):
@@ -183,20 +174,5 @@ class Conveyor(Machine):
             Exception: Exceptions that a thrown in thread function.
         '''
         self.thread.join()
-        if self.exception:
-            raise self.exception
-        
-    def end_conveyor(self):
-        '''Ends conveyor.'''
-        self.end_machine = True
-        self.switch_state(State.END)
-
-    def __error_propagation(self, error):
-        '''Throws raised exceptions if called from Module is called from other Machine.
-        
-        Args:
-            error: Error to be raised.
-        '''
-        if self.name.find("_") != -1: # if called from another module as a thread
-            self.exception = error
-            raise
+        if self.exception_msg:
+            raise self.exception_msg

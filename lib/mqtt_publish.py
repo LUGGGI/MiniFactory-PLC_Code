@@ -6,7 +6,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.12.18"
+__version__ = "2024.01.12"
 
 import json
 import paho.mqtt.client as mqtt
@@ -106,54 +106,64 @@ class MqttPublish():
 
         self.__BROKER_ADDR = "test.mosquitto.org"
 
-        self.__topic_start = f"MiniFactory/{factory_name}/Factory"
+        self.topic_start = f"MiniFactory/{factory_name}/Factory"
 
-        self.__client = mqtt.Client()
+        self.client = mqtt.Client()
 
-        self.__client.connect(self.__BROKER_ADDR, self.__PORT)
+        self.client.connect(self.__BROKER_ADDR, self.__PORT)
 
 
-        self.topic_line_config_set = f"{self.__topic_start}/LineConfig/Set"
-        self.topic_factory_config_set = f"{self.__topic_start}/FactoryConfig/Set"
-        self.topic_factory_command_set = f"{self.__topic_start}/FactoryCommand/Set"
-        self.topic_wh_content_set = f"{self.__topic_start}/WHContent/Set"
+        self.topic_line_config_set = f"{self.topic_start}/LineConfig/Set"
+        self.topic_factory_config_set = f"{self.topic_start}/FactoryConfig/Set"
+        self.topic_factory_command_set = f"{self.topic_start}/FactoryCommand/Set"
+        self.topic_wh_content_set = f"{self.topic_start}/WHContent/Set"
 
-        self.topic_wh_content_get = f"{self.__topic_start}/WHContent/Get"
-        self.topic_line_config_get = f"{self.__topic_start}/LineConfig/Get"
-        self.topic_factory_config_get = f"{self.__topic_start}/FactoryConfig/Get"
-
-        self.publish_all()
+        self.topic_line_config_get = f"{self.topic_start}/LineConfig/Get"
+        self.topic_factory_config_get = f"{self.topic_start}/FactoryConfig/Get"
+        self.topic_factory_command_get = f"{self.topic_start}/FactoryCommand/Get"
+        self.topic_wh_content_get = f"{self.topic_start}/WHContent/Get"
 
 
     def publish_all(self):
         
-        self.__client.publish(self.topic_wh_content_set, json.dumps(wh_content))
-        print(f"{self.topic_wh_content_set.removeprefix(f"{self.__topic_start}/")}")
+        self.client.publish(self.topic_wh_content_set, json.dumps(wh_content))
+        print(f"{self.topic_wh_content_set.removeprefix(f'{self.topic_start}/')}")
 
-        for config in line_configs:
-            self.__client.publish(self.topic_line_config_set, json.dumps(config))
-            print(f"{self.topic_line_config_set.removeprefix(f"{self.__topic_start}/")}")
+        self.client.publish(self.topic_line_config_set, json.dumps({
+            "name": "Test",
+            "run": True,
+            "start_at": "CB1",
+            "end_at": "CB1"
+        }))
 
-        # self.__client.publish(self.topic_factory_command_set, json.dumps(factory_command))
-        # print(f"{self.topic_factory_command_set.removeprefix(f"{self.__topic_start}/")}")
+        print(f"{self.topic_line_config_set.removeprefix(f'{self.topic_start}/')}")
+        # for config in line_configs:
+        #     self.__client.publish(self.topic_line_config_set, json.dumps(config))
+        #     print(f"{self.topic_line_config_set.removeprefix(f'{self.__topic_start}/')}")
+
+        self.client.publish(self.topic_factory_command_set, json.dumps(factory_command))
+        print(f"{self.topic_factory_command_set.removeprefix(f'{self.topic_start}/')}")
 
         # time.sleep(1)
 
         # self.__client.publish(self.topic_factory_config_set, json.dumps(factory_config))
-        # print(f"{self.topic_factory_config_set.removeprefix(f"{self.__topic_start}/")}")
+        # print(f"{self.topic_factory_config_set.removeprefix(f'{self.__topic_start}/')}")
 
-        time.sleep(3)
+        # time.sleep(3)
 
-        self.__client.publish(self.topic_wh_content_get)
-        print(f"{self.topic_wh_content_get.removeprefix(f"{self.__topic_start}/")}")
+        # self.__client.publish(self.topic_wh_content_get)
+        # print(f"{self.topic_wh_content_get.removeprefix(f'{self.__topic_start}/')}")
 
-        self.__client.publish(self.topic_line_config_get)
-        print(f"{self.topic_line_config_get.removeprefix(f"{self.__topic_start}/")}")
+        # # todo get working 
+        # self.__client.publish(self.topic_line_config_get)
+        # print(f"{self.topic_line_config_get.removeprefix(f'{self.__topic_start}/')}")
 
-        self.__client.publish(self.topic_factory_config_get)
-        print(f"{self.topic_factory_config_get.removeprefix(f"{self.__topic_start}/")}")
+        # self.__client.publish(self.topic_factory_config_get)
+        # print(f"{self.topic_factory_config_get.removeprefix(f'{self.__topic_start}/')}")
 
         print("End of publish all")
 
 if __name__ == "__main__":
-    MqttPublish(factory_name="Right")
+    mqtt_pub = MqttPublish(factory_name="Right")
+    mqtt_pub.publish_all()
+    print("end")

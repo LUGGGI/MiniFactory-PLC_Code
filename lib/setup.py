@@ -7,25 +7,21 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2024.01.12"
 
 from time import sleep, time
-from threading import Semaphore
 from revpimodio2 import RevPiModIO
 
 from lib.exit_handler import ExitHandler
-from lib.io_interface import IOInterface
 from lib.mqtt_handler import Configs, Status, MqttHandler
 from lib.logger import log
+from lib.machine import MainState
 from lib.mainline import MainLine
 
 
-
-
-
 class Setup():
-    '''Setup for Factory.'''
-    '''
+    '''Setup for Factory.
+
     Methodes:
         run_factory(): Starts the factory, adds and updates the lines.
         __update_factory(): Updates the factory and starts every line.
@@ -84,6 +80,7 @@ class Setup():
     def run_factory(self):
         '''Starts the factory, adds and updates the lines.'''
         
+        self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, "Program started")
         # send all the machineStatus-Data
         for state in self.states:
             state_data = {state.name: [state.value[1].name, state.value[2]]}
@@ -128,6 +125,7 @@ class Setup():
                 log.debug(f"Long Loop run time: {(loop_run_time*1000).__round__()}ms")
 
         log.critical("End of program")
+        self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, "Program stopped")
         self.mqtt_handler.disconnect()
         self.revpi.exit()
 
@@ -142,23 +140,21 @@ class Setup():
                 line.config = self.convert_to_states(self.configs.line_configs.get(line.name))
                 log.warning(f"Changed line: {line.name}")
             # end the line
-            if line.end_machine or line.config["run"] == False:
+            if line.end_line:
                 log.critical(f"Stop: {line.name}")
                 self.lines.pop(line.name)
                 self.configs.line_configs.pop(line.name)
                 break
             # handle problems in the line
-            if line.problem_in_machine:
-                if self.configs.factory_commands["run"] == False:
-                    line.state = self.states.END
-                else:
-                    log.error(f"Problem in line {line.name}")
+            if line.state == MainState.PROBLEM:
+                if self.configs.factory_commands["run"] == True:
+                    log.error(f"Problem in line {line.name}: {line.exception_msg}")
                     self.configs.factory_commands.update({"run": False})
                     self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_COMMANDS, {"run": False})
             
             # handel exception in the line
-            if line.error_exception_in_machine:
-                log.error(f"Error in line {line.name}")
+            if line.state == MainState.ERROR:
+                log.error(f"Error in line {line.name}: {line.exception_msg}")
                 self.__save_status()
                 self.exception = True
                 break
@@ -166,12 +162,12 @@ class Setup():
             # run an iteration if the line
             if line.running:
                 line.update(self.configs.factory_commands.get("run"))
+                
             # start the line
             elif line.config["run"] == True and (self.lines.get("Init") == None or self.lines.get("Init").running == False) and self.configs.factory_commands.get("run"):
                 log.critical(f"Start: {line.name}")
                 line.switch_state(line.config["start_at"], False)
                 line.running = True
-                line.update(True)
 
         # end all lines if error occurred or if stop command was issued
         if self.exit_handler.was_called or self.exception or self.configs.factory_commands.get("stop"):
@@ -180,7 +176,7 @@ class Setup():
 
             for line in self.lines.values():
                 log.critical(f"Ending line: {line.name}")
-                line.end_machine = True
+                line.end_line = True
 
             if not self.exit_handler.was_called:
                 self.exit_handler.stop_factory()
@@ -194,9 +190,6 @@ class Setup():
         
         # get the machine states
         for state in self.states:
-            if state.name == "END":
-                # don't send anything for end state
-                continue
             state_data = {state.name: [state.value[1].name, state.value[2]]}
             if self.status.machines_status.get(state.name) != state_data[state.name]:
                 # if state changed update status and send the state_data
@@ -219,10 +212,10 @@ class Setup():
             
             for machine in line.machines.values():
                 line_status.update({machine.name: {"status": machine.state.name if machine.state else None}})
-                if machine.problem_in_machine:
-                    line_status[machine.name].update({"problem": self.convert_exception_to_str(machine.problem_in_machine)})
-                if machine.error_exception_in_machine:
-                    line_status[machine.name].update({"error": self.convert_exception_to_str(machine.error_exception_in_machine)})
+                if machine.state == MainState.PROBLEM:
+                    line_status[machine.name].update({"PROBLEM": self.convert_exception_to_str(machine.exception_msg)})
+                if machine.state == MainState.ERROR:
+                    line_status[machine.name].update({"ERROR": self.convert_exception_to_str(machine.exception_msg)})
 
             if line_status != self.status.line_status.get(line.name):
                 self.status.line_status.update({line.name: line_status})
@@ -249,7 +242,10 @@ class Setup():
             if type(config["start_at"]) != str and type(config["end_at"]) != str:
                 break
         else:
-            raise LookupError(f"Config {config['name']} could not be parsed.")
+            if config["end_at"] == "END":
+                config["end_at"] == MainState.END
+            else:
+                raise LookupError(f"Config {config['name']} could not be parsed.")
         
         return config
 
@@ -260,8 +256,4 @@ class Setup():
         Args:
             exception(Exception): exception to be converted.
         '''
-        severity = ""
-        if exception.args.__len__() > 1:
-            severity = f": {exception.args[0]}"
-
-        return f"{type(exception).__name__}{severity}: {exception.args[-1]}"
+        return f"{type(exception).__name__}: {exception}"

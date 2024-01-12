@@ -5,14 +5,22 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.21"
+__version__ = "2024.01.12"
 
 import threading
 from datetime import datetime
 from time import time
+from enum import Enum
 from revpimodio2 import RevPiModIO
 
 from lib.logger import log
+
+class MainState(Enum):
+    '''Main State enum'''
+    END = 100
+    PROBLEM = 888
+    ERROR = 999
+
 
 class Machine:
     '''Parent class for all machine modules.'''
@@ -57,15 +65,10 @@ class Machine:
         self.thread: threading.Thread = None
 
         self.end_machine = False
-        self.error_exception_in_machine = False
-        self.problem_in_machine = False
+        self.exception_msg: str = None
 
         self.position = 0
         self.state = None
-
-        self.status_dict = {
-            self.name: None
-        }
 
         global log
         self.log = log.getChild(f"{self.line_name}(Mach)")
@@ -107,7 +110,6 @@ class Machine:
             input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
         self.__state_time_start = datetime.now()
         self.state = state
-        self.status_dict["state"] = state
 
         self.log.warning(self.name + ": Switching state to: " + str(state.name))
 
@@ -138,9 +140,12 @@ class Machine:
         Args:
             problem_msg: message that is thrown by the machine.
         '''
-        self.problem_in_machine = problem_msg
-        self.switch_state(self.states.ERROR)
-        self.log.exception(problem_msg)
+        self.exception_msg = problem_msg
+        self.switch_state(MainState.PROBLEM)
+        if self.name.find("_") != -1 and self.thread == None:
+            # If called in another machine
+            raise
+        self.log.exception(f"PROBLEM: {self.exception_msg}")
 
     def error_handler(self, error_msg):
         '''Handler for errors.
@@ -148,6 +153,9 @@ class Machine:
         Args:
             error_msg: message that is thrown by the machine.
         '''
-        self.error_exception_in_machine = error_msg
-        self.switch_state(self.states.ERROR)
-        self.log.exception(error_msg)
+        self.exception_msg = error_msg
+        self.switch_state(MainState.ERROR)
+        if self.name.find("_") != -1 and self.thread == None:
+            # If called in another machine
+            raise
+        self.log.exception(f"ERROR: {self.exception_msg}")
