@@ -53,9 +53,11 @@ class MainLine(Machine):
             config (dict): Config for the line.
             states (State): States from Subclass.
         '''
-        super().__init__(revpi, config["name"], config["name"], states)
+        super().__init__(revpi, config["name"], config["name"])
 
         self.config = config
+        self.states = states
+
         self.machines: "dict[str, Machine]" = {}
         self.product_at: str = None
         self.waiting_for_state = None
@@ -118,6 +120,9 @@ class MainLine(Machine):
                 if self.thread and self.thread.is_alive():
                     tmp_end_line = False
             self.end_line = tmp_end_line
+
+        if self.state == MainState.END:
+            self.end()
 
         if self.state == MainState.ERROR or self.state == MainState.PROBLEM:
             if self.state == MainState.PROBLEM:

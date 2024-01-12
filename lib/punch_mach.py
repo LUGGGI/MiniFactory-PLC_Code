@@ -96,4 +96,3 @@ class PunchMach(Machine):
             self.error_handler(error)
         else:
             self.position += 1
-            self.switch_state(MainState.END)

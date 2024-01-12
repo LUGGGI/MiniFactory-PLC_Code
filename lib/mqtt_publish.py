@@ -122,43 +122,45 @@ class MqttPublish():
         self.topic_factory_config_get = f"{self.topic_start}/FactoryConfig/Get"
         self.topic_factory_command_get = f"{self.topic_start}/FactoryCommand/Get"
         self.topic_wh_content_get = f"{self.topic_start}/WHContent/Get"
+        self.topic_machine_status_get = f"{self.topic_start}/MachineStatus/Get"
 
 
     def publish_all(self):
         
-        self.client.publish(self.topic_wh_content_set, json.dumps(wh_content))
-        print(f"{self.topic_wh_content_set.removeprefix(f'{self.topic_start}/')}")
+        # self.client.publish(self.topic_wh_content_set, json.dumps(wh_content))
+        # print(f"{self.topic_wh_content_set.removeprefix(f'{self.topic_start}/')}")
 
-        self.client.publish(self.topic_line_config_set, json.dumps({
-            "name": "Test",
-            "run": True,
-            "start_at": "CB1",
-            "end_at": "CB1"
-        }))
+        # self.client.publish(self.topic_line_config_set, json.dumps({
+        #     "name": "Test",
+        #     "run": True,
+        #     "start_at": "CB1",
+        #     "end_at": "CB1"
+        # }))
 
         print(f"{self.topic_line_config_set.removeprefix(f'{self.topic_start}/')}")
-        # for config in line_configs:
-        #     self.__client.publish(self.topic_line_config_set, json.dumps(config))
-        #     print(f"{self.topic_line_config_set.removeprefix(f'{self.__topic_start}/')}")
+        for config in line_configs:
+            self.client.publish(self.topic_line_config_set, json.dumps(config))
+            print(f"{self.topic_line_config_set.removeprefix(f'{self.topic_start}/')}")
 
+        time.sleep(1)
+            
         self.client.publish(self.topic_factory_command_set, json.dumps(factory_command))
         print(f"{self.topic_factory_command_set.removeprefix(f'{self.topic_start}/')}")
 
-        # time.sleep(1)
 
-        # self.__client.publish(self.topic_factory_config_set, json.dumps(factory_config))
+        # self.client.publish(self.topic_factory_config_set, json.dumps(factory_config))
         # print(f"{self.topic_factory_config_set.removeprefix(f'{self.__topic_start}/')}")
 
         # time.sleep(3)
 
-        # self.__client.publish(self.topic_wh_content_get)
+        # self.client.publish(self.topic_wh_content_get)
         # print(f"{self.topic_wh_content_get.removeprefix(f'{self.__topic_start}/')}")
 
         # # todo get working 
-        # self.__client.publish(self.topic_line_config_get)
+        # self.client.publish(self.topic_line_config_get)
         # print(f"{self.topic_line_config_get.removeprefix(f'{self.__topic_start}/')}")
 
-        # self.__client.publish(self.topic_factory_config_get)
+        # self.client.publish(self.topic_factory_config_get)
         # print(f"{self.topic_factory_config_get.removeprefix(f'{self.__topic_start}/')}")
 
         print("End of publish all")

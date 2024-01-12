@@ -163,7 +163,6 @@ class Warehouse(Machine):
             self.error_handler(error)
         else:
             if to_end:
-                self.end_machine = True
                 self.switch_state(MainState.END)
             else:
                 self.log.warning(f"{self.name}: Initialized")

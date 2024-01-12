@@ -101,6 +101,7 @@ class Setup():
                         if config.pop("new", False) == True:
                             self.lines[config["name"]] = self.line_class(self.revpi, self.convert_to_states(config))
                             log.warning(f"Added new line: {config['name']}")
+                            self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, f"New line added: {config['name']}")
             
                 self.__update_factory()
             except Exception as e:
@@ -139,12 +140,20 @@ class Setup():
             if self.configs.line_configs.get(line.name).pop("changed", False):
                 line.config = self.convert_to_states(self.configs.line_configs.get(line.name))
                 log.warning(f"Changed line: {line.name}")
+                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, f"Changed line: {line.name}")
             # end the line
             if line.end_line:
-                log.critical(f"Stop: {line.name}")
-                self.lines.pop(line.name)
-                self.configs.line_configs.pop(line.name)
-                break
+                if line.config["run"] == True:
+                    log.critical(f"Stop: {line.name}")
+                    self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, f"Stopped line: {line.name}")
+                    line.config["run"] = False
+                    self.configs.line_configs[line.name]["run"] = False
+                # remove line only when restarting
+                if self.configs.factory_commands["run"] == True:
+                    self.lines.pop(line.name)
+                    self.configs.line_configs.pop(line.name)
+                    self.status.line_status.pop(line.name)
+                    break
             # handle problems in the line
             if line.state == MainState.PROBLEM:
                 if self.configs.factory_commands["run"] == True:
@@ -197,8 +206,7 @@ class Setup():
                 self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_MACHINES_STATUS, state_data)
                 self.status.status_update_num += 1
         
-        # get the status of all lines and its machines
-        changed = False
+        # get the status of all lines
         line: MainLine
         for line in self.lines.values():
             if line.config["run"] == False:
@@ -219,10 +227,8 @@ class Setup():
 
             if line_status != self.status.line_status.get(line.name):
                 self.status.line_status.update({line.name: line_status})
-                changed = True
-        if changed:
-            self.status.status_update_num += 1
-            self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_LINE_STATUS)
+                self.status.status_update_num += 1
+                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_LINE_STATUS, {line.name: line_status})
 
 
     def convert_to_states(self, config_dict: dict) -> dict:
@@ -242,6 +248,8 @@ class Setup():
             if type(config["start_at"]) != str and type(config["end_at"]) != str:
                 break
         else:
+            if config["start_at"] == "INIT":
+                config["start_at"] == MainState.INIT
             if config["end_at"] == "END":
                 config["end_at"] == MainState.END
             else:

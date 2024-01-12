@@ -164,7 +164,7 @@ class Robot3D(Machine):
             start_vertical_position = self.__encoder_ver.get_current_value()
             try_num = 1
             while(True):
-                if self.error_exception_in_machine or self.problem_in_machine:
+                if self.state == MainState.PROBLEM or self.state == MainState.ERROR:
                     break
                 
                 # move down to product

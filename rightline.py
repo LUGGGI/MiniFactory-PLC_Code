@@ -32,8 +32,6 @@ from lib.setup import Setup
 
 class State(Enum):
     '''NAME = [ID, Status, Used_by]'''
-    INIT = [0, Status.FREE, "None"]
-
     CB1 = [11, Status.FREE, "None"]
     CB3 = [13, Status.FREE, "None"]
     CB4_TO_WH = [141, Status.FREE, "None"]
@@ -88,7 +86,7 @@ class RightLine(MainLine):
             if self.test():
                 return
             
-        if self.state == State.INIT:
+        if self.state == MainState.INIT:
             if self.run_init():
                 self.switch_state(MainState.END, wait=False)
 
@@ -166,7 +164,6 @@ class RightLine(MainLine):
     def run_init(self) -> False:
         if self.position == 0:
             self.position = 1
-            self.switch_status(State.INIT, Status.RUNNING)
             for gr in ["GR1", "GR2", "GR3"]:
                 self.machines[gr] = GripRobot(self.revpi, gr, self.name, Position(-1, -1, -1))
                 self.machines[gr].init(to_end=True)
@@ -177,7 +174,6 @@ class RightLine(MainLine):
             self.machines["WH"].init(to_end=True)
 
         if self.machines.__len__() <= 0:
-            self.switch_status(State.INIT, Status.FREE)
             return True
 
     def run_cb1(self) -> False:

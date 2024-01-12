@@ -204,12 +204,16 @@ class MqttHandler():
         '''
         topic = msg.topic.removesuffix("/Get")
         topic_end = topic.removeprefix(f"{self.__topic_start}/")
-        self.log.warning(f"Get {topic_end}/Data")
+        self.log.warning(f"Get /{topic_end}/Data")
         if topic_end == self.TOPIC_WH_CONTENT:
             self.send_wh_content_data()
         else:
             try:
-                self.__client.publish(f"{topic}/Data", json.dumps(self.__topics[topic_end]))
+                data = self.__topics[topic_end]
+            except Exception:
+                data = f"ERROR: cant get data for topic: {topic}"
+            try:
+                self.__client.publish(f"{topic}/Data", json.dumps(data))
             except TypeError as e:
                 self.log.error(f"Error for publish of {topic_end}/Data: {e}")
 

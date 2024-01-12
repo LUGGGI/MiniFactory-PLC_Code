@@ -17,6 +17,7 @@ from lib.logger import log
 
 class MainState(Enum):
     '''Main State enum'''
+    INIT = 0
     END = 100
     PROBLEM = 888
     ERROR = 999
@@ -38,33 +39,28 @@ class Machine:
         __time_start (float): Time of machine start.
         __state_time_start (float): Time of current state start.
         end_machine (bool): True if machine should end.
-        error_exception_in_machine (bool): True if exception in machine.
-        problem_in_machine (bool): True if problem in machine.
         position (int): Counts up the positions of the machine.
         state (State): Current state of machine.
         log (Logger): Log object to print to log.
     '''
 
-    def __init__(self, revpi: RevPiModIO, name: str, line_name: str, states):
+    def __init__(self, revpi: RevPiModIO, name: str, line_name: str):
         '''Parent class for all machine modules.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
             line_name (str): Name of current line.
-            states (State): All possible States of the machine.
         '''
         self.revpi = revpi
         self.name = name
         self.line_name = line_name
-        self.states = states
 
         self.__time_start = time()
         self.__state_time_start = time()
 
         self.thread: threading.Thread = None
 
-        self.end_machine = False
         self.exception_msg: str = None
 
         self.position = 0
