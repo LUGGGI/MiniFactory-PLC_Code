@@ -12,6 +12,44 @@ __version__ = "2023.12.06"
 
 import json
 import paho.mqtt.client as mqtt
+import logging
+from os import listdir
+
+class Logger():
+    STD_LEVEL_CONSOLE = "WARNING"
+    LEVEL_FILE = logging.INFO
+
+
+    def __init__(self) -> None:
+            
+        self.log: logging.Logger = None
+
+
+        log_file_path = f"log_mqtt/mqtt{listdir('log_mqtt').__len__()+1}.log"
+
+
+        log_formatter_file = logging.Formatter("%(asctime)s.%(msecs)03d; %(message)s", datefmt='%H:%M:%S')
+        log_formatter_console = logging.Formatter("%(asctime)s.%(msecs)03d; %(message)s", datefmt='%M:%S')
+
+        # Setup File handler, change mode tp 'a' to keep the log after relaunch
+        file_handler = logging.FileHandler(log_file_path, mode='a')
+        file_handler.setFormatter(log_formatter_file)
+        file_handler.setLevel(self.LEVEL_FILE)
+
+        # Setup Stream Handler (i.e. console)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(log_formatter_console)
+        stream_handler.setLevel(logging.DEBUG)
+
+        # Get our logger
+        self.log = logging.getLogger()
+        self.log.setLevel(logging.DEBUG)
+
+        # Add both Handlers
+        self.log.addHandler(stream_handler)
+        self.log.addHandler(file_handler)
+
+        self.log.warning("0; Start of recording")
 
 
 class MqttReceive():
@@ -22,7 +60,7 @@ class MqttReceive():
     __PORT = 1883
     
 
-    def __init__(self, factory_name: str) -> None:
+    def __init__(self, factory_name: str, log: logging.Logger) -> None:
         '''Init MqttInterface.
         
         Args:
@@ -32,23 +70,28 @@ class MqttReceive():
 
         self.__BROKER_ADDR = "test.mosquitto.org"
 
-        self.__topic_start = f"MiniFactory/{factory_name}/Factory"
+        self.topic_start = f"MiniFactory/{factory_name}/Factory"
 
-        self.__client = mqtt.Client()
-        self.__client.on_connect = self.__on_connect
+        self.log = log
+        self.message_count = 0
 
-        self.__client.on_message = self.__on_message_fallback
+        
+        self.client = mqtt.Client()
+        self.client.on_connect = self.__on_connect
 
-        self.__client.on_disconnect = self.__on_disconnect
+        self.client.on_message = self.__on_message_fallback
 
-        self.__client.connect(self.__BROKER_ADDR, self.__PORT)
+        self.client.on_disconnect = self.__on_disconnect
 
-        self.__client.loop_forever()
+        self.client.connect(self.__BROKER_ADDR, self.__PORT)
+
+        self.client.loop_forever()
+
 
 
     def disconnect(self):
         '''Disconnect from MQTT broker.'''
-        self.__client.disconnect()
+        self.client.disconnect()
 
 
     def __on_connect(self, client: mqtt.Client, _userdata, _flags, rc):
@@ -57,11 +100,11 @@ class MqttReceive():
         Args:
             client(mqtt.Client): connection client.
         '''
-        print(f"Connected to MQTT-Broker. Result code: {rc}")
+        self.log.debug(f"Connected to MQTT-Broker. Result code: {rc}")
 
         client.subscribe("Debug")
         client.subscribe("Status")
-        client.subscribe(f"{self.__topic_start}/#")
+        client.subscribe(f"{self.topic_start}/#")
         # client.subscribe(f"{self.__topic_start}/+/Get")
         # client.subscribe(f"{self.__topic_start}/+/Set")
         # client.subscribe(f"{self.__topic_start}/+/Data")
@@ -72,7 +115,9 @@ class MqttReceive():
             decoded_msg = json.loads(msg.payload)
         except Exception:
             decoded_msg = msg.payload
-        print(f"{msg.topic.removeprefix(f"{self.__topic_start}/")}:\n\t{decoded_msg}")
+
+        self.message_count += 1
+        self.log.info(f"{self.message_count}; {msg.topic.removeprefix(f"{self.topic_start}/")}; {decoded_msg}")
 
 
     def __on_disconnect(self, client, userdata, rc):
@@ -81,4 +126,5 @@ class MqttReceive():
 
 
 if __name__ == "__main__":
-    MqttReceive(factory_name="Right")
+    logger = Logger()
+    MqttReceive(factory_name="Right", log=logger.log)

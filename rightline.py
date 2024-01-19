@@ -34,11 +34,13 @@ class State(Enum):
     '''NAME = [ID, Status, Used_by]'''
     CB1 = [11, Status.FREE, "None"]
     CB3 = [13, Status.FREE, "None"]
+    CB4 = [14, Status.FREE, "None"]
     CB4_TO_WH = [141, Status.FREE, "None"]
     CB4_TO_CB5 = [142, Status.FREE, "None"]
     CB5 = [15, Status.FREE, "None"]
 
     GR1 = [21, Status.FREE, "None"]
+    GR2 = [22, Status.FREE, "None"]
     GR2_CB1_TO_CB3 = [221, Status.FREE, "None"]
     GR2_CB1_TO_PM = [222, Status.FREE, "None"]
     GR2_PM_TO_CB3 = [223, Status.FREE, "None"]
@@ -49,6 +51,7 @@ class State(Enum):
     MPS = [5, Status.FREE, "None"]
     PM = [6, Status.FREE, "None"]
     SL = [7, Status.FREE, "None"]
+    WH = [8, Status.FREE, "None"]
     WH_STORE = [81, Status.FREE, "None"]
     WH_RETRIEVE = [82, Status.FREE, "None"]
 
@@ -74,7 +77,7 @@ class RightLine(MainLine):
         global log
         self.log = log.getChild(f"{self.line_name}(Main)")
 
-        self.state = State.INIT
+        self.state = MainState.INIT
 
     def mainloop(self):
         '''Switches the line states.'''
@@ -183,7 +186,7 @@ class RightLine(MainLine):
             self.product_at = cb.name
             cb.run_to_stop_sensor("FWD", f"{cb.name}_SENS_END", stop_delay_in_ms=200)
         if cb.is_position(2):
-            cb.state = MainState.END
+            cb.switch_state(MainState.END)
             return True
         
         # init GR2
@@ -196,9 +199,10 @@ class RightLine(MainLine):
         if cb.is_position(1):
             self.product_at = cb.name
             cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
-            if self.is_end_state():
-                cb.state = MainState.END
-                True
+
+        if self.is_end_state():
+            cb.switch_state(MainState.END)
+            return True
 
         if cb.is_position(2) and (
                 (self.config.get("with_WH") and self.state_is_free(State.CB4_TO_WH)) or
@@ -220,20 +224,24 @@ class RightLine(MainLine):
                 self.product_at = cb.name
                 cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=100)
             elif cb.is_position(2):
-                cb.end_conveyor()
+                cb.switch_state(MainState.END)
                 return True
+            
+            # init wh
+            if not self.is_end_state() and self.state_is_free(State.WH_STORE):
+                self.run_wh_store()
 
         elif self.state == State.CB4_TO_CB5:
             if cb.is_position(1):
                 self.product_at = cb.name
                 cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
+
+            if self.is_end_state():
+                cb.switch_state(MainState.END)
+                return True
             elif cb.is_position(2) and self.state_is_free(State.CB5):
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB5_SENS_START", end_machine=True)
                 return True
-            
-        # init wh
-        if self.config.get("with_WH") and not self.is_end_state() and self.state_is_free(State.WH_STORE):
-            self.run_wh_store()
 
 
     def run_cb5(self) -> False:
@@ -243,7 +251,7 @@ class RightLine(MainLine):
             self.product_at = cb.name
             cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END", stop_delay_in_ms=200)
         elif cb.is_position(2) and State.SL.value[1] == Status.FREE:
-            cb.state = MainState.END
+            cb.switch_state(MainState.END)
             return True
         # init gr3
         if self.state != self.config["end_at"] and (State.GR3.value[1] == Status.FREE or State.GR3.value[2] == self.name):
@@ -289,7 +297,7 @@ class RightLine(MainLine):
             if gr.is_position(1):
                 # move to cb1
                 gr.reset_claw()
-                gr.move_to_position(Position(140, 72, 1700), ignore_moving_pos=True)
+                gr.move_to_position(Position(145, 72, 1700), ignore_moving_pos=True)
 
             if gr.is_position(2):
                 # get product from cb1, (move down, grip product, move up)
@@ -402,7 +410,7 @@ class RightLine(MainLine):
         cb: Conveyor = self.get_machine("CB2", Conveyor)
         
         if cb.is_position(1):
-            self.switch_status("GR2", Status.BLOCKED)
+            self.switch_status(State.GR2_PM_TO_CB3, Status.WAITING)
             self.product_at = cb.name
             cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
         elif cb.is_position(2):
@@ -415,8 +423,8 @@ class RightLine(MainLine):
             cb.run_to_stop_sensor("BWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=200)
 
         elif cb.is_position(4) and pm.is_position(2):
-            pm.state = MainState.END
-            cb.state = MainState.END
+            pm.switch_state(MainState.END)
+            cb.switch_state(MainState.END)
             return True
         
         if pm.ready_for_transport:
@@ -433,6 +441,9 @@ class RightLine(MainLine):
             self.product_at = mps.name
             mps.run(with_oven=self.config.get("with_oven"), with_saw=self.config.get("with_saw"))
         elif mps.is_position(2) and State.CB1.value[1] == Status.FREE:
+            if self.is_end_state():
+                mps.switch_state(MainState.END)
+                return True
             mps.run_to_out()
             return True
 
@@ -445,7 +456,7 @@ class RightLine(MainLine):
             self.product_at = sl.name
             sl.run(color=self.config["color"])
         if sl.is_position(2):
-            sl.state = MainState.END
+            sl.switch_state(MainState.END)
             return True
 
     def run_wh_store(self) -> False:
@@ -488,7 +499,7 @@ class RightLine(MainLine):
         elif wh.is_position(2):
             if self.config["end_at"] == State.WH_STORE:
                 wh.init(to_end=True)
-                vg.state = MainState.END
+                vg.switch_state(MainState.END)
             else:
                 wh.position = 1
                 vg.position = 2
@@ -532,7 +543,7 @@ class RightLine(MainLine):
         elif vg.is_position(7):        
             # move back to init
             vg.init(to_end=True)
-            wh.state = MainState.END
+            wh.switch_state(MainState.END)
             return True
         
 
