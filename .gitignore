@@ -2,4 +2,5 @@
 
 plc*.log
 !plc_all.log
+mqtt*.log
 *states.json

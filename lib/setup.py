@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.01.12"
+__version__ = "2024.01.19"
 
 from time import sleep, time
 from revpimodio2 import RevPiModIO
@@ -84,8 +84,8 @@ class Setup():
         # send all the machineStatus-Data
         for state in self.states:
             state_data = {state.name: [state.value[1].name, state.value[2]]}
-            self.status.machines_status.update(state_data)
-        self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_MACHINES_STATUS)
+            self.status.machine_status.update(state_data)
+        self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_MACHINE_STATUS)
 
         while(True):
             self.loop_start_time = time()
@@ -101,15 +101,16 @@ class Setup():
                         if config.pop("new", False) == True:
                             self.lines[config["name"]] = self.line_class(self.revpi, self.convert_to_states(config))
                             log.warning(f"Added new line: {config['name']}")
-                            self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, f"New line added: {config['name']}")
+                            self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, f"New line added: {config}")
             
                 self.__update_factory()
-            except Exception as e:
-                log.exception(e)
+                # save Status of factory, lines and every running machine
+                self.__save_status()
+            except Exception as error:
+                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, {"ERROR": self.convert_exception_to_str(error)})
+                log.exception(f"ERROR: {error}")
                 self.exception = True
 
-            # save Status of factory, lines and every running machine
-            self.__save_status()
             
             # exit the factory if error occurred or end has ben reached
             if self.exception:
@@ -163,6 +164,7 @@ class Setup():
             
             # handel exception in the line
             if line.state == MainState.ERROR:
+                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, {"ERROR": f"Error in line {line.name}: {self.convert_exception_to_str(line.exception_msg)}"})
                 log.error(f"Error in line {line.name}: {line.exception_msg}")
                 self.__save_status()
                 self.exception = True
@@ -200,10 +202,14 @@ class Setup():
         # get the machine states
         for state in self.states:
             state_data = {state.name: [state.value[1].name, state.value[2]]}
-            if self.status.machines_status.get(state.name) != state_data[state.name]:
+            old_state_data = self.status.machine_status.get(state.name)
+            if old_state_data != state_data[state.name]:
                 # if state changed update status and send the state_data
-                self.status.machines_status.update(state_data)
-                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_MACHINES_STATUS, state_data)
+                self.status.machine_status.update(state_data)
+                # if state_data[state.name][0] == "BLOCKED" or (old_state_data[0] == "BLOCKED" and state_data[state.name][0] == "FREE"):
+                #     # skip sending if state just was set to block
+                #     continue
+                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_MACHINE_STATUS, state_data)
                 self.status.status_update_num += 1
         
         # get the status of all lines
@@ -220,6 +226,8 @@ class Setup():
             
             for machine in line.machines.values():
                 line_status.update({machine.name: {"status": machine.state.name if machine.state else None}})
+                if machine.state == MainState.WARNING:
+                    line_status[machine.name].update({"WARNING": self.convert_exception_to_str(machine.exception_msg)})
                 if machine.state == MainState.PROBLEM:
                     line_status[machine.name].update({"PROBLEM": self.convert_exception_to_str(machine.exception_msg)})
                 if machine.state == MainState.ERROR:
@@ -249,9 +257,9 @@ class Setup():
                 break
         else:
             if config["start_at"] == "INIT":
-                config["start_at"] == MainState.INIT
+                config["start_at"] = MainState.INIT
             if config["end_at"] == "END":
-                config["end_at"] == MainState.END
+                config["end_at"] = MainState.END
             else:
                 raise LookupError(f"Config {config['name']} could not be parsed.")
         

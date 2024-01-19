@@ -5,10 +5,11 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.01.12"
+__version__ = "2024.01.19"
 
 import threading
 from enum import Enum
+from time import sleep
 
 from lib.logger import log
 from lib.machine import Machine, MainState
@@ -175,7 +176,7 @@ class Robot3D(Machine):
 
                 # check if product still at sensor, if so try to grip again
                 if sensor and Sensor(self.revpi, sensor, self.line_name).get_current_value() == True:
-                    self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num}")
+                    self.warning_handler(f"{self.name} :Product still at Sensor, try nr.: {try_num}")
                     self.reset_claw(as_thread=False)
                 else:
                     # product was gripped
@@ -183,7 +184,8 @@ class Robot3D(Machine):
 
                 # try one list time with complete robot reset.
                 if try_num == self.__MAX_PICKUP_TRIES:
-                    self.log.error(f"{self.name} :Product still at Sensor, grip failed, resetting position")
+                    self.warning_handler(f"{self.name} :Product still at Sensor, grip failed, resetting position")
+                    sleep(0.02)
                     # get current position
                     current_position = Position(
                         self.__encoder_rot.get_current_value(),

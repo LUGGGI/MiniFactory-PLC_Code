@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.01.12"
+__version__ = "2024.01.19"
 
 import threading
 from datetime import datetime
@@ -19,6 +19,7 @@ class MainState(Enum):
     '''Main State enum'''
     INIT = 0
     END = 100
+    WARNING = 777
     PROBLEM = 888
     ERROR = 999
 
@@ -129,6 +130,16 @@ class Machine:
             return False
 
         return True
+    
+    def warning_handler(self, warning_msg):
+        '''Handler for warnings.
+        
+        Args:
+            problem_msg: message that is thrown by the machine.
+        '''
+        self.exception_msg = warning_msg
+        self.switch_state(MainState.WARNING)
+        self.log.exception(f"WARNING: {self.exception_msg}")
 
     def problem_handler(self, problem_msg):
         '''Handler for problems.

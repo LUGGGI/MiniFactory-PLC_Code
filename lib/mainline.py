@@ -7,7 +7,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.01.12"
+__version__ = "2024.01.19"
 
 from enum import Enum
 
@@ -135,7 +135,7 @@ class MainLine(Machine):
                     self.switch_status(state, Status.FREE)
 
             return False
-        # no error occoured
+        # no error occurred
         return True
 
         
@@ -210,16 +210,21 @@ class MainLine(Machine):
         name_tag = "None" if status == Status.FREE else self.name
 
         if type(state_name) != str:
-            state_name.value[1] = status
-            # set the used_by tag
-            state_name.value[2] = name_tag
-        else:
-            for state in self.states:
-                if state.name.split('_')[0].find(state_name) != -1:
-                    # set status
-                    state.value[1] = status
-                    # set the used_by tag
-                    state.value[2] = name_tag
+            state_name = state_name.name
+        
+        for state in self.states:
+            if state.name == state_name:
+                # set status
+                state.value[1] = status
+                # set the used_by tag
+                state.value[2] = name_tag
+                self.log.debug(f"{self.name}: Switching status of: {state_name} to [{status}, {name_tag}]")
+            elif state.name.split('_')[0] == state_name.split('_')[0]:
+                # set status
+                state.value[1] = Status.FREE if status == Status.FREE else Status.BLOCKED
+                # set the used_by tag
+                state.value[2] = name_tag
+                self.log.debug(f"{self.name}: Switching status of other: {state.name} to [{Status.FREE if status == Status.FREE else Status.BLOCKED}, {name_tag}]")
 
 
     def get_machine(self, machine_name: str, machine_class, *args) -> Machine:
@@ -236,7 +241,8 @@ class MainLine(Machine):
         if machine == None:
             machine = machine_class(self.revpi, machine_name, self.name, *args)
             self.machines[machine_name] = machine
-            self.switch_status(machine_name, Status.RUNNING)
+            if self.state.name.split('_')[0] != machine_name:
+                self.switch_status(machine_name, Status.RUNNING)
         return machine
     
     

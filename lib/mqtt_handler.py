@@ -6,7 +6,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.01.12"
+__version__ = "2024.01.19"
 
 import json
 import paho.mqtt.client as mqtt
@@ -32,7 +32,7 @@ class Status():
     '''Holds the current status of the different factory parts.'''
 
     status_update_num = 0
-    machines_status = {}
+    machine_status = {}
     line_status = {}
 
 
@@ -51,7 +51,7 @@ class MqttHandler():
     TOPIC_FACTORY_COMMANDS = "FactoryCommand"
 
     TOPIC_WH_CONTENT = "WHContent"
-    TOPIC_MACHINES_STATUS = "MachinesStatus"
+    TOPIC_MACHINE_STATUS = "MachineStatus"
     TOPIC_FACTORY_STATUS = "FactoryStatus"
     TOPIC_LINE_STATUS = "LineStatus"
     
@@ -81,7 +81,7 @@ class MqttHandler():
             self.TOPIC_FACTORY_CONFIG: self.__configs.factory_config,
             self.TOPIC_FACTORY_COMMANDS: self.__configs.factory_commands,
 
-            self.TOPIC_MACHINES_STATUS: self.__status.machines_status,
+            self.TOPIC_MACHINE_STATUS: self.__status.machine_status,
             self.TOPIC_LINE_STATUS: self.__status.line_status
         }
 
@@ -204,7 +204,7 @@ class MqttHandler():
         '''
         topic = msg.topic.removesuffix("/Get")
         topic_end = topic.removeprefix(f"{self.__topic_start}/")
-        self.log.warning(f"Get /{topic_end}/Data")
+        self.log.info(f"Get /{topic_end}/Data")
         if topic_end == self.TOPIC_WH_CONTENT:
             self.send_wh_content_data()
         else:
@@ -225,7 +225,7 @@ class MqttHandler():
             topic: The topic of the data to send.
             data: The data to send, if None the default data for the given topic will be sent.
         '''
-        self.log.warning(f"Send {topic}/Data")
+        self.log.info(f"Send {topic}/Data")
         if data == None:
             data = self.__topics[topic]
         self.__client.publish(f"{self.__topic_start}/{topic}/Data", json.dumps(data))
