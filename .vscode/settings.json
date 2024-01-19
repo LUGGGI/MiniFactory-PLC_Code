@@ -10,10 +10,12 @@
         "Lukas",
         "mainsloops",
         "Methodes",
+        "mqtt",
         "PiCtory",
         "procimg",
         "revpi",
         "revpimodio",
-        "unreg"
+        "unreg",
+        "userdata"
     ]
 }

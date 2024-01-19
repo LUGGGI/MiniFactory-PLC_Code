@@ -5,14 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.21"
+__version__ = "2024.01.12"
 
 import threading
 from time import sleep
 from enum import Enum, auto
 
 from lib.logger import log
-from lib.machine import Machine
+from lib.machine import Machine, MainState
 from lib.actuator import Actuator, SensorTimeoutError
 from lib.conveyor import Conveyor
 
@@ -24,9 +24,7 @@ class State(Enum):
     TO_SAW = auto() 
     SAWING = auto() 
     TO_CB = auto() 
-    CB = auto() 
-    END = 100
-    ERROR = 999
+    CB = auto()
 
 class MPStation(Machine):
     '''Controls the Multi Purpose Station.'''
@@ -75,13 +73,9 @@ class MPStation(Machine):
             Actuator(self.revpi, self.name + "_VG", self.line_name).run_to_sensor("TO_TABLE", self.name + "_REF_SW_VG_TABLE")
 
         except SensorTimeoutError as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.position = 1
 
@@ -186,13 +180,9 @@ class MPStation(Machine):
             Conveyor(self.revpi, self.name + "_CB", self.line_name).run_to_stop_sensor("FWD", "MPS_SENS_CB", as_thread=False)
 
         except SensorTimeoutError as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.position += 1
 
@@ -216,14 +206,9 @@ class MPStation(Machine):
             del self.table
 
         except SensorTimeoutError as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
-            self.end_machine = True
             self.position += 1
-            self.switch_state(State.END)
+            self.switch_state(MainState.END)

@@ -5,14 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2024.01.12"
 
 import threading
 from time import sleep
 from enum import Enum
 
 from lib.logger import log
-from lib.machine import Machine
+from lib.machine import Machine, MainState
 from lib.sensor import Sensor, SensorTimeoutError, EncoderOverflowError, NoDetectionError
 from lib.actuator import Actuator
 from lib.conveyor import Conveyor
@@ -22,8 +22,6 @@ class State(Enum):
     COLOR_SENSING = 1
     SORTING = 2
     INTO_BAY = 3
-    END = 100
-    ERROR = 999
 
 class SortLine(Machine):
     '''Controls the Sorting Line.'''
@@ -113,14 +111,10 @@ class SortLine(Machine):
                 raise(NoDetectionError(f"{self.name} :Product not in right bay"))
 
         except (SensorTimeoutError, ValueError, EncoderOverflowError, NoDetectionError) as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.log.warning(f"{self.name} :Product sorted into: {self.color}")
             self.position += 1
-            self.switch_state(State.END)
+            self.switch_state(MainState.END)

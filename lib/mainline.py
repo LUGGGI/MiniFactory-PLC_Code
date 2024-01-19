@@ -7,12 +7,12 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.15"
+__version__ = "2024.01.19"
 
 from enum import Enum
 
 from lib.logger import log
-from lib.machine import Machine
+from lib.machine import Machine, MainState
 
 class Status(Enum):
     NONE = 0
@@ -20,6 +20,8 @@ class Status(Enum):
     RUNNING = 2
     BLOCKED = 3
     WAITING = 4
+    PROBLEM = 888
+    ERROR = 999
 
 class MainLine(Machine):
     '''Controls the MiniFactory.'''
@@ -55,11 +57,12 @@ class MainLine(Machine):
 
         self.config = config
         self.states = states
+
         self.machines: "dict[str, Machine]" = {}
         self.product_at: str = None
         self.waiting_for_state = None
         self.running = False
-        self.status_dict = {}
+        self.end_line = False
 
         global log
         self.log = log.getChild(f"{self.line_name}")
@@ -75,9 +78,7 @@ class MainLine(Machine):
             if self.line_config() and run:
                 self.mainloop()
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.log.exception(error)
-            self.switch_state(self.states.ERROR)
+            self.error_handler(error)
 
 
     def line_config(self) -> bool:
@@ -88,16 +89,19 @@ class MainLine(Machine):
         '''
         for machine in self.machines.values():
             # look for errors in the machines
-            if machine.error_exception_in_machine:
-                self.error_exception_in_machine = True
-                self.switch_state(self.states.ERROR)
+            if machine.state == MainState.ERROR and not self.state == MainState.ERROR:
+                self.exception_msg = machine.exception_msg
+                self.switch_state(MainState.ERROR)
+                self.switch_status(machine.name, Status.ERROR)
                 return False
-            if machine.problem_in_machine and not self.problem_in_machine:
-                self.problem_in_machine = True
-                self.switch_state(self.states.ERROR)
+            if machine.state == MainState.PROBLEM and not self.state == MainState.PROBLEM:
+                self.exception_msg = machine.exception_msg
+                self.switch_state(MainState.PROBLEM)
+                self.switch_status(machine.name, Status.PROBLEM)
                 return False
+            
             # end machines 
-            if machine.end_machine and not machine.name == self.product_at:
+            if machine.state == MainState.END and not machine.name == self.product_at:
                 self.log.info(f"Ended: {machine.name}")
                 self.switch_status(machine.name, Status.FREE)
                 self.machines.pop(machine.name)
@@ -110,26 +114,28 @@ class MainLine(Machine):
                 self.switch_state(self.waiting_for_state)
                 self.waiting_for_state = None
 
-        if self.state == self.states.END:
-            self.product_at = None
-            self.switch_status(self.states.END, Status.FREE)
-            if not self.end() and not self.problem_in_machine:
-                return True
-            self.end_machine = True
+        if self.config["run"] == False:
+            tmp_end_line = True
+            for machine in self.machines.values():
+                if self.thread and self.thread.is_alive():
+                    tmp_end_line = False
+            self.end_line = tmp_end_line
+
+        if self.state == MainState.END:
+            self.end()
+
+        if self.state == MainState.ERROR or self.state == MainState.PROBLEM:
+            if self.state == MainState.PROBLEM:
+                for machine in self.machines.values():
+                    if self.thread and self.thread.is_alive():
+                        return False
+            self.end_line = True
             for state in self.states:
                 if state.value[2] == self.name:
                     self.switch_status(state, Status.FREE)
 
             return False
-        
-        # update line status for status
-        self.status_dict = {
-            "state": self.state.name if self.state else None,
-            "product_at": self.product_at,
-            "waiting_for_state": self.waiting_for_state.name if self.waiting_for_state else None,
-            "error_exception_in_machine": self.error_exception_in_machine,
-            "problem_in_machine": self.problem_in_machine
-        }
+        # no error occurred
         return True
 
         
@@ -146,6 +152,8 @@ class MainLine(Machine):
         Returns:
             bool: True if given state is FREE or used by current line, else False.
         '''
+        if isinstance(state, MainState):
+            return True
         if state.value[1] == Status.FREE or state.value[2] == self.name:
             return True
         else:
@@ -158,6 +166,8 @@ class MainLine(Machine):
         Returns:
             bool: True if current state is end state, else False.
         '''
+        if isinstance(self.state, MainState):
+            return True
         if self.state == self.config["end_at"]:
             return True
         else:
@@ -171,15 +181,15 @@ class MainLine(Machine):
             state (State): State Enum to switch to.
             wait (bool): Calls for input bevor switching.
         '''
-        if self.state == self.config["end_at"] and state != self.states.END:
+        if self.state == self.config["end_at"] and not isinstance(state, MainState):
             self.switch_status(self.state, Status.FREE)
-            self.switch_state(self.states.END, wait)
+            self.switch_state(MainState.END, wait)
         elif self.state_is_free(state):
             if wait:
                 input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
             self.log.critical(self.name + ": Switching state to: " + str(state.name))
             self.state = state
-            if state != self.states.END or state != self.states.WAITING:
+            if not isinstance(state, MainState) or state != self.states.WAITING:
                 self.switch_status(state, Status.RUNNING)
         else:
             self.log.critical(f"{self.name}: Waiting for: {state}")
@@ -194,20 +204,27 @@ class MainLine(Machine):
             state (State | str): Can be a State Enum or a string of to switching state.
             status (Status): Status that the state should be switched to.
         '''
+        if isinstance(state_name, MainState):
+            return
         # get the used_by tag
         name_tag = "None" if status == Status.FREE else self.name
 
         if type(state_name) != str:
-            state_name.value[1] = status
-            # set the used_by tag
-            state_name.value[2] = name_tag
-        else:
-            for state in self.states:
-                if state.name.split('_')[0].find(state_name) != -1:
-                    # set status
-                    state.value[1] = status
-                    # set the used_by tag
-                    state.value[2] = name_tag
+            state_name = state_name.name
+        
+        for state in self.states:
+            if state.name == state_name:
+                # set status
+                state.value[1] = status
+                # set the used_by tag
+                state.value[2] = name_tag
+                self.log.debug(f"{self.name}: Switching status of: {state_name} to [{status}, {name_tag}]")
+            elif state.name.split('_')[0] == state_name.split('_')[0]:
+                # set status
+                state.value[1] = Status.FREE if status == Status.FREE else Status.BLOCKED
+                # set the used_by tag
+                state.value[2] = name_tag
+                self.log.debug(f"{self.name}: Switching status of other: {state.name} to [{Status.FREE if status == Status.FREE else Status.BLOCKED}, {name_tag}]")
 
 
     def get_machine(self, machine_name: str, machine_class, *args) -> Machine:
@@ -224,7 +241,8 @@ class MainLine(Machine):
         if machine == None:
             machine = machine_class(self.revpi, machine_name, self.name, *args)
             self.machines[machine_name] = machine
-            self.switch_status(machine_name, Status.RUNNING)
+            if self.state.name.split('_')[0] != machine_name:
+                self.switch_status(machine_name, Status.RUNNING)
         return machine
     
     
@@ -239,7 +257,7 @@ class MainLine(Machine):
             # check if there any machines left running
             machine: Machine
             for machine in self.machines.values():
-                if not machine.end_machine and not machine.name == "Main":
+                if machine.state != MainState.END and not machine.name == "Main":
                     # wait for running machines
                     machine_running = True
                     if machine.position != 100:
@@ -248,5 +266,5 @@ class MainLine(Machine):
             if machine_running:
                 return False
             # all machines have ended
-            self.end_machine
+            self.end_line = True
             return True

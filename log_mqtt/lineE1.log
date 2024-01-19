@@ -1,0 +1,26 @@
+16:38:51.113; 0; Start of recording
+16:38:53.607; 1; FactoryStatus/Data; Program started
+16:38:53.615; 2; MachineStatus/Data; {'CB1': ['FREE', 'None'], 'CB3': ['FREE', 'None'], 'CB4': ['FREE', 'None'], 'CB4_TO_WH': ['FREE', 'None'], 'CB4_TO_CB5': ['FREE', 'None'], 'CB5': ['FREE', 'None'], 'GR1': ['FREE', 'None'], 'GR2': ['FREE', 'None'], 'GR2_CB1_TO_CB3': ['FREE', 'None'], 'GR2_CB1_TO_PM': ['FREE', 'None'], 'GR2_PM_TO_CB3': ['FREE', 'None'], 'GR3': ['FREE', 'None'], 'VG2': ['FREE', 'None'], 'MPS': ['FREE', 'None'], 'PM': ['FREE', 'None'], 'SL': ['FREE', 'None'], 'WH': ['FREE', 'None'], 'WH_STORE': ['FREE', 'None'], 'WH_RETRIEVE': ['FREE', 'None'], 'WAITING': ['FREE', 'None'], 'TEST': ['FREE', 'None']}
+16:38:55.650; 3; LineConfig/Set; {'name': 'LineE1', 'run': True, 'start_at': 'CB1', 'end_at': 'CB1', 'color': 'WHITE'}
+16:38:55.656; 4; FactoryCommand/Set; {'run': True}
+16:38:56.343; 5; FactoryStatus/Data; New line added: {'name': 'LineE1', 'run': True, 'start_at': 'CB1', 'end_at': 'CB1', 'color': 'WHITE'}
+16:38:56.398; 6; MachineStatus/Data; {'CB1': ['RUNNING', 'LineE1']}
+16:38:56.399; 7; LineStatus/Data; {'LineE1': {'self': {'state': 'CB1', 'product_at': None}}}
+16:38:56.401; 8; LineStatus/Data; {'LineE1': {'self': {'state': 'CB1', 'product_at': 'CB1'}, 'CB1': {'status': None}}}
+16:38:56.401; 9; LineStatus/Data; {'LineE1': {'self': {'state': 'CB1', 'product_at': 'CB1'}, 'CB1': {'status': 'RUN'}}}
+16:39:06.368; 10; MachineStatus/Data; {'CB1': ['PROBLEM', 'LineE1']}
+16:39:06.380; 11; LineStatus/Data; {'LineE1': {'self': {'state': 'PROBLEM', 'product_at': 'CB1'}, 'CB1': {'status': 'PROBLEM', 'PROBLEM': 'SensorTimeoutError: CB1_SENS_END no detection in time'}}}
+16:39:06.394; 12; FactoryCommand/Data; {'run': False}
+16:39:06.400; 13; MachineStatus/Data; {'CB1': ['FREE', 'None']}
+16:39:06.407; 14; FactoryStatus/Data; Stopped line: LineE1
+16:39:08.756; 15; LineConfig/Get; b''
+16:39:08.777; 16; LineStatus/Get; b''
+16:39:08.777; 17; LineConfig/Data; {'LineE1': {'name': 'LineE1', 'run': False, 'start_at': 'CB1', 'end_at': 'CB1', 'color': 'WHITE'}}
+16:39:08.793; 18; LineStatus/Data; {'LineE1': {'self': {'state': 'PROBLEM', 'product_at': 'CB1'}, 'CB1': {'status': 'PROBLEM', 'PROBLEM': 'SensorTimeoutError: CB1_SENS_END no detection in time'}}}
+16:39:09.758; 19; FactoryCommand/Set; {'run': True}
+16:39:10.761; 20; LineConfig/Get; b''
+16:39:10.784; 21; LineStatus/Get; b''
+16:39:10.788; 22; LineConfig/Data; {}
+16:39:10.798; 23; LineStatus/Data; {}
+16:39:11.774; 24; FactoryConfig/Set; {'exit_if_end': True}
+16:39:11.792; 25; FactoryStatus/Data; Program stopped

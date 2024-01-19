@@ -5,14 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.21"
+__version__ = "2024.01.12"
 
 import threading
 from enum import Enum
 import json
 
 from lib.logger import log
-from lib.machine import Machine
+from lib.machine import Machine, MainState
 from lib.sensor import Sensor, SensorTimeoutError, EncoderOverflowError
 from lib.actuator import Actuator
 from lib.conveyor import Conveyor
@@ -25,8 +25,6 @@ class State(Enum):
     SETTING_PRODUCT = 4
     CB_BWD = 5
     CB_FWD = 6
-    END = 100
-    ERROR = 999
 
 # Positions in the Warehouse rack
 POSITIONS: "list[list[tuple]]" = [
@@ -160,17 +158,12 @@ class Warehouse(Machine):
                     self.store_product(color="Carrier", as_thread=False)
 
         except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             if to_end:
-                self.end_machine = True
-                self.switch_state(State.END)
+                self.switch_state(MainState.END)
             else:
                 self.log.warning(f"{self.name}: Initialized")
                 self.position = current_position + 1
@@ -252,13 +245,9 @@ class Warehouse(Machine):
                 json.dump(json_obj, fp, indent=4)
 
         except (SensorTimeoutError, ValueError, EncoderOverflowError, LookupError) as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.log.warning(f"{self.name} :{color}-product stored at position: [hor:{hor},ver:{ver}]; {position}")
             self.position += 1
@@ -342,13 +331,9 @@ class Warehouse(Machine):
                 json.dump(json_obj, fp, indent=4)
             
         except (SensorTimeoutError, ValueError, EncoderOverflowError, LookupError) as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.log.warning(f"{self.name} :{color}-product retrieved from position: [hor:{hor+1},ver:{ver+1}]; {position}")
             self.position += 1

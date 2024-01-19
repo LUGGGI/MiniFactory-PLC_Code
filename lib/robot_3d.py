@@ -5,13 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.12.04"
+__version__ = "2024.01.19"
 
 import threading
 from enum import Enum
+from time import sleep
 
 from lib.logger import log
-from lib.machine import Machine
+from lib.machine import Machine, MainState
 from lib.sensor import Sensor
 from lib.actuator import Actuator, EncoderOverflowError, SensorTimeoutError
 
@@ -23,8 +24,6 @@ class State(Enum):
     GRIPPING = 4
     RELEASE = 5
     GET_PRODUCT = 6
-    END = 100
-    ERROR = 999
 
 class Position:
     '''Holds a int value for each axis.'''
@@ -135,17 +134,12 @@ class Robot3D(Machine):
             self.__move_all_axes(Position(0,-1,-1))
 
         except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             if to_end:
-                self.end_machine = True
-                self.switch_state(State.END)
+                self.switch_state(MainState.END)
             else:
                 self.log.warning(f"{self.name}: Initialized")
                 self.position += 1
@@ -171,7 +165,7 @@ class Robot3D(Machine):
             start_vertical_position = self.__encoder_ver.get_current_value()
             try_num = 1
             while(True):
-                if self.error_exception_in_machine or self.problem_in_machine:
+                if self.state == MainState.PROBLEM or self.state == MainState.ERROR:
                     break
                 
                 # move down to product
@@ -182,7 +176,7 @@ class Robot3D(Machine):
 
                 # check if product still at sensor, if so try to grip again
                 if sensor and Sensor(self.revpi, sensor, self.line_name).get_current_value() == True:
-                    self.log.warning(f"{self.name} :Product still at Sensor, try nr.: {try_num}")
+                    self.warning_handler(f"{self.name} :Product still at Sensor, try nr.: {try_num}")
                     self.reset_claw(as_thread=False)
                 else:
                     # product was gripped
@@ -190,7 +184,8 @@ class Robot3D(Machine):
 
                 # try one list time with complete robot reset.
                 if try_num == self.__MAX_PICKUP_TRIES:
-                    self.log.error(f"{self.name} :Product still at Sensor, grip failed, resetting position")
+                    self.warning_handler(f"{self.name} :Product still at Sensor, grip failed, resetting position")
+                    sleep(0.02)
                     # get current position
                     current_position = Position(
                         self.__encoder_rot.get_current_value(),
@@ -209,13 +204,9 @@ class Robot3D(Machine):
             self.position = current_program_position + 1
         
         except (SensorTimeoutError, ValueError, EncoderOverflowError, GetProductError) as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
 
 
     def move_to_position(self, position: Position, ignore_moving_pos=False, as_thread=True) -> True:
@@ -274,13 +265,9 @@ class Robot3D(Machine):
             self.__move_all_axes(position)
         
         except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
-            self.problem_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.problem_handler(error)
         except Exception as error:
-            self.error_exception_in_machine = True
-            self.switch_state(State.ERROR)
-            self.log.exception(error)
+            self.error_handler(error)
         else:
             self.log.warning(f"{self.name} :Position reached: {end_position}")
             self.position += 1

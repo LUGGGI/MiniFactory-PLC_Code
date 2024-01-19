@@ -5,14 +5,24 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2023.09.21"
+__version__ = "2024.01.19"
 
 import threading
 from datetime import datetime
 from time import time
+from enum import Enum
 from revpimodio2 import RevPiModIO
 
 from lib.logger import log
+
+class MainState(Enum):
+    '''Main State enum'''
+    INIT = 0
+    END = 100
+    WARNING = 777
+    PROBLEM = 888
+    ERROR = 999
+
 
 class Machine:
     '''Parent class for all machine modules.'''
@@ -30,8 +40,6 @@ class Machine:
         __time_start (float): Time of machine start.
         __state_time_start (float): Time of current state start.
         end_machine (bool): True if machine should end.
-        error_exception_in_machine (bool): True if exception in machine.
-        problem_in_machine (bool): True if problem in machine.
         position (int): Counts up the positions of the machine.
         state (State): Current state of machine.
         log (Logger): Log object to print to log.
@@ -54,9 +62,7 @@ class Machine:
 
         self.thread: threading.Thread = None
 
-        self.end_machine = False
-        self.error_exception_in_machine = False
-        self.problem_in_machine = False
+        self.exception_msg: str = None
 
         self.position = 0
         self.state = None
@@ -124,18 +130,39 @@ class Machine:
             return False
 
         return True
-
-
-    def get_status_dict(self) -> dict:
-        '''Returns a dictionary with the machine status.
+    
+    def warning_handler(self, warning_msg):
+        '''Handler for warnings.
         
-        Returns:
-            dict: Status dictionary
+        Args:
+            problem_msg: message that is thrown by the machine.
         '''
-        return {
-            "state": self.state.name if self.state else None,
-            "position": self.position,
-            "end_machine": False if not self.end_machine else f"true, Runtime: {self.get_run_time()} s",
-            "error_exception_in_machine": self.error_exception_in_machine,
-            "problem_in_machine": self.problem_in_machine
-        }
+        self.exception_msg = warning_msg
+        self.switch_state(MainState.WARNING)
+        self.log.exception(f"WARNING: {self.exception_msg}")
+
+    def problem_handler(self, problem_msg):
+        '''Handler for problems.
+        
+        Args:
+            problem_msg: message that is thrown by the machine.
+        '''
+        self.exception_msg = problem_msg
+        self.switch_state(MainState.PROBLEM)
+        if self.name.find("_") != -1 and self.thread == None:
+            # If called in another machine
+            raise
+        self.log.exception(f"PROBLEM: {self.exception_msg}")
+
+    def error_handler(self, error_msg):
+        '''Handler for errors.
+        
+        Args:
+            error_msg: message that is thrown by the machine.
+        '''
+        self.exception_msg = error_msg
+        self.switch_state(MainState.ERROR)
+        if self.name.find("_") != -1 and self.thread == None:
+            # If called in another machine
+            raise
+        self.log.exception(f"ERROR: {self.exception_msg}")

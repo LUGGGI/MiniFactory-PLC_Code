@@ -1,0 +1,5 @@
+17:17:48.504; 0; Start of recording
+17:17:50.762; 1; FactoryStatus/Data; Program started
+17:17:50.762; 2; MachineStatus/Data; {'CB1': ['FREE', 'None'], 'CB3': ['FREE', 'None'], 'CB4': ['FREE', 'None'], 'CB4_TO_WH': ['FREE', 'None'], 'CB4_TO_CB5': ['FREE', 'None'], 'CB5': ['FREE', 'None'], 'GR1': ['FREE', 'None'], 'GR2': ['FREE', 'None'], 'GR2_CB1_TO_CB3': ['FREE', 'None'], 'GR2_CB1_TO_PM': ['FREE', 'None'], 'GR2_PM_TO_CB3': ['FREE', 'None'], 'GR3': ['FREE', 'None'], 'VG2': ['FREE', 'None'], 'MPS': ['FREE', 'None'], 'PM': ['FREE', 'None'], 'SL': ['FREE', 'None'], 'WH': ['FREE', 'None'], 'WH_STORE': ['FREE', 'None'], 'WH_RETRIEVE': ['FREE', 'None'], 'WAITING': ['FREE', 'None'], 'TEST': ['FREE', 'None']}
+17:17:52.766; 3; FactoryStatus/Data; {'ERROR': 'Exception: Test Exception 2'}
+17:17:52.769; 4; FactoryStatus/Data; Program stopped

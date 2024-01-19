@@ -52,7 +52,7 @@ class ExitHandler:
             exit_revpi = RevPiModIO(autorefresh=True)
         except:
             # load simulation if not connected to factory
-            exit_revpi = RevPiModIO(autorefresh=True, configrsc="../RevPi/RevPi82247.rsc", procimg="../RevPi/RevPi82247.img")
+            exit_revpi = RevPiModIO(autorefresh=True, configrsc="../RevPi/right.rsc", procimg="../RevPi/right.img")
 
         log.critical("Setting all outputs to false: ")
 

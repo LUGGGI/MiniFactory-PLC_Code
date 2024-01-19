@@ -1,0 +1,52 @@
+16:54:37.229; 0; Start of recording
+16:54:39.300; 1; FactoryStatus/Data; Program started
+16:54:39.306; 2; MachineStatus/Data; {'CB1': ['FREE', 'None'], 'CB3': ['FREE', 'None'], 'CB4': ['FREE', 'None'], 'CB4_TO_WH': ['FREE', 'None'], 'CB4_TO_CB5': ['FREE', 'None'], 'CB5': ['FREE', 'None'], 'GR1': ['FREE', 'None'], 'GR2': ['FREE', 'None'], 'GR2_CB1_TO_CB3': ['FREE', 'None'], 'GR2_CB1_TO_PM': ['FREE', 'None'], 'GR2_PM_TO_CB3': ['FREE', 'None'], 'GR3': ['FREE', 'None'], 'VG2': ['FREE', 'None'], 'MPS': ['FREE', 'None'], 'PM': ['FREE', 'None'], 'SL': ['FREE', 'None'], 'WH': ['FREE', 'None'], 'WH_STORE': ['FREE', 'None'], 'WH_RETRIEVE': ['FREE', 'None'], 'WAITING': ['FREE', 'None'], 'TEST': ['FREE', 'None']}
+16:54:40.690; 3; LineConfig/Set; {'name': 'LineE2', 'run': True, 'start_at': 'CB1', 'end_at': 'PM', 'with_PM': True, 'color': 'WHITE'}
+16:54:40.695; 4; FactoryCommand/Set; {'run': True}
+16:54:41.301; 5; FactoryStatus/Data; New line added: {'name': 'LineE2', 'run': True, 'start_at': 'CB1', 'end_at': 'PM', 'with_PM': True, 'color': 'WHITE'}
+16:54:41.359; 6; MachineStatus/Data; {'CB1': ['RUNNING', 'LineE2']}
+16:54:41.364; 7; LineStatus/Data; {'LineE2': {'self': {'state': 'CB1', 'product_at': None}}}
+16:54:41.365; 8; MachineStatus/Data; {'GR2': ['RUNNING', 'LineE2']}
+16:54:41.366; 9; MachineStatus/Data; {'GR2_CB1_TO_CB3': ['BLOCKED', 'LineE2']}
+16:54:41.366; 10; MachineStatus/Data; {'GR2_CB1_TO_PM': ['BLOCKED', 'LineE2']}
+16:54:41.367; 11; MachineStatus/Data; {'GR2_PM_TO_CB3': ['BLOCKED', 'LineE2']}
+16:54:41.369; 12; LineStatus/Data; {'LineE2': {'self': {'state': 'CB1', 'product_at': 'CB1'}, 'CB1': {'status': 'RUN'}, 'GR2': {'status': 'INIT'}}}
+16:54:41.370; 13; MachineStatus/Data; {'GR2': ['BLOCKED', 'LineE2']}
+16:54:41.370; 14; MachineStatus/Data; {'GR2_CB1_TO_PM': ['RUNNING', 'LineE2']}
+16:54:41.370; 15; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'INIT'}}}
+16:54:41.543; 16; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'TO_DESTINATION'}}}
+16:54:48.519; 17; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'GET_PRODUCT'}}}
+16:54:50.725; 18; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'GRIPPING'}}}
+16:54:53.722; 19; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'WARNING', 'WARNING': 'str: GR2 :Product still at Sensor, try nr.: 1'}}}
+16:54:58.258; 20; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'GRIPPING'}}}
+16:55:01.420; 21; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'WARNING', 'WARNING': 'str: GR2 :Product still at Sensor, try nr.: 2'}}}
+16:55:05.654; 22; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'GRIPPING'}}}
+16:55:08.630; 23; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'WARNING', 'WARNING': 'str: GR2 :Product still at Sensor, try nr.: 3'}}}
+16:55:10.960; 24; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'WARNING', 'WARNING': 'str: GR2 :Product still at Sensor, grip failed, resetting position'}}}
+16:55:10.979; 25; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'INIT'}}}
+16:55:18.656; 26; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'TO_MOVING_POS'}}}
+16:55:22.724; 27; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'MOVING'}}}
+16:55:29.551; 28; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'TO_DESTINATION'}}}
+16:55:31.819; 29; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'GRIPPING'}}}
+16:55:34.776; 30; LineStatus/Data; {'LineE2': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'WARNING', 'WARNING': 'str: GR2 :Product still at Sensor, try nr.: 4'}}}
+16:55:37.131; 31; MachineStatus/Data; {'GR2': ['PROBLEM', 'LineE2']}
+16:55:37.143; 32; MachineStatus/Data; {'GR2_CB1_TO_PM': ['BLOCKED', 'LineE2']}
+16:55:37.149; 33; LineStatus/Data; {'LineE2': {'self': {'state': 'PROBLEM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'PROBLEM', 'PROBLEM': 'GetProductError: GR2 :Product still at Sensor, grip failed'}}}
+16:55:37.164; 34; FactoryCommand/Data; {'run': False}
+16:55:37.165; 35; MachineStatus/Data; {'CB1': ['FREE', 'None']}
+16:55:37.168; 36; MachineStatus/Data; {'GR2': ['FREE', 'None']}
+16:55:37.170; 37; MachineStatus/Data; {'GR2_CB1_TO_CB3': ['FREE', 'None']}
+16:55:37.171; 38; MachineStatus/Data; {'GR2_CB1_TO_PM': ['FREE', 'None']}
+16:55:37.172; 39; MachineStatus/Data; {'GR2_PM_TO_CB3': ['FREE', 'None']}
+16:55:37.173; 40; FactoryStatus/Data; Stopped line: LineE2
+16:55:40.252; 41; LineConfig/Get; b''
+16:55:40.259; 42; LineConfig/Data; {'LineE2': {'name': 'LineE2', 'run': False, 'start_at': 'CB1', 'end_at': 'PM', 'with_PM': True, 'color': 'WHITE'}}
+16:55:40.309; 43; LineStatus/Get; b''
+16:55:40.327; 44; LineStatus/Data; {'LineE2': {'self': {'state': 'PROBLEM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'PROBLEM', 'PROBLEM': 'GetProductError: GR2 :Product still at Sensor, grip failed'}}}
+16:55:41.255; 45; FactoryCommand/Set; {'run': True}
+16:55:42.256; 46; LineConfig/Get; b''
+16:55:42.260; 47; LineStatus/Get; b''
+16:55:42.274; 48; LineConfig/Data; {}
+16:55:42.284; 49; LineStatus/Data; {}
+16:55:43.258; 50; FactoryConfig/Set; {'exit_if_end': True}
+16:55:43.275; 51; FactoryStatus/Data; Program stopped

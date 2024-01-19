@@ -1,0 +1,20 @@
+17:19:12.511; 0; Start of recording
+17:19:16.796; 1; FactoryStatus/Data; Program started
+17:19:16.797; 2; MachineStatus/Data; {'CB1': ['FREE', 'None'], 'CB3': ['FREE', 'None'], 'CB4': ['FREE', 'None'], 'CB4_TO_WH': ['FREE', 'None'], 'CB4_TO_CB5': ['FREE', 'None'], 'CB5': ['FREE', 'None'], 'GR1': ['FREE', 'None'], 'GR2': ['FREE', 'None'], 'GR2_CB1_TO_CB3': ['FREE', 'None'], 'GR2_CB1_TO_PM': ['FREE', 'None'], 'GR2_PM_TO_CB3': ['FREE', 'None'], 'GR3': ['FREE', 'None'], 'VG2': ['FREE', 'None'], 'MPS': ['FREE', 'None'], 'PM': ['FREE', 'None'], 'SL': ['FREE', 'None'], 'WH': ['FREE', 'None'], 'WH_STORE': ['FREE', 'None'], 'WH_RETRIEVE': ['FREE', 'None'], 'WAITING': ['FREE', 'None'], 'TEST': ['FREE', 'None']}
+17:19:19.152; 3; LineConfig/Set; {'name': 'LineE4', 'run': True, 'start_at': 'CB1', 'end_at': 'CB3', 'with_PM': True, 'color': 'WHITE'}
+17:19:19.159; 4; FactoryCommand/Set; {'run': True}
+17:19:19.802; 5; FactoryStatus/Data; New line added: {'name': 'LineE4', 'run': True, 'start_at': 'CB1', 'end_at': 'CB3', 'with_PM': True, 'color': 'WHITE'}
+17:19:19.851; 6; MachineStatus/Data; {'CB1': ['RUNNING', 'LineE4']}
+17:19:19.851; 7; LineStatus/Data; {'LineE4': {'self': {'state': 'CB1', 'product_at': None}}}
+17:19:19.851; 8; MachineStatus/Data; {'GR2': ['RUNNING', 'LineE4']}
+17:19:19.851; 9; MachineStatus/Data; {'GR2_CB1_TO_CB3': ['BLOCKED', 'LineE4']}
+17:19:19.851; 10; MachineStatus/Data; {'GR2_CB1_TO_PM': ['BLOCKED', 'LineE4']}
+17:19:19.851; 11; MachineStatus/Data; {'GR2_PM_TO_CB3': ['BLOCKED', 'LineE4']}
+17:19:19.851; 12; LineStatus/Data; {'LineE4': {'self': {'state': 'CB1', 'product_at': 'CB1'}, 'CB1': {'status': 'RUN'}, 'GR2': {'status': 'INIT'}}}
+17:19:27.225; 13; MachineStatus/Data; {'GR2': ['BLOCKED', 'LineE4']}
+17:19:27.238; 14; MachineStatus/Data; {'GR2_CB1_TO_PM': ['RUNNING', 'LineE4']}
+17:19:27.243; 15; LineStatus/Data; {'LineE4': {'self': {'state': 'GR2_CB1_TO_PM', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'INIT'}}}
+17:19:27.254; 16; LineStatus/Data; {'LineE4': {'self': {'state': 'ERROR', 'product_at': 'CB1'}, 'CB1': {'status': 'END'}, 'GR2': {'status': 'INIT'}}}
+17:19:27.265; 17; FactoryStatus/Data; {'ERROR': 'Error in line LineE4: Exception: Test Exception.'}
+17:19:27.281; 18; FactoryCommand/Data; {'stop': True}
+17:19:27.285; 19; FactoryStatus/Data; Program stopped
