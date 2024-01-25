@@ -258,7 +258,7 @@ class RightLine(MainLine):
             self.run_gr3()
 
     def run_gr1(self) -> False:
-        gr: GripRobot = self.get_machine("GR1", GripRobot, Position(-1, 0, 1100))
+        gr: GripRobot = self.get_machine("GR1", GripRobot, Position(-1, 0, 1400))
         if gr.is_position(0):
             gr.init()
             if State.MPS.value[1] == Status.FREE:
@@ -275,10 +275,10 @@ class RightLine(MainLine):
         elif gr.is_position(3):
             self.product_at = gr.name
             # move to mps
-            gr.move_to_position(Position(525, 0, 1200))
+            gr.move_to_position(Position(535, 0, 1400))
         elif gr.is_position(4) and (State.MPS.value[1] == Status.FREE or State.MPS.value[2] == self.name):
             # move to tray
-            gr.move_to_position(Position(-1, 77, -1))
+            gr.move_to_position(Position(-1, 82, -1))
         elif gr.is_position(5):
             # release product
             gr.release()
