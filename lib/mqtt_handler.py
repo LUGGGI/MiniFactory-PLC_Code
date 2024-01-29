@@ -10,6 +10,7 @@ __version__ = "2024.01.19"
 
 import json
 import paho.mqtt.client as mqtt
+from time import sleep
 
 try:
     from lib.logger import log
@@ -101,7 +102,14 @@ class MqttHandler():
 
         self.__client.on_disconnect = self.__on_disconnect
 
-        self.__client.connect(self.__BROKER_ADDR, self.__PORT)
+        while (True):
+            try:
+                self.__client.connect(self.__BROKER_ADDR, self.__PORT)
+            except Exception as error:
+                log.error(f"Error while connecting trying again: {error}")
+                sleep(2)
+            else:
+                break
 
         self.__client.loop_start()
 
