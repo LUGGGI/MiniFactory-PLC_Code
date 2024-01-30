@@ -68,6 +68,9 @@ class Setup():
         self.exception = False
         self.loop_start_time: float = 0
         self.last_config_update_time: float = 0
+        self.last_led_update_time: float = 0
+        self.status_led = 0
+        self.status_led_blink = True
 
         self.lines: dict = {}
         self.configs = Configs()
@@ -81,6 +84,7 @@ class Setup():
         '''Starts the factory, adds and updates the lines.'''
         
         self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, "Program started")
+        self.set_status_led(factory_led="green")
         # send all the machineStatus-Data
         for state in self.states:
             state_data = {state.name: [state.value[1].name, state.value[2]]}
@@ -106,6 +110,8 @@ class Setup():
                 self.__update_factory()
                 # save Status of factory, lines and every running machine
                 self.__save_status()
+
+                self.set_status_led()
             except Exception as error:
                 self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, {"ERROR": self.convert_exception_to_str(error)})
                 log.exception(f"ERROR: {error}")
@@ -126,6 +132,10 @@ class Setup():
             else:
                 log.debug(f"Long Loop run time: {(loop_run_time*1000).__round__()}ms")
 
+        if self.exception:
+            self.set_status_led(factory_led="red")
+        else:
+            self.set_status_led(factory_led="off")
         log.critical("End of program")
         self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, "Program stopped")
         self.mqtt_handler.disconnect()
@@ -154,6 +164,8 @@ class Setup():
                     self.lines.pop(line.name)
                     self.configs.line_configs.pop(line.name)
                     self.status.line_status.pop(line.name)
+                    if self.lines.__len__() == 0:
+                        self.set_status_led(line_led="off")
                     break
             # handle problems in the line
             if line.state == MainState.PROBLEM:
@@ -161,10 +173,12 @@ class Setup():
                     log.error(f"Problem in line {line.name}: {line.exception_msg}")
                     self.configs.factory_commands.update({"run": False})
                     self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_COMMANDS, {"run": False})
+                    self.set_status_led(line_led="red")
             
             # handel exception in the line
             if line.state == MainState.ERROR:
                 self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, {"ERROR": f"Error in line {line.name}: {self.convert_exception_to_str(line.exception_msg)}"})
+                self.set_status_led(line_led="red")
                 log.error(f"Error in line {line.name}: {line.exception_msg}")
                 self.__save_status()
                 self.exception = True
@@ -179,6 +193,7 @@ class Setup():
                 log.critical(f"Start: {line.name}")
                 line.switch_state(line.config["start_at"], False)
                 line.running = True
+                self.set_status_led(line_led="green")
 
         # end all lines if error occurred or if stop command was issued
         if self.exit_handler.was_called or self.exception or self.configs.factory_commands.get("stop"):
@@ -273,3 +288,49 @@ class Setup():
             exception(Exception): exception to be converted.
         '''
         return f"{type(exception).__name__}: {exception}"
+
+
+    def set_status_led(self, factory_led: str=None, line_led: str=None):
+        '''Sets the status LEDs according to the status of the factory.
+
+        Args:
+            a1(str): Factory status, color of a1 led (red, green, off).
+            a2(str): Line status, color of a1 led (red, green, off).
+        
+        A1:
+            Green blinking: Factory running
+            Red blinking: Problem with factory
+            static/ off: Factory stopped
+        A2:
+            Green blinking: A line is running
+            Red blinking: Problem in a line
+            static/ off: Line stopped
+        '''
+
+        if factory_led == "green":
+            self.status_led = self.status_led & int("1100", 2)
+            self.status_led = self.status_led | int("0001", 2)
+        if factory_led == "red":
+            self.status_led = self.status_led & int("1100", 2)
+            self.status_led = self.status_led | int("0010", 2)
+        if factory_led == "off":
+            self.status_led = self.status_led & int("1100", 2)
+        
+        if line_led == "green":
+            self.status_led = self.status_led & int("0011", 2)
+            self.status_led = self.status_led | int("0100", 2)
+        if line_led == "red":
+            self.status_led = self.status_led & int("0011", 2)
+            self.status_led = self.status_led | int("1000", 2)
+        if line_led == "off":
+            self.status_led = self.status_led & int("0011", 2)
+
+        if time() > self.last_led_update_time + 1 or factory_led or line_led:
+            if self.status_led_blink == False or factory_led or line_led:
+                self.status_led_blink = True
+                self.revpi.io.RevPiLED.value = self.status_led
+            else:
+                self.status_led_blink = False
+                self.revpi.io.RevPiLED.value = 0
+
+            self.last_led_update_time = time()
