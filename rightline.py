@@ -268,21 +268,25 @@ class RightLine(MainLine):
             # get product from plate
             gr.GRIPPER_OPENED = 5
             gr.reset_claw()
-            gr.move_to_position(Position(1920, 10, 3650))
+            gr.move_to_position(Position(1400, 0, 1400), ignore_moving_pos=True)
         elif gr.is_position(2):
+            gr.move_to_position(Position(1925, 10, 3650), ignore_moving_pos=True)
+        elif gr.is_position(3):
             # grip product
             gr.grip()
-        elif gr.is_position(3):
+        elif gr.is_position(4):
             self.product_at = gr.name
             # move to mps
+            gr.move_to_position(Position(900, 0, 1400), ignore_moving_pos=True)
+        elif gr.is_position(5):
             gr.move_to_position(Position(535, 0, 1400))
-        elif gr.is_position(4) and (State.MPS.value[1] == Status.FREE or State.MPS.value[2] == self.name):
+        elif gr.is_position(6) and (State.MPS.value[1] == Status.FREE or State.MPS.value[2] == self.name):
             # move to tray
             gr.move_to_position(Position(-1, 82, -1))
-        elif gr.is_position(5):
+        elif gr.is_position(7):
             # release product
             gr.release()
-        elif gr.is_position(6):
+        elif gr.is_position(8):
             # move back to init
             gr.init(to_end=True)
             return True
