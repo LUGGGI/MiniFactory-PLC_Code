@@ -5,7 +5,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.01.19"
+__version__ = "2024.02.02"
 
 import threading
 from enum import Enum
@@ -86,7 +86,7 @@ class Robot3D(Machine):
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            name (str): Exact name of the machine in PiCtory (everything before first '_').
             line_name (str): Name of current line.
             moving_position (Position): Position where the axes should be to allow save moving.
             move_threshold_rot (int): Set the move threshold for the rotation axis (defaults to 40).
@@ -176,7 +176,7 @@ class Robot3D(Machine):
 
                 # check if product still at sensor, if so try to grip again
                 if sensor and Sensor(self.revpi, sensor, self.line_name).get_current_value() == True:
-                    self.warning_handler(f"{self.name} :Product still at Sensor, try nr.: {try_num}")
+                    self.warning_handler(GetProductError(f"{self.name} :Product still at Sensor, try nr.: {try_num}"))
                     self.reset_claw(as_thread=False)
                 else:
                     # product was gripped
@@ -184,7 +184,7 @@ class Robot3D(Machine):
 
                 # try one list time with complete robot reset.
                 if try_num == self.__MAX_PICKUP_TRIES:
-                    self.warning_handler(f"{self.name} :Product still at Sensor, grip failed, resetting position")
+                    self.warning_handler(GetProductError(f"{self.name} :Product still at Sensor, grip failed, resetting position"))
                     sleep(0.02)
                     # get current position
                     current_position = Position(
@@ -235,7 +235,7 @@ class Robot3D(Machine):
                 # move to moving position
                 self.switch_state(State.TO_MOVING_POS)
                 if self.__encoder_ver.get_current_value() <= self.__moving_position.vertical:
-                    # if robot is higher than moving postion rotate directly
+                    # if robot is higher than moving position rotate directly
                     self.__move_all_axes(Position(position.rotation, self.__moving_position.horizontal, self.__moving_position.vertical))
                 else:
                     self.__move_all_axes(self.__moving_position)
@@ -323,13 +323,25 @@ class Robot3D(Machine):
             as_thread (bool): Runs the function as a thread.
         '''
         pass
-    def release(self, as_thread=True):
+    def release(self, with_check_sens: str=None, as_thread=True):
         '''Release product. Abstract function, see subclass.
         
         Args:
+            with_check_sens(str): If a Sensor name is provided the sensor will be checked for detection. If False the griper resets so start.
             as_thread (bool): Runs the function as a thread.
+
+        Raises:
+            GetProductError: No Product detected after release.
         '''
-        pass
+        if with_check_sens:
+            if self.exception_msg and self.exception_msg.args[0] == f"{self.name} :Transport was not successful, trying again":
+                raise GetProductError(f"{self.name} :Transport was not successful")
+            elif Sensor(self.revpi, with_check_sens, self.line_name).get_current_value() == False:
+                # product not detected at sensor
+                self.warning_handler(GetProductError(f"{self.name} :Transport was not successful, trying again"))
+                self.position = -1
+
+
     def reset_claw(self, as_thread=True):
         '''Reset gripper. Abstract function, see subclass.
         

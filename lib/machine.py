@@ -9,7 +9,7 @@ __version__ = "2024.01.19"
 
 import threading
 from datetime import datetime
-from time import time
+from time import time, sleep
 from enum import Enum
 from revpimodio2 import RevPiModIO
 
@@ -34,7 +34,7 @@ class Machine:
         is_position(): Returns True if no thread is running and given position is current position.
     Attributes:
         revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-        name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
+        name (str): Exact name of the sensor in PiCtory (everything before first '_').
         line_name (str): Name of current line.
         thread (Thread): Thread object if a function is called as thread.
         __time_start (float): Time of machine start.
@@ -50,7 +50,7 @@ class Machine:
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
+            name (str): Exact name of the sensor in PiCtory (everything before first '_').
             line_name (str): Name of current line.
         '''
         self.revpi = revpi
@@ -101,7 +101,7 @@ class Machine:
         
         Args:
             state (State): State Enum to switch to.
-            wait (bool): Waits for input bevor switching.
+            wait (bool): Waits for input before switching.
         '''
         if wait:
             input(f"Press any key to go to switch: {self.name} to state: {state.name}...\n")
@@ -111,7 +111,7 @@ class Machine:
         self.log.warning(self.name + ": Switching state to: " + str(state.name))
 
     
-    def is_position(self, postion: int) -> bool:
+    def is_position(self, position: int) -> bool:
         '''Returns True if no thread is running and given position is current position.
         
         Args:
@@ -126,7 +126,7 @@ class Machine:
         except AttributeError:
             pass
         # False, if given position is not current position
-        if postion != self.position:
+        if position != self.position:
             return False
 
         return True
@@ -139,7 +139,8 @@ class Machine:
         '''
         self.exception_msg = warning_msg
         self.switch_state(MainState.WARNING)
-        self.log.exception(f"WARNING: {self.exception_msg}")
+        self.log.error(f"WARNING: {self.exception_msg}")
+        sleep(0.1)
 
     def problem_handler(self, problem_msg):
         '''Handler for problems.
