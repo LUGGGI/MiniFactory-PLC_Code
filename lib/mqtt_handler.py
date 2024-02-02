@@ -38,7 +38,7 @@ class Status():
 
 
 class MqttHandler():
-    '''Handels Communication with mqtt broker.
+    '''Handles Communication with mqtt broker.
     
     Attributes:
         configs (Configs): Object where all config data can be saved.

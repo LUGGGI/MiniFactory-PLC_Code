@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.01.12"
+__version__ = "2024.02.02"
 
 from enum import Enum
 
@@ -285,9 +285,11 @@ class RightLine(MainLine):
             gr.move_to_position(Position(-1, 82, -1))
         elif gr.is_position(7):
             # release product
-            gr.release()
+            gr.GRIPPER_OPENED = 11
+            gr.release(with_check_sens="MPS_SENS_OVEN")
         elif gr.is_position(8):
             # move back to init
+            gr.GRIPPER_OPENED = 9 # reset to default
             gr.init(to_end=True)
             return True
 
@@ -529,7 +531,7 @@ class RightLine(MainLine):
         elif vg.is_position(3):
             self.product_at = vg.name
             # move to cb4_start
-            vg.move_to_position(Position(0, 1450, 1100))
+            vg.move_to_position(Position(0, 1450, 1100), ignore_moving_pos=True)
             wh.init(to_end=False)
 
         elif vg.is_position(4) and State.CB4_TO_CB5.value[1] == Status.FREE:
@@ -537,14 +539,8 @@ class RightLine(MainLine):
             vg.move_to_position(Position(-1, -1, 1400))
         elif vg.is_position(5):
             # release product
-            vg.release()
-        elif vg.is_position(6):
-            if Sensor(self.revpi, "CB4_SENS_START", self.line_name).get_current_value() == False:
-                vg.log.critical(f"{vg.name} :Product still at WH, trying again")
-                vg.position = 0
-            else:
-                vg.position += 1
-        elif vg.is_position(7):        
+            vg.release(with_check_sens="CB4_SENS_START")
+        elif vg.is_position(6):      
             # move back to init
             vg.init(to_end=True)
             wh.switch_state(MainState.END)

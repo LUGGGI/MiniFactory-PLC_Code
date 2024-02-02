@@ -5,14 +5,14 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.01.12"
+__version__ = "2024.02.02"
 
 import threading
 from time import sleep
 
 from lib.logger import log
 from lib.actuator import Actuator
-from lib.robot_3d import Robot3D, Position, State
+from lib.robot_3d import Robot3D, Position, State, GetProductError
 
 
 class VacRobot(Robot3D):
@@ -31,7 +31,7 @@ class VacRobot(Robot3D):
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name: Exact name of the machine in PiCtory (everything bevor first '_').
+            name: Exact name of the machine in PiCtory (everything before first '_').
             line_name: Name of current line.
             moving_position (Position): Position at which the axes should be to allow save moving.
         '''
@@ -58,7 +58,7 @@ class VacRobot(Robot3D):
             return
 
         try:
-            self.log.info(f"{self.name} :Gripping")
+            self.switch_state(State.GRIPPING)
             self.__compressor.run_for_time("", 0.3, as_thread=True)
             sleep(0.2)
             self.__valve.start()
@@ -69,20 +69,26 @@ class VacRobot(Robot3D):
         else:
             self.position += 1
 
-    def release(self, as_thread=True):
+    def release(self, with_check_sens: str=None, as_thread=True):
         '''Release product.
         
         Args:
+            with_check_sens(str): If a Sensor name is provided the sensor will be checked for detection. If False the griper resets so start.
             as_thread (bool): Runs the function as a thread.
         '''
         if as_thread:
-            self.thread = threading.Thread(target=self.release, args=(False,), name=self.name)
+            self.thread = threading.Thread(target=self.release, args=(with_check_sens, False,), name=self.name)
             self.thread.start()
             return
 
         try:
-            self.log.info(f"{self.name} :Releasing")
+            self.switch_state(State.RELEASE)
             self.__valve.stop()
+
+            super().release(with_check_sens)
+
+        except GetProductError as error:
+            self.problem_handler(error)
 
         except Exception as error:
             self.error_handler(error)

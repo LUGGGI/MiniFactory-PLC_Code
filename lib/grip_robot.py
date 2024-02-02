@@ -5,14 +5,15 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.01.12"
+__version__ = "2024.02.02"
 
 import threading
+from time import sleep
 
 from lib.logger import log
 from lib.sensor import Sensor, SensorType
 from lib.actuator import Actuator, SensorTimeoutError, EncoderOverflowError
-from lib.robot_3d import Robot3D, Position, State
+from lib.robot_3d import Robot3D, Position, State, GetProductError
 
 
 class GripRobot(Robot3D):
@@ -34,7 +35,7 @@ class GripRobot(Robot3D):
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name: Exact name of the machine in PiCtory (everything bevor first '_').
+            name: Exact name of the machine in PiCtory (everything before first '_').
             line_name: Name of current line.
             moving_position (Position): Position at which the axes should be to allow save moving.
         '''
@@ -79,22 +80,27 @@ class GripRobot(Robot3D):
             self.position += 1
 
 
-    def release(self, as_thread=True):
+    def release(self, with_check_sens: str=None, as_thread=True):
         '''Release product.
         
         Args:
+            with_check_sens(str): If a Sensor name is provided the sensor will be checked for detection. If False the griper resets so start.
             as_thread (bool): Runs the function as a thread.
         '''
         if as_thread:
-            self.thread = threading.Thread(target=self.release, args=(False,), name=self.name)
+            self.thread = threading.Thread(target=self.release, args=(with_check_sens, False,), name=self.name)
             self.thread.start()
             return
 
         try:
             self.switch_state(State.RELEASE)
             self.__motor_claw.run_to_encoder_value("OPEN", self.__encoder_claw, self.GRIPPER_OPENED, timeout_in_s=5)
+            
+            if with_check_sens:
+                sleep(0.5)
+            super().release(with_check_sens)
 
-        except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
+        except (SensorTimeoutError, ValueError, EncoderOverflowError, GetProductError) as error:
             self.problem_handler(error)
         except Exception as error:
             self.error_handler(error)
