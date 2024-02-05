@@ -22,20 +22,20 @@ class State(Enum):
     CB_TO_OUT = 3
 
 class PunchMach(Machine):
-    '''Controls the Punching Maschine.'''
+    '''Controls the Punching Machine.'''
     '''
     Methodes:
-        run(): Runs the Punching Maschine routine.
+        run(): Runs the Punching Machine routine.
     Attributes:
         ready_for_transport (bool): If True then the next machine can transport the product.
     '''
 
     def __init__(self, revpi, name: str, line_name: str):
-        '''Initializes the Punching Maschine.
+        '''Initializes the Punching Machine.
         
         Args
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            name (str): Exact name of the machine in PiCtory (everything before first '_').
             line_name (str): Name of current line.
         '''
         super().__init__(revpi, name, line_name)
@@ -49,7 +49,7 @@ class PunchMach(Machine):
 
 
     def run(self, out_stop_sensor: str, as_thread=True):
-        '''Runs the Punching Maschine routine.
+        '''Runs the Punching Machine routine.
         
         Args:
             out_stop_sensor (str): Sensor at which the cb stops when outputting.

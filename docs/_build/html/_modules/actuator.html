@@ -130,9 +130,9 @@
 <span class="sd">        __PWM_WINDOW (int): Range around the trigger value where the actuator is slowed down from the start.</span>
 <span class="sd">        __PWM_DURATION (int): Range around the trigger value where the actuator is slowed down.</span>
 <span class="sd">        __revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
-<span class="sd">        name (str): Exact name of the sensor in PiCtory (everything bevor first &#39;_&#39;).</span>
+<span class="sd">        name (str): Exact name of the sensor in PiCtory (everything before first &#39;_&#39;).</span>
 <span class="sd">        line_name (str): Name of current line.</span>
-<span class="sd">        __pwm (str): Name of PWM-pin, Slows motor down, bevor reaching the value.</span>
+<span class="sd">        __pwm (str): Name of PWM-pin, Slows motor down, before reaching the value.</span>
 <span class="sd">        __type (str): Specifier for motor name.</span>
 <span class="sd">        __thread (Thread): Thread object if a function is called as thread.</span>
 <span class="sd">        exception (Exception): Holdes exception if exception was raised.</span>
@@ -152,9 +152,9 @@
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
-<span class="sd">            name: Exact name of the machine in PiCtory (everything bevor first &#39;_&#39;).</span>
+<span class="sd">            name: Exact name of the machine in PiCtory (everything before first &#39;_&#39;).</span>
 <span class="sd">            line_name: Name of current line.</span>
-<span class="sd">            pwm: Name of PWM-pin, Slows motor down, bevor reaching the value.</span>
+<span class="sd">            pwm: Name of PWM-pin, Slows motor down, before reaching the value.</span>
 <span class="sd">            type (str): Specifier for motor name.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__revpi</span> <span class="o">=</span> <span class="n">revpi</span>

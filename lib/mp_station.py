@@ -46,7 +46,7 @@ class MPStation(Machine):
         
         Args
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            name (str): Exact name of the machine in PiCtory (everything before first '_').
             line_name (str): Name of current line.
         '''
         super().__init__(revpi, name, line_name)

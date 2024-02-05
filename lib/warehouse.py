@@ -84,7 +84,7 @@ class Warehouse(Machine):
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            name (str): Exact name of the machine in PiCtory (everything before first '_').
             line_name (str): Name of current line.
             content_file (str): File path to the file that saves the inventory.
         '''

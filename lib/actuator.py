@@ -34,12 +34,12 @@ class Actuator():
         __PWM_WINDOW (int): Range around the trigger value where the actuator is slowed down from the start.
         __PWM_DURATION (int): Range around the trigger value where the actuator is slowed down.
         __revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-        name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
+        name (str): Exact name of the sensor in PiCtory (everything before first '_').
         line_name (str): Name of current line.
-        __pwm (str): Name of PWM-pin, Slows motor down, bevor reaching the value.
+        __pwm (str): Name of PWM-pin, Slows motor down, before reaching the value.
         __type (str): Specifier for motor name.
         __thread (Thread): Thread object if a function is called as thread.
-        exception (Exception): Holdes exception if exception was raised.
+        exception (Exception): Holds exception if exception was raised.
         __pwm_value (int): Value for pwm, the percentage of the speed.
         log (Logger): Log object to print to log.
     '''
@@ -54,9 +54,9 @@ class Actuator():
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name: Exact name of the machine in PiCtory (everything bevor first '_').
+            name: Exact name of the machine in PiCtory (everything before first '_').
             line_name: Name of current line.
-            pwm: Name of PWM-pin, Slows motor down, bevor reaching the value.
+            pwm: Name of PWM-pin, Slows motor down, before reaching the value.
             type (str): Specifier for motor name.
         '''
         self.__revpi = revpi
@@ -177,7 +177,7 @@ class Actuator():
             as_thread (bool): Runs the function as a thread.
         Raises:
             SensorTimeoutError: Timeout is reached (no detection happened).
-            EncoderOverflowError: Encoder value negativ.
+            EncoderOverflowError: Encoder value negative.
             ValueError: Counter jumped values.
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")
@@ -215,7 +215,7 @@ class Actuator():
             as_thread (bool): Runs the function as a thread.
         Raises:
             SensorTimeoutError: Timeout is reached (no detection happened).
-            EncoderOverflowError: Encoder value negativ.
+            EncoderOverflowError: Encoder value negative.
             ValueError: Counter jumped values.
         '''
         actuator = self.name + ( "_" + direction if direction != "" else "")

@@ -120,7 +120,7 @@
 <span class="sd">        is_position(): Returns True if no thread is running and given position is current position.</span>
 <span class="sd">    Attributes:</span>
 <span class="sd">        revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
-<span class="sd">        name (str): Exact name of the sensor in PiCtory (everything bevor first &#39;_&#39;).</span>
+<span class="sd">        name (str): Exact name of the sensor in PiCtory (everything before first &#39;_&#39;).</span>
 <span class="sd">        line_name (str): Name of current line.</span>
 <span class="sd">        thread (Thread): Thread object if a function is called as thread.</span>
 <span class="sd">        __time_start (float): Time of machine start.</span>
@@ -140,7 +140,7 @@
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.</span>
-<span class="sd">            name (str): Exact name of the sensor in PiCtory (everything bevor first &#39;_&#39;).</span>
+<span class="sd">            name (str): Exact name of the sensor in PiCtory (everything before first &#39;_&#39;).</span>
 <span class="sd">            line_name (str): Name of current line.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revpi</span> <span class="o">=</span> <span class="n">revpi</span>
@@ -202,7 +202,7 @@
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            state (State): State Enum to switch to.</span>
-<span class="sd">            wait (bool): Waits for input bevor switching.</span>
+<span class="sd">            wait (bool): Waits for input before switching.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
             <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Press any key to go to switch: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> to state: </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>

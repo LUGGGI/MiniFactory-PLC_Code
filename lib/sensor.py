@@ -35,7 +35,7 @@ class Sensor():
     Attributes:
         CYCLE_TIME (int): how often encoder/counter ar checked for new values.
         __revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-        name (str): Exact name of the sensor in PiCtory (everything bevor first '_').
+        name (str): Exact name of the sensor in PiCtory (everything before first '_').
         line_name (str): Name of current line.
         type (SensorType): Type of the sensor.
         counter_offset (int): Offset for counter so that counter can be used like encoder.
@@ -49,7 +49,7 @@ class Sensor():
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name (str): Exact name of the machine in PiCtory (everything bevor first '_').
+            name (str): Exact name of the machine in PiCtory (everything before first '_').
             line_name (str): Name of current line.
             type (SensorType): Type of the sensor, if empty type is determined from name.
         '''
@@ -171,7 +171,7 @@ class Sensor():
             Reached encoder_value
         Raises:
             SensorTimeoutError: Timeout is reached (no detection happened).
-            EncoderOverflowError: Encoder value negativ.
+            EncoderOverflowError: Encoder value negative.
             ValueError: Counter jumped values.
         '''
         old_value = self.get_current_value()
@@ -185,7 +185,7 @@ class Sensor():
             new_value = self.get_current_value()
 
             if self.type == SensorType.COUNTER:
-                # Handels counters, because they don't know the direction of the motor an offset is added if the motor is running backwards. This allows the use of counters as encoders
+                # Handles counters, because they don't know the direction of the motor an offset is added if the motor is running backwards. This allows the use of counters as encoders
                 if new_value == old_value + 1:
                     if lower:
                         self.counter_offset += 2
@@ -216,7 +216,7 @@ class Sensor():
         Raises:
             TimeoutError: Encoder/counter could not be reset in time")
         '''
-        for i in range(15):
+        for i in range(30):
             self.__revpi.io[self.name].reset()
             # wait until the actuator has stopped
             time.sleep(0.06)
@@ -235,7 +235,7 @@ def event_det_at_sensor(io_name, __):
 
 
 class EncoderOverflowError(ValueError):
-    '''Encoder had a 'negativ' value.'''
+    '''Encoder had a 'negative' value.'''
 
 class SensorTimeoutError(TimeoutError):
     '''Timeout occurred while waiting for Sensor.'''

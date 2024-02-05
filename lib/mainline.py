@@ -179,7 +179,7 @@ class MainLine(Machine):
         
         Args:
             state (State): State Enum to switch to.
-            wait (bool): Calls for input bevor switching.
+            wait (bool): Calls for input before switching.
         '''
         if self.state == self.config["end_at"] and not isinstance(state, MainState):
             self.switch_status(self.state, Status.FREE)

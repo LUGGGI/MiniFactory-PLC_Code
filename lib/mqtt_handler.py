@@ -1,4 +1,4 @@
-'''Handels Communication with mqtt broker.
+'''Handles Communication with mqtt broker.
 '''
 
 __author__ = "Lukas Beck"

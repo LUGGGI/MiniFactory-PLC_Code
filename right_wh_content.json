@@ -1,7 +1,7 @@
 {
     "content": [
         [
-            "Empty",
+            "Carrier",
             "Carrier",
             "Carrier"
         ],
@@ -11,9 +11,9 @@
             "BLUE"
         ],
         [
-            "Carrier",
-            "Carrier",
-            "Carrier"
+            "Empty",
+            "Empty",
+            "Empty"
         ]
     ],
     "states": [
