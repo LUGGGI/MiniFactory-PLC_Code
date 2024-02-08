@@ -285,7 +285,7 @@ class RightLine(MainLine):
             gr.move_to_position(Position(-1, 82, -1))
         elif gr.is_position(7):
             # release product
-            gr.GRIPPER_OPENED = 11
+            gr.GRIPPER_OPENED = 10
             gr.release(with_check_sens="MPS_SENS_OVEN")
         elif gr.is_position(8):
             # move back to init

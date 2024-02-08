@@ -30,7 +30,7 @@ if logs.__len__() == 0:
     log_file_path = f"{LOG_DIR}/plc1.log"
 else:   
     # get the new file by getting the number of the latest logfile an adding 1.
-    log_file_path = f"{LOG_DIR}/plc{int(logs[-1].stem[3:]) + 1}.log"
+    log_file_path = f"{LOG_DIR}/plc{(int(logs[-1].stem[3:]) + 1):02}.log"
 
 # enable command line arguments
 parser = argparse.ArgumentParser()
