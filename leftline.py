@@ -353,27 +353,30 @@ class LeftLine(MainLine):
 
 
     def run_gr3(self) -> False:
-        gr: GripRobot = self.get_machine("GR3", GripRobot, Position(-1, -1, 1400))
+        gr: GripRobot = self.get_machine("GR3", GripRobot, Position(-1, -1, 1900))
         if gr.is_position(0):
             gr.init()
 
         elif gr.is_position(1):
             # move to indx
             gr.reset_claw()
-            gr.move_to_position(Position(1910, 30, 1300), ignore_moving_pos=True)
+            gr.move_to_position(Position(9, 78, 1900), ignore_moving_pos=True)
 
         # if product ready get it
         elif gr.is_position(2) and self.state == State.GR3:
             # move down, grip product, move up
-            gr.get_product(2050)
+            gr.get_product(2250)
         elif gr.is_position(3):
             self.product_at = gr.name
             # move to out
-            gr.move_to_position(Position(120, 75, 3600))
+            gr.move_to_position(Position(3000, 40, 3500))
         elif gr.is_position(4):
             # release product
             gr.release()
         elif gr.is_position(5):
+            # release product
+            gr.move_to_position(Position(3000, 40, 3200), ignore_moving_pos=True)
+        elif gr.is_position(6):
             # move back to init
             gr.init(to_end=True)
             return True
