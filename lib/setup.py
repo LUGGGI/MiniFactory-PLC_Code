@@ -41,12 +41,10 @@ class Setup():
     '''
     LOOP_TIME = 0.02 # in seconds
     
-    def __init__(self, input_file: str, output_file: str, states, line_class: MainLine, factory_name: str):
+    def __init__(self, states, line_class: MainLine, factory_name: str):
         '''Init setup and setup of RevpiModIO.
         
         Args:
-            input_file (str): Config json file path where the lines are configured.
-            output_file (str): Json file path where the states are logged.
             states (State): All possible States of the line.
             line_class (Mainline): Class of the current line.
             factory_name (str): Name of the factory (for example Right).
