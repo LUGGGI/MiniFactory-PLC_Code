@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.02.02"
+__version__ = "2024.02.27"
 
 from enum import Enum
 
@@ -164,6 +164,7 @@ class RightLine(MainLine):
     def test(self) -> False:
         pass
 
+
     def run_init(self) -> False:
         if self.position == 0:
             self.position = 1
@@ -179,6 +180,7 @@ class RightLine(MainLine):
         if self.machines.__len__() <= 0:
             return True
 
+
     def run_cb1(self) -> False:
         cb: Conveyor = self.get_machine("CB1", Conveyor)
         
@@ -192,6 +194,7 @@ class RightLine(MainLine):
         # init GR2
         if self.state != self.config["end_at"] and (State.GR2_CB1_TO_CB3.value[1] == Status.FREE or State.GR2_CB1_TO_CB3.value[2] == self.name):
             self.run_gr2()
+
 
     def run_cb3(self) -> False:
         cb: Conveyor = self.get_machine("CB3", Conveyor)
@@ -257,6 +260,7 @@ class RightLine(MainLine):
         if self.state != self.config["end_at"] and (State.GR3.value[1] == Status.FREE or State.GR3.value[2] == self.name):
             self.run_gr3()
 
+
     def run_gr1(self) -> False:
         gr: GripRobot = self.get_machine("GR1", GripRobot, Position(-1, 0, 1400))
         if gr.is_position(0):
@@ -292,6 +296,7 @@ class RightLine(MainLine):
             gr.GRIPPER_OPENED = 9 # reset to default
             gr.init(to_end=True)
             return True
+
 
     def run_gr2(self) -> False:
         gr: GripRobot = self.get_machine("GR2", GripRobot, Position(-1, -1, 1700))
@@ -353,13 +358,14 @@ class RightLine(MainLine):
                 gr.init(to_end=True)
                 return True
 
+
     def run_gr3(self) -> False:
         gr: GripRobot = self.get_machine("GR3", GripRobot, Position(-1, -1, 1800))
         if gr.is_position(0):
             gr.init()
 
         elif gr.is_position(1):
-            # move to cb4
+            # move to cb5
             gr.reset_claw()
             gr.move_to_position(Position(140, 3, 1800), ignore_moving_pos=True)
 
@@ -382,6 +388,7 @@ class RightLine(MainLine):
             gr.init(to_end=True)
             return True
     
+
     def run_vg2(self) -> False:
         vg: VacRobot = self.get_machine("VG2", VacRobot, Position(-1, -1, 1100))
         if vg.is_position(0):
@@ -411,6 +418,7 @@ class RightLine(MainLine):
             vg.init(to_end=True)
             return True
 
+
     def run_pm(self) -> False:
         pm: PunchMach = self.get_machine("PM", PunchMach)
         cb: Conveyor = self.get_machine("CB2", Conveyor)
@@ -438,6 +446,7 @@ class RightLine(MainLine):
             if not self.is_end_state() and self.state_is_free(State.GR2_PM_TO_CB3):
                 self.run_gr2()
 
+
     def run_mps(self) -> False:
         mps: MPStation = self.get_machine("MPS", MPStation)
         if mps.is_position(0):
@@ -452,6 +461,7 @@ class RightLine(MainLine):
                 return True
             mps.run_to_out()
             return True
+
 
     def run_sl(self) -> False:
         sl: SortLine = self.get_machine("SL", SortLine)
@@ -511,6 +521,7 @@ class RightLine(MainLine):
                 vg.position = 2
             return True
 
+
     def run_wh_retrieve(self) -> False:
         wh: Warehouse = self.get_machine("WH", Warehouse, self.WAREHOUSE_CONTENT_FILE)
         vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 0))
@@ -549,5 +560,5 @@ class RightLine(MainLine):
 
 if __name__ == "__main__":
     # Start and run the factory
-    setup = Setup("right_config.json", "states.json", State, RightLine, "Right")
+    setup = Setup(State, RightLine, "Right")
     setup.run_factory()
