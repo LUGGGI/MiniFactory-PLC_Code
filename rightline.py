@@ -219,17 +219,22 @@ class RightLine(MainLine):
             if State.WH_STORE != self.config["end_at"] or (self.state_is_free(State.WH) and self.state_is_free(State.VG1)):
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
                 return True
+            elif self.state_is_free(State.WH) and self.state_is_free(State.VG1):
+                self.run_wh()
+                self.run_vg1()
+                cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
+                return True
         
         # init vg1 & wh
         if not self.is_end_state() and self.state_is_free(State.WH) and self.state_is_free(State.VG1):
-            self.run_vg1()    
+            self.run_vg1()
         
 
     def run_cb4(self) -> False:
         cb: Conveyor = self.get_machine("CB4", Conveyor)
         
         if self.state == State.CB4_TO_WH:
-            if cb.is_position(1) and self.state_is_free(State.WH_STORE):
+            if cb.is_position(1):
                 self.product_at = cb.name
                 cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=100)
             elif cb.is_position(2):
@@ -237,7 +242,7 @@ class RightLine(MainLine):
                 return True
             
             # init vg1 & wh
-            if not self.is_end_state() and self.state_is_free(State.WH_STORE) and self.state_is_free(State.VG1):
+            if not self.is_end_state():
                 self.run_vg1()    
 
         elif self.state == State.CB4_TO_CB5:
@@ -408,7 +413,8 @@ class RightLine(MainLine):
                 vg.move_to_position(Position(1800, 140, 0), ignore_moving_pos=True)
         # init for store
         else:
-            self.run_wh()
+            if self.state_is_free(State.WH):
+                self.run_wh()
             if vg.is_position(0):
                 vg.init()
             if vg.is_position(1):
@@ -455,19 +461,19 @@ class RightLine(MainLine):
 
 
     def run_vg2(self) -> False:
-        vg: VacRobot = self.get_machine("VG2", VacRobot, Position(-1, -1, 1100))
+        vg: VacRobot = self.get_machine("VG2", VacRobot, Position(-1, -1, 1000))
         if vg.is_position(0):
             vg.init()
 
         elif vg.is_position(1) and self.config["color"] == "WHITE":
             # move to white
-            vg.move_to_position(Position(875, 700, 1400))
+            vg.move_to_position(Position(875, 700, 1300))
         elif vg.is_position(1) and self.config["color"] == "RED":
             # move to red
-            vg.move_to_position(Position(725, 875, 1400))
+            vg.move_to_position(Position(725, 875, 1300))
         elif vg.is_position(1) and self.config["color"] == "BLUE":
             # move to blue
-            vg.move_to_position(Position(600, 1200, 1400))
+            vg.move_to_position(Position(600, 1200, 1300))
 
         elif vg.is_position(2) and self.state == State.VG2:
             vg.get_product(1600, sensor=f"SL_SENS_{self.config['color']}")
@@ -549,7 +555,8 @@ class RightLine(MainLine):
 
         # init for retrieve
         if self.state == State.WH_RETRIEVE:
-            self.run_vg1()
+            if self.state_is_free(State.VG1):
+                self.run_vg1()
 
             if wh.is_position(0):
                 wh.init(for_retrieve=True)
