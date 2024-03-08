@@ -305,7 +305,7 @@ class RightLine(MainLine):
             if gr.is_position(1):
                 # move to cb1
                 gr.reset_claw()
-                gr.move_to_position(Position(145, 72, 1700), ignore_moving_pos=True)
+                gr.move_to_position(Position(150, 72, 1700), ignore_moving_pos=True)
 
             if gr.is_position(2):
                 # get product from cb1, (move down, grip product, move up)
