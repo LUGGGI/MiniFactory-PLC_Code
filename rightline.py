@@ -65,10 +65,7 @@ class RightLine(MainLine):
     Methodes:
         run_...(): Calls the different modules.
         mainloop(): Switches between machines.
-    Attributes:
-        WAREHOUSE_CONTENT_FILE (str): File path to the file that saves the warehouse inventory.
     '''
-    WAREHOUSE_CONTENT_FILE = "right_wh_content.json"
 
     def __init__(self, revpi, config: dict):
         '''Initializes MiniFactory control loop.'''
@@ -174,7 +171,7 @@ class RightLine(MainLine):
             for vg in ["VG1", "VG2"]:
                 self.machines[vg] = VacRobot(self.revpi, vg, self.name, Position(-1, -1, -1))
                 self.machines[vg].init(to_end=True)
-            self.machines["WH"] = Warehouse(self.revpi, "WH", self.name, self.WAREHOUSE_CONTENT_FILE)
+            self.machines["WH"] = Warehouse(self.revpi, "WH", self.name)
             self.machines["WH"].init(to_end=True)
 
         if self.machines.__len__() <= 0:
@@ -476,7 +473,7 @@ class RightLine(MainLine):
             return True
 
     def run_wh_store(self) -> False:
-        wh: Warehouse = self.get_machine("WH", Warehouse, self.WAREHOUSE_CONTENT_FILE)
+        wh: Warehouse = self.get_machine("WH", Warehouse)
         vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 0))
         if wh.is_position(0):
             wh.init(for_store=True)
@@ -523,7 +520,7 @@ class RightLine(MainLine):
 
 
     def run_wh_retrieve(self) -> False:
-        wh: Warehouse = self.get_machine("WH", Warehouse, self.WAREHOUSE_CONTENT_FILE)
+        wh: Warehouse = self.get_machine("WH", Warehouse)
         vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 0))
         if wh.is_position(0):
             wh.init(for_retrieve=True)

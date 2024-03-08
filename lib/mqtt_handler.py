@@ -73,7 +73,7 @@ class MqttHandler():
         self.log = log.getChild(f"Mqtt")
 
         self.__topic_start = f"MiniFactory/{factory_name}/Factory"
-        self.__wh_content_file = f"{factory_name.lower()}_wh_content.json"
+        self.__wh_content_file = f"wh_content.json"
         self.__configs = configs
         self.__status = status
 

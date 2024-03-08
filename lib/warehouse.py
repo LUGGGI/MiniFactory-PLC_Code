@@ -60,10 +60,9 @@ class Warehouse(Machine):
         __MOVE_THRESHOLD_VER (int): Only moves the vertical axis if movement is more.
         __LIFT_VALUE_RACK (int): Value that the arm lifts a Carrier at rack.
         __LIFT_VALUE_CB (int): Value that the arm lifts a Carrier at cb.
-        __content_file (str): File path to the file that saves the inventory.
         ready_for_product (bool): True if a carrier is at input for store.
-        __ref_sw_arm_front (str): Referenz switch name for arm in extended state.
-        __ref_sw_arm_back (str): Referenz switch name for arm in retracted state.
+        __ref_sw_arm_front (str): Reference switch name for arm in extended state.
+        __ref_sw_arm_back (str): Reference switch name for arm in retracted state.
         __cb (Conveyor): Conveyor object for in-/output conveyor.
         __encoder_hor (Sensor): Encoder for horizontal axis.
         __encoder_ver (Sensor): Encoder for vertical axis.
@@ -78,19 +77,18 @@ class Warehouse(Machine):
     __MOVE_THRESHOLD_VER = 40
     __LIFT_VALUE_RACK = 150
     __LIFT_VALUE_CB = 150
+    __CONTENT_FILE = "wh_content.json"
 
-    def __init__(self, revpi, name: str, line_name: str, content_file: str):
+    def __init__(self, revpi, name: str, line_name: str):
         '''Initializes the Warehouse.
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
             name (str): Exact name of the machine in PiCtory (everything before first '_').
             line_name (str): Name of current line.
-            content_file (str): File path to the file that saves the inventory.
         '''
         super().__init__(revpi, name, line_name)
 
-        self.__content_file = content_file
         self.ready_for_product = False
 
         self.__ref_sw_arm_front = self.name + "_REF_SW_ARM_FRONT"
@@ -169,11 +167,11 @@ class Warehouse(Machine):
                 self.position = current_position + 1
 
 
-    def store_product(self, position: POSITIONS=None, color: str=None, as_thread=True):
+    def store_product(self, position: tuple=None, color: str=None, as_thread=True):
         '''Stores a product at given position.
 
         Args:
-            position (POSITIONS): Position of a shelf defined in POSITIONS, can be None.
+            position (tuple): Position of a shelf defined in POSITIONS, can be None.
             color (str): Color of the Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier).
             as_thread (bool): Runs the function as a thread.
         '''
@@ -191,7 +189,7 @@ class Warehouse(Machine):
             
             if position == None:
                 # find Empty bay
-                with open(self.__content_file, "r") as fp:
+                with open(self.__CONTENT_FILE, "r") as fp:
                     positions = json.load(fp)["content"]
 
                 # find the nearest empty bay
@@ -238,10 +236,10 @@ class Warehouse(Machine):
                 else:
                     continue
                 break
-            with open(self.__content_file, "r") as fp:
+            with open(self.__CONTENT_FILE, "r") as fp:
                 json_obj = json.load(fp)
             json_obj["content"][hor][ver] = color
-            with open(self.__content_file, "w") as fp:
+            with open(self.__CONTENT_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
 
         except (SensorTimeoutError, ValueError, EncoderOverflowError, LookupError) as error:
@@ -253,11 +251,11 @@ class Warehouse(Machine):
             self.position += 1
 
 
-    def retrieve_product(self, position: POSITIONS=None, color: str=None, as_thread=True):
+    def retrieve_product(self, position: tuple=None, color: str=None, as_thread=True):
         '''Retrieves a product from given position.
 
         Args:
-            position (POSITIONS): Position of a shelf defined in POSITIONS, can be None.
+            position (tuple): Position of a shelf defined in POSITIONS, can be None.
             color (str): Color of the wanted Product (WHITE, RED, BLUE, COLOR_UNKNOWN, Carrier).
             as_thread (bool): Runs the function as a thread.
         '''
@@ -272,7 +270,7 @@ class Warehouse(Machine):
         try:
             if position == None:
                 # find wanted color
-                with open(self.__content_file, "r") as fp:
+                with open(self.__CONTENT_FILE, "r") as fp:
                     positions = json.load(fp)["content"]
 
                 # find the nearest empty bay
@@ -324,10 +322,10 @@ class Warehouse(Machine):
                 else:
                     continue
                 break
-            with open(self.__content_file, "r") as fp:
+            with open(self.__CONTENT_FILE, "r") as fp:
                 json_obj = json.load(fp)
             json_obj["content"][hor][ver] = "Empty"
-            with open(self.__content_file, "w") as fp:
+            with open(self.__CONTENT_FILE, "w") as fp:
                 json.dump(json_obj, fp, indent=4)
             
         except (SensorTimeoutError, ValueError, EncoderOverflowError, LookupError) as error:
@@ -348,7 +346,7 @@ class Warehouse(Machine):
 
         Raises:
             SensorTimeoutError: Timeout is reached (no detection happened).
-            EncoderOverflowError: Encoder value negativ.
+            EncoderOverflowError: Encoder value negative.
             ValueError: Counter jumped values.
         '''
         self.log.info("Moving Crane to position: " + str(f"(hor:{horizontal},ver:{vertical})"))
