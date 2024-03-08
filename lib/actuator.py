@@ -116,7 +116,8 @@ class Actuator():
             
         except Exception as e:
             self.exception = e
-            raise
+            if not as_thread:
+                raise
         finally:
             #stop actuator
             self.stop(direction)
@@ -157,7 +158,8 @@ class Actuator():
             
         except Exception as e:
             self.exception = e
-            raise
+            if not as_thread:
+                raise
         finally:
             #stop actuator
             self.stop(direction)
@@ -193,16 +195,17 @@ class Actuator():
                 return
             # if trigger value is 0 move to init position
             elif trigger_value == 0:
-                self.run_to_encoder_start(direction, ref_sw, encoder, timeout_in_s, as_thread=False)
+                self.run_to_encoder_start(direction, ref_sw, encoder, timeout_in_s)
             # if trigger value is the same as the current value don't move
             elif abs(current_value - trigger_value) < move_threshold:
                 self.log.info(f"{self.name}_{direction} :Axis already at position")
             # move to value
             else:
-                self.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s, as_thread=False)
+                self.run_to_encoder_value(direction, encoder, trigger_value, timeout_in_s)
         except Exception as e:
             self.exception = e
-            raise
+            if not as_thread:
+                raise
 
 
     def run_to_encoder_value(self, direction: str, encoder: Sensor, trigger_value: int, timeout_in_s=20, as_thread=False):
@@ -249,7 +252,8 @@ class Actuator():
 
         except Exception as e:
             self.exception = e
-            raise
+            if not as_thread:
+                raise
         finally:
             #stop actuator
             self.stop(direction)
@@ -283,7 +287,8 @@ class Actuator():
 
         except Exception as e:
             self.exception = e
-            raise
+            if not as_thread:
+                raise
 
 
     def start(self, direction: str=""):

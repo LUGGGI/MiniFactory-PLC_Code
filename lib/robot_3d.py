@@ -235,8 +235,10 @@ class Robot3D(Machine):
                 # move to moving position
                 self.switch_state(State.TO_MOVING_POS)
                 if self.__encoder_ver.get_current_value() <= self.__moving_position.vertical:
+                    # set horizontal position
+                    pos_hor = position.horizontal if self.__moving_position.horizontal == -1 else self.__moving_position.horizontal
                     # if robot is higher than moving position rotate directly
-                    self.__move_all_axes(Position(position.rotation, self.__moving_position.horizontal, self.__moving_position.vertical))
+                    self.__move_all_axes(Position(position.rotation, pos_hor, self.__moving_position.vertical))
                 else:
                     self.__move_all_axes(self.__moving_position)
 

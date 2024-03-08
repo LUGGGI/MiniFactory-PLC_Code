@@ -267,11 +267,13 @@ class RightLine(MainLine):
 
         elif gr.is_position(1):
             # get product from plate
-            gr.GRIPPER_OPENED = 5
-            gr.reset_claw()
+            gr.reset_claw(gripper_opened=5)
             gr.move_to_position(Position(1400, 0, 1400), ignore_moving_pos=True)
         elif gr.is_position(2):
-            gr.move_to_position(Position(1925, 10, 3650), ignore_moving_pos=True)
+            if self.config.get("start_int"):
+                gr.move_to_position(Position(3260, 0, 3650), ignore_moving_pos=True)
+            else:
+                gr.move_to_position(Position(1925, 10, 3650), ignore_moving_pos=True)
         elif gr.is_position(3):
             # grip product
             gr.grip()
@@ -290,7 +292,6 @@ class RightLine(MainLine):
             gr.release(with_check_sens="MPS_SENS_OVEN")
         elif gr.is_position(8):
             # move back to init
-            gr.GRIPPER_OPENED = 9 # reset to default
             gr.init(to_end=True)
             return True
 
@@ -363,8 +364,8 @@ class RightLine(MainLine):
 
         elif gr.is_position(1):
             # move to cb5
-            gr.reset_claw()
-            gr.move_to_position(Position(140, 3, 1800), ignore_moving_pos=True)
+            gr.reset_claw(gripper_opened=8)
+            gr.move_to_position(Position(145, 3, 1800), ignore_moving_pos=True)
 
         # if product ready get it
         elif gr.is_position(2) and self.state == State.GR3:
@@ -373,7 +374,7 @@ class RightLine(MainLine):
         elif gr.is_position(3):
             self.product_at = gr.name
             # move to cb5
-            gr.move_to_position(Position(1970, 62, 1800))
+            gr.move_to_position(Position(1985, 62, 1800))
         elif gr.is_position(4) and State.SL.value[1] == Status.FREE:
             # move down
             gr.move_to_position(Position(-1, -1, 2300))
@@ -406,7 +407,10 @@ class RightLine(MainLine):
         elif vg.is_position(3):
             self.product_at = vg.name
             # move to out
-            vg.move_to_position(Position(0, 300, 1750))
+            if self.config.get("end_int"):
+                vg.move_to_position(Position(2970, 0, 1750))
+            else:
+                vg.move_to_position(Position(0, 300, 1750))
         elif vg.is_position(4):
             # release product
             vg.release()

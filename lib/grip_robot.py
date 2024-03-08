@@ -108,20 +108,22 @@ class GripRobot(Robot3D):
             self.position += 1
 
 
-    def reset_claw(self, as_thread=True):
+    def reset_claw(self, gripper_opened: int=None, as_thread=True):
         '''Reset claw to init position.
         
         Args:
+            gripper_opened(int): optional set a different tmp open position of gripper.
             as_thread (bool): Runs the function as a thread.
         '''
         if as_thread:
-            self.thread = threading.Thread(target=self.reset_claw, args=(False,), name=self.name)
+            self.thread = threading.Thread(target=self.reset_claw, args=(gripper_opened, False,), name=self.name)
             self.thread.start()
             return
 
+        gripper_opened = self.GRIPPER_OPENED if gripper_opened == None else gripper_opened
         try:
             self.__motor_claw.run_to_encoder_start("OPEN", self.name + "_REF_SW_CLAW", self.__encoder_claw)
-            self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, self.GRIPPER_OPENED)
+            self.__motor_claw.run_to_encoder_value("CLOSE", self.__encoder_claw, gripper_opened)
         
         except (SensorTimeoutError, ValueError, EncoderOverflowError) as error:
             self.problem_handler(error)

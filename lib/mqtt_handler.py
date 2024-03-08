@@ -226,12 +226,12 @@ class MqttHandler():
                 self.log.error(f"Error for publish of {topic_end}/Data: {e}")
 
 
-    def send_data(self, topic, data:str=None):
+    def send_data(self, topic, data:dict=None):
         '''Send data to given topic, if data==None default data for the given topic will be sent
 
         Args:
             topic: The topic of the data to send.
-            data: The data to send, if None the default data for the given topic will be sent.
+            data(dict): The data to send, if None the default data for the given topic will be sent.
         '''
         self.log.info(f"Send {topic}/Data")
         if data == None:

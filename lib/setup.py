@@ -81,7 +81,7 @@ class Setup():
     def run_factory(self):
         '''Starts the factory, adds and updates the lines.'''
         
-        self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, "Program started")
+        self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, {"status": "Program started"})
         self.set_status_led(factory_led="green")
         # send all the machineStatus-Data
         for state in self.states:
@@ -103,7 +103,7 @@ class Setup():
                         if config.pop("new", False) == True:
                             self.lines[config["name"]] = self.line_class(self.revpi, self.convert_to_states(config))
                             log.warning(f"Added new line: {config['name']}")
-                            self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, f"New line added: {config}")
+                            self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, {"line_added": config})
             
                 self.__update_factory()
                 # save Status of factory, lines and every running machine
@@ -135,7 +135,7 @@ class Setup():
         else:
             self.set_status_led(factory_led="off")
         log.critical("End of program")
-        self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, "Program stopped")
+        self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, {"status": "Program stopped"})
         self.mqtt_handler.disconnect()
         self.revpi.exit()
 
@@ -149,12 +149,12 @@ class Setup():
             if self.configs.line_configs.get(line.name).pop("changed", False):
                 line.config = self.convert_to_states(self.configs.line_configs.get(line.name))
                 log.warning(f"Changed line: {line.name}")
-                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, f"Changed line: {line.name}")
-            # end the line
+                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, {"line_changed": self.configs.line_configs.get(line.name)})
+            # stop the line
             if line.end_line:
                 if line.config["run"] == True:
                     log.critical(f"Stop: {line.name}")
-                    self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, f"Stopped line: {line.name}")
+                    self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, {"line_stopped": line.name})
                     line.config["run"] = False
                     self.configs.line_configs[line.name]["run"] = False
                 # remove line only when restarting
@@ -165,6 +165,13 @@ class Setup():
                     if self.lines.__len__() == 0:
                         self.set_status_led(line_led="off")
                     break
+            
+            if line.state == MainState.END and not line.product_at == "END":
+                line.product_at = "END"
+                msg = {"line_ended": {"name": line.name, "at": line.config["end_at"].name}}
+                log.critical(msg)
+                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, msg)
+
             # handle problems in the line
             if line.state == MainState.PROBLEM:
                 if self.configs.factory_commands["run"] == True:
@@ -188,7 +195,17 @@ class Setup():
                 
             # start the line
             elif line.config["run"] == True and (self.lines.get("Init") == None or self.lines.get("Init").running == False) and self.configs.factory_commands.get("run"):
-                log.critical(f"Start: {line.name}")
+                # if start_at is configured wait for the line to end
+                if line.config.get("start_when", None) != None:
+                    if self.lines.get(line.config["start_when"], None) != None:
+                        if self.lines[line.config["start_when"]].product_at != "END":
+                            continue
+                    else:
+                        continue
+                    
+                msg = {"line_started": {"name": line.name, "at": line.config["start_at"].name}}
+                log.critical(msg)
+                self.mqtt_handler.send_data(self.mqtt_handler.TOPIC_FACTORY_STATUS, msg)
                 line.switch_state(line.config["start_at"], False)
                 line.running = True
                 self.set_status_led(line_led="green")
@@ -255,26 +272,30 @@ class Setup():
     def convert_to_states(self, config_dict: dict) -> dict:
         '''Converts all the state names to actual states'''
         config = config_dict.copy()
-        if config.get("start_at", "start").lower() == "start":
-                config["start_at"] = "GR1"
-        elif config["start_at"].lower() == "storage":
-            config["start_at"] = "WH_RETRIEVE"
-        if config.get("end_at", "storage").lower() == "storage":
-            config["end_at"] = "WH_STORE"
+        start_at = config.get("start_at", "start").lower()
+        end_at = config.get("end_at", "END").lower()
+
+        if start_at == "start":
+            config["start_at"] = self.states.GR1
+        elif start_at == "storage":
+            config["start_at"] = self.states.WH_RETRIEVE
+        if start_at == "init":
+            config["start_at"] = MainState.INIT
+
+        if end_at == "storage":
+            config["end_at"] = self.states.WH_STORE
+        if end_at == "end":
+            config["end_at"] = MainState.END
+
         for state in self.states:
-            if state.name == config["start_at"]:
+            if start_at == state.name.lower():
                 config["start_at"] = state
-            if state.name == config["end_at"]:
+            if end_at == state.name.lower():
                 config["end_at"] = state
             if type(config["start_at"]) != str and type(config["end_at"]) != str:
                 break
         else:
-            if config["start_at"] == "INIT":
-                config["start_at"] = MainState.INIT
-            if config["end_at"] == "END":
-                config["end_at"] = MainState.END
-            else:
-                raise LookupError(f"Config {config['name']} could not be parsed.")
+            raise LookupError(f"Config {config['name']} could not be parsed: ({start_at}, {end_at})")
         
         return config
 

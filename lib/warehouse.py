@@ -39,9 +39,9 @@ POSITIONS: "list[list[tuple]]" = [
         (2700, 1650)
     ],
     [ # third column
-        (3840, 200),
-        (3840, 900),
-        (3840, 1650)
+        (3865, 200),
+        (3865, 900),
+        (3865, 1650)
     ]
 ]
 
@@ -105,6 +105,8 @@ class Warehouse(Machine):
         self.__motor_loading = Actuator(self.revpi, self.name + "_ARM", self.line_name, type="loading")
         self.__motor_hor = Actuator(self.revpi, self.name + "_CRANE", self.line_name, type="horizontal")
         self.__motor_ver = Actuator(self.revpi, self.name + "_ARM", self.line_name, type="vertical")
+
+        self.__motor_hor._Actuator__ENCODER_TRIGGER_THRESHOLD = 25
 
         self.__color = "COLOR_UNKNOWN"
 
