@@ -35,7 +35,7 @@ class Sensor():
     Attributes:
         CYCLE_TIME (int): how often encoder/counter ar checked for new values.
         __revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-        name (str): Exact name of the sensor in PiCtory (everything before first '_').
+        name (str): Exact name of the sensor in PiCtory.
         line_name (str): Name of current line.
         type (SensorType): Type of the sensor.
         counter_offset (int): Offset for counter so that counter can be used like encoder.
@@ -49,7 +49,7 @@ class Sensor():
         
         Args:
             revpi (RevPiModIO): RevPiModIO Object to control the motors and sensors.
-            name (str): Exact name of the machine in PiCtory (everything before first '_').
+            name (str): Exact name of the Sensor in PiCtory.
             line_name (str): Name of current line.
             type (SensorType): Type of the sensor, if empty type is determined from name.
         '''

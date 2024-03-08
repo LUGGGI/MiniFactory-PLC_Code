@@ -159,8 +159,13 @@ class Setup():
                     self.configs.line_configs[line.name]["run"] = False
                 # remove line only when restarting
                 if self.configs.factory_commands["run"] == True:
+                    # if restart config is set restarts the line
+                    if line.config.get("restart"):
+                        self.configs.line_configs[line.name].update({"new": True})
+                        self.configs.line_configs[line.name].update({"run": True})
+                    else:
+                        self.configs.line_configs.pop(line.name)
                     self.lines.pop(line.name)
-                    self.configs.line_configs.pop(line.name)
                     self.status.line_status.pop(line.name)
                     if self.lines.__len__() == 0:
                         self.set_status_led(line_led="off")

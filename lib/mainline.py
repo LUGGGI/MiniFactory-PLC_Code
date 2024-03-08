@@ -250,7 +250,7 @@ class MainLine(Machine):
         '''Waits for any machines left running.
         
         Returns:
-            bool: True if all machine have endet else False.
+            bool: True if all machine have ended else False.
         '''
         machine_running = False
         while(True):

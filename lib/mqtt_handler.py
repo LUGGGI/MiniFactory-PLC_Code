@@ -67,7 +67,7 @@ class MqttHandler():
             status (Status): Holds the current status of the different factory parts.
         '''
 
-        self.__BROKER_ADDR = "test.mosquitto.org"
+        # self.__BROKER_ADDR = "test.mosquitto.org"
 
         global log
         self.log = log.getChild(f"Mqtt")
