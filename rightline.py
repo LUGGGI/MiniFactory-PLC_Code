@@ -216,7 +216,7 @@ class RightLine(MainLine):
                 cb.switch_state(MainState.END)
                 return True
             
-            if State.WH_STORE != self.config["end_at"] or (self.state_is_free(State.WH) and self.state_is_free(State.VG1)):
+            if State.WH_STORE != self.config["end_at"]:
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
                 return True
             elif self.state_is_free(State.WH) and self.state_is_free(State.VG1):
@@ -431,7 +431,7 @@ class RightLine(MainLine):
                 vg.move_to_position(Position(1800, 140, 0), ignore_moving_pos=True)
 
             # wait for warehouse to have a carrier
-            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value(with_log=True):
+            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
                 # move down a bit
                 vg.move_to_position(Position(-1, -1, 500))
             elif vg.is_position(5):
@@ -439,7 +439,7 @@ class RightLine(MainLine):
                 vg.release()
 
         if self.state == State.VG1_RETRIEVE:
-            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value(with_log=True):
+            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
                 # move down, grip product, move up
                 vg.get_product(550)
             elif vg.is_position(3):
@@ -481,28 +481,32 @@ class RightLine(MainLine):
             self.product_at = vg.name
             # move to out
             if self.config.get("end_int"):
-                vg.move_to_position(Position(2300, 0, 1750))
+                vg.move_to_position(Position(2300, 0, 1600))
             else:
-                vg.move_to_position(Position(0, 300, 1750))
+                vg.move_to_position(Position(0, 300, 1600))
         elif vg.is_position(4):
             if self.config.get("end_int"):
                 # check for obstruction
                 if Sensor(self.revpi, "GR1_ROTATION_ENCODER", self.line_name).get_current_value(with_log=True) < 1950:
-                    vg.move_to_position(Position(2970, 0, 1750))
+                    vg.move_to_position(Position(2970, 0, 1600), ignore_moving_pos=True)
                 elif not vg.exception_msg:
                     vg.warning_handler(ObstructionError(f"{vg.name} :GR1 is in the way waiting for clear path"))
             else:
                 vg.position += 1
-        elif vg.is_position(4):
+        elif vg.is_position(5):
+            # move down
+            vg.move_to_position(Position(-1, -1, 1700), ignore_moving_pos=True)
+        elif vg.is_position(6):
             # release product
             vg.release()
-        elif vg.is_position(5):
+            vg.move_to_position(Position(-1, -1, 1600), ignore_moving_pos=True)
+        elif vg.is_position(8):
             # move back to init
             if self.config.get("end_int"):
-                vg.move_to_position(Position(2200, 0, 1750))
+                vg.move_to_position(Position(2300, 0, 1600), ignore_moving_pos=True)
             else:
                 vg.position += 1
-        elif vg.is_position(6):
+        elif vg.is_position(9):
             # move back to init
             vg.init(to_end=True)
             return True
