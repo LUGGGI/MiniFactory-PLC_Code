@@ -13,7 +13,7 @@ from time import sleep
 from lib.logger import log
 from lib.sensor import Sensor, SensorType
 from lib.actuator import Actuator, SensorTimeoutError, EncoderOverflowError
-from lib.robot_3d import Robot3D, Position, State, GetProductError
+from lib.robot_3d import Robot3D, Position, State, GetProductError, ObstructionError
 
 
 class GripRobot(Robot3D):

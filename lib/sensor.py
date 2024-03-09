@@ -89,17 +89,20 @@ class Sensor():
             Int value of ENCODER or COUNTER.
         '''
         if self.type == SensorType.ENCODER:
-            return int(self.__revpi.io[self.name].value)
+            value = self.__revpi.io[self.name].value
         
         elif self.type == SensorType.COUNTER:
-            return int(self.__revpi.io[self.name].value - self.counter_offset)
+            value = self.__revpi.io[self.name].value - self.counter_offset
         
         elif self.type == SensorType.LIGHT_BARRIER:
-            return bool(not self.__revpi.io[self.name].value)
+            value = not self.__revpi.io[self.name].value
         
         else:
             # self.type == SensorType.REF_SWITCH
-            return bool(self.__revpi.io[self.name].value)
+            value = self.__revpi.io[self.name].value
+
+        self.log.debug(f"Got {self.type.name} value: {value}")
+        return value
 
 
     def start_monitor(self, edge=BOTH):

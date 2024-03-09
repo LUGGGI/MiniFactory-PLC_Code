@@ -23,7 +23,7 @@ from lib.sensor import Sensor
 from lib.conveyor import Conveyor
 from lib.punch_mach import PunchMach
 from lib.mp_station import MPStation
-from lib.grip_robot import GripRobot, Position
+from lib.grip_robot import GripRobot, Position, ObstructionError
 from lib.vac_robot import VacRobot
 from lib.index_line import IndexLine
 from lib.warehouse import Warehouse
@@ -286,12 +286,12 @@ class LeftLine(MainLine):
         elif gr.is_position(4):
             self.product_at = gr.name
             # move to mps
-            gr.move_to_position(Position(900, 0, 1400), ignore_moving_pos=True)
+            gr.move_to_position(Position(900, 0, 1300), ignore_moving_pos=True)
         elif gr.is_position(5):
-            gr.move_to_position(Position(555, 0, 1400))
+            gr.move_to_position(Position(575, 0, 1300))
         elif gr.is_position(6) and (State.MPS.value[1] == Status.FREE or State.MPS.value[2] == self.name):
             # move to tray
-            gr.move_to_position(Position(-1, 82, -1))
+            gr.move_to_position(Position(-1, 80, -1))
         elif gr.is_position(7):
             # release product
             gr.GRIPPER_OPENED = 10
@@ -311,7 +311,7 @@ class LeftLine(MainLine):
         if self.state == State.CB1 or self.state == State.GR2_CB1_TO_PM or self.state == State.GR2_CB1_TO_CB3:
             if gr.is_position(1):
                 # move to cb1
-                gr.reset_claw()
+                gr.reset_claw(8)
                 gr.move_to_position(Position(125, 72, 1700), ignore_moving_pos=True)
 
             if gr.is_position(2):
@@ -364,14 +364,14 @@ class LeftLine(MainLine):
 
 
     def run_gr3(self) -> False:
-        gr: GripRobot = self.get_machine("GR3", GripRobot, Position(-1, -1, 1900))
+        gr: GripRobot = self.get_machine("GR3", GripRobot, Position(-1, -1, -1))
         if gr.is_position(0):
             gr.init()
 
         elif gr.is_position(1):
             # move to indx
             gr.reset_claw()
-            gr.move_to_position(Position(9, 78, 1900), ignore_moving_pos=True)
+            gr.move_to_position(Position(9, 76, 1900))
 
         # if product ready get it
         elif gr.is_position(2) and self.state == State.GR3:
@@ -381,13 +381,22 @@ class LeftLine(MainLine):
             self.product_at = gr.name
             # move to out
             if self.config.get("end_int"):
-                gr.move_to_position(Position(2500, 15, 3500))
+                gr.move_to_position(Position(1700, 20, 3500))
             else:
                 gr.move_to_position(Position(3000, 40, 3500))
         elif gr.is_position(4):
+            if self.config.get("end_int"):
+                # check for obstruction
+                if Sensor(self.revpi, "GR1_ROTATION_ENCODER", self.line_name).get_current_value() < 1950:
+                    gr.move_to_position(Position(2200, 20, 3500))
+                elif not gr.exception_msg:
+                    gr.warning_handler(ObstructionError(f"{gr.name} :GR1 is in the way waiting for clear path"))
+            else:
+                gr.position += 1
+        elif gr.is_position(5):
             # release product
             gr.release()
-        elif gr.is_position(5):
+        elif gr.is_position(6):
             # move back to init
             gr.init(to_end=True)
             return True
@@ -416,11 +425,11 @@ class LeftLine(MainLine):
         if self.state == State.VG1_STORE:
             if vg.is_position(2):
                 # move down, grip product, move up
-                vg.get_product(1450, sensor="CB4_SENS_START")
+                vg.get_product(1500, sensor="CB4_SENS_START")
             elif vg.is_position(3):
                 self.product_at = vg.name
                 # move to wh
-                vg.move_to_position(Position(1800, 100, 0), ignore_moving_pos=True)
+                vg.move_to_position(Position(1790, 90, 0), ignore_moving_pos=True)
 
             # wait for warehouse to have a carrier
             elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():

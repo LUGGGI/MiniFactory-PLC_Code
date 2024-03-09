@@ -424,7 +424,7 @@ class RightLine(MainLine):
         if self.state == State.VG1_STORE:
             if vg.is_position(2):
                 # move down, grip product, move up
-                vg.get_product(1450, sensor="CB4_SENS_START")
+                vg.get_product(1500, sensor="CB4_SENS_START")
             elif vg.is_position(3):
                 self.product_at = vg.name
                 # move to wh

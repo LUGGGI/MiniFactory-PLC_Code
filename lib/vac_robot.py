@@ -12,7 +12,7 @@ from time import sleep
 
 from lib.logger import log
 from lib.actuator import Actuator
-from lib.robot_3d import Robot3D, Position, State, GetProductError
+from lib.robot_3d import Robot3D, Position, State, GetProductError, ObstructionError
 
 
 class VacRobot(Robot3D):

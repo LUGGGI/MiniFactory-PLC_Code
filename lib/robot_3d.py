@@ -354,3 +354,6 @@ class Robot3D(Machine):
 
 class GetProductError(SystemError):
     '''Robot could not grip Product.'''
+
+class ObstructionError(SystemError):
+    '''Robot can't move because of obstruction.'''
