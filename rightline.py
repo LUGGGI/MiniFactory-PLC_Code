@@ -461,22 +461,22 @@ class RightLine(MainLine):
 
 
     def run_vg2(self) -> False:
-        vg: VacRobot = self.get_machine("VG2", VacRobot, Position(-1, -1, 1000))
+        vg: VacRobot = self.get_machine("VG2", VacRobot, Position(-1, -1, 900))
         if vg.is_position(0):
             vg.init()
 
         elif vg.is_position(1) and self.config["color"] == "WHITE":
             # move to white
-            vg.move_to_position(Position(875, 700, 1300))
+            vg.move_to_position(Position(885, 700, 1100))
         elif vg.is_position(1) and self.config["color"] == "RED":
             # move to red
-            vg.move_to_position(Position(725, 875, 1300))
+            vg.move_to_position(Position(735, 875, 1100))
         elif vg.is_position(1) and self.config["color"] == "BLUE":
             # move to blue
-            vg.move_to_position(Position(600, 1200, 1300))
+            vg.move_to_position(Position(600, 1200, 1100))
 
         elif vg.is_position(2) and self.state == State.VG2:
-            vg.get_product(1600, sensor=f"SL_SENS_{self.config['color']}")
+            vg.get_product(1400, sensor=f"SL_SENS_{self.config['color']}")
         elif vg.is_position(3):
             self.product_at = vg.name
             # move to out

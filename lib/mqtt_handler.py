@@ -44,7 +44,7 @@ class MqttHandler():
         configs (Configs): Object where all config data can be saved.
     '''
 
-    __BROKER_ADDR = "192.168.0.59"
+    __BROKER_ADDR = "MiniFactory"
     __PORT = 1883
 
     TOPIC_LINE_CONFIG = "LineConfig"
