@@ -467,13 +467,13 @@ class RightLine(MainLine):
 
         elif vg.is_position(1) and self.config["color"] == "WHITE":
             # move to white
-            vg.move_to_position(Position(885, 700, 1100))
+            vg.move_to_position(Position(885, 700, 1150))
         elif vg.is_position(1) and self.config["color"] == "RED":
             # move to red
-            vg.move_to_position(Position(735, 875, 1100))
+            vg.move_to_position(Position(735, 875, 1150))
         elif vg.is_position(1) and self.config["color"] == "BLUE":
             # move to blue
-            vg.move_to_position(Position(600, 1200, 1100))
+            vg.move_to_position(Position(600, 1200, 1150))
 
         elif vg.is_position(2) and self.state == State.VG2:
             vg.get_product(1400, sensor=f"SL_SENS_{self.config['color']}")
