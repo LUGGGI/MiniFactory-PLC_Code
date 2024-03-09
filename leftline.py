@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.02.27"
+__version__ = "2024.03.09"
 
 from enum import Enum
 
@@ -32,8 +32,6 @@ from lib.setup import Setup
 
 class State(Enum):
     '''NAME = [ID, Status, Used_by]'''
-    INIT = [0, Status.FREE, "None"]
-
     CB1 = [11, Status.FREE, "None"]
     CB3 = [13, Status.FREE, "None"]
     CB4 = [14, Status.FREE, "None"]
@@ -47,6 +45,10 @@ class State(Enum):
     GR2_CB1_TO_PM = [222, Status.FREE, "None"]
     GR2_PM_TO_CB3 = [223, Status.FREE, "None"]
     GR3 = [23, Status.FREE, "None"]
+
+    VG1 = [31, Status.FREE, "None"]
+    VG1_STORE = [311, Status.FREE, "None"]
+    VG1_RETRIEVE = [312, Status.FREE, "None"]
 
     INDX = [4, Status.FREE, "None"]
     MPS = [5, Status.FREE, "None"]
@@ -65,10 +67,7 @@ class LeftLine(MainLine):
     Methodes:
         run_...(): Calls the different modules.
         mainloop(): Switches between machines.
-    Attributes:
-        WAREHOUSE_CONTENT_FILE (str): File path to the file that saves the warehouse inventory.
     '''
-    WAREHOUSE_CONTENT_FILE = "right_wh_content.json"
 
     def __init__(self, revpi, config: dict):
         '''Initializes MiniFactory control loop.'''
@@ -77,7 +76,7 @@ class LeftLine(MainLine):
         global log
         self.log = log.getChild(f"{self.line_name}(Main)")
 
-        self.state = State.INIT
+        self.state = MainState.INIT
 
     def mainloop(self):
         '''Switches the line states.'''
@@ -122,21 +121,29 @@ class LeftLine(MainLine):
 
         elif self.state == State.CB3:
             if self.run_cb3():
-                if self.config.get("with_WH"):
+                if self.config["end_at"] == State.WH_STORE:
                     self.switch_state(State.CB4_TO_WH)
                 else:
                     self.switch_state(State.CB4_TO_CB5)
 
         elif self.state == State.CB4_TO_WH:
             if self.run_cb4():
+                self.switch_state(State.VG1_STORE)
+
+        elif self.state == State.VG1_STORE:
+            if self.run_vg1():
                 self.switch_state(State.WH_STORE)
         
         elif self.state == State.WH_STORE:
-            if self.run_wh_store():
-                self.switch_state(State.WH_RETRIEVE)
+            if self.run_wh():
+                self.switch_state(MainState.END)
 
         elif self.state == State.WH_RETRIEVE:
-            if self.run_wh_retrieve():
+            if self.run_wh():
+                self.switch_state(State.VG1_RETRIEVE)
+
+        elif self.state == State.VG1_RETRIEVE:
+            if self.run_vg1():
                 self.switch_state(State.CB4_TO_CB5)
         
         elif self.state == State.CB4_TO_CB5:
@@ -167,10 +174,10 @@ class LeftLine(MainLine):
             for gr in ["GR1", "GR2", "GR3"]:
                 self.machines[gr] = GripRobot(self.revpi, gr, self.name, Position(-1, -1, -1))
                 self.machines[gr].init(to_end=True)
-            for vg in ["VG"]:
+            for vg in ["VG1"]:
                 self.machines[vg] = VacRobot(self.revpi, vg, self.name, Position(-1, -1, -1))
                 self.machines[vg].init(to_end=True)
-            self.machines["WH"] = Warehouse(self.revpi, "WH", self.name, self.WAREHOUSE_CONTENT_FILE)
+            self.machines["WH"] = Warehouse(self.revpi, "WH", self.name)
             self.machines["WH"].init(to_end=True)
 
         if self.machines.__len__() <= 0:
@@ -199,36 +206,39 @@ class LeftLine(MainLine):
             self.product_at = cb.name
             cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
 
-        if self.is_end_state():
-            cb.switch_state(MainState.END)
-            return True
-
-        if cb.is_position(2) and (
-                (self.config.get("with_WH") and self.state_is_free(State.CB4_TO_WH)) or
-                (not self.config.get("with_WH") and self.state_is_free(State.CB4_TO_WH))
-            ):
-            cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
-            return True
+        if cb.is_position(2):
+            if self.is_end_state():
+                cb.switch_state(MainState.END)
+                return True
+            
+            if State.WH_STORE != self.config["end_at"] or (self.state_is_free(State.WH) and self.state_is_free(State.VG1)):
+                cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
+                return True
+            elif self.state_is_free(State.WH) and self.state_is_free(State.VG1):
+                self.run_wh()
+                self.run_vg1()
+                cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
+                return True
         
-        # init wh
-        if self.config.get("with_WH") and not self.is_end_state() and self.state_is_free(State.WH_STORE):
-            self.run_wh_store()    
+        # init vg1 & wh
+        if not self.is_end_state() and self.state_is_free(State.WH) and self.state_is_free(State.VG1):
+            self.run_vg1()
         
 
     def run_cb4(self) -> False:
         cb: Conveyor = self.get_machine("CB4", Conveyor)
         
         if self.state == State.CB4_TO_WH:
-            if cb.is_position(1) and self.state_is_free(State.WH_STORE):
+            if cb.is_position(1):
                 self.product_at = cb.name
-                cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=100)
+                cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=0)
             elif cb.is_position(2):
                 cb.switch_state(MainState.END)
                 return True
             
-            # init wh
-            if not self.is_end_state() and self.state_is_free(State.WH_STORE):
-                self.run_wh_store()
+            # init vg1 & wh
+            if not self.is_end_state():
+                self.run_vg1()    
 
         elif self.state == State.CB4_TO_CB5:
             if cb.is_position(1):
@@ -242,7 +252,7 @@ class LeftLine(MainLine):
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB5_SENS_START", end_machine=True)
                 return True
 
-    
+
     def run_cb5(self) -> False:
         cb: Conveyor = self.get_machine("CB5", Conveyor)           
         
@@ -263,11 +273,13 @@ class LeftLine(MainLine):
 
         elif gr.is_position(1):
             # get product from plate
-            gr.GRIPPER_OPENED = 5
-            gr.reset_claw()
+            gr.reset_claw(gripper_opened=5)
             gr.move_to_position(Position(1400, 0, 1400), ignore_moving_pos=True)
         elif gr.is_position(2):
-            gr.move_to_position(Position(1925, 10, 3650), ignore_moving_pos=True)
+            if self.config.get("start_int"):
+                gr.move_to_position(Position(3260, 0, 3650), ignore_moving_pos=True)
+            else:
+                gr.move_to_position(Position(1925, 10, 3650), ignore_moving_pos=True)
         elif gr.is_position(3):
             # grip product
             gr.grip()
@@ -276,7 +288,7 @@ class LeftLine(MainLine):
             # move to mps
             gr.move_to_position(Position(900, 0, 1400), ignore_moving_pos=True)
         elif gr.is_position(5):
-            gr.move_to_position(Position(535, 0, 1400))
+            gr.move_to_position(Position(555, 0, 1400))
         elif gr.is_position(6) and (State.MPS.value[1] == Status.FREE or State.MPS.value[2] == self.name):
             # move to tray
             gr.move_to_position(Position(-1, 82, -1))
@@ -286,7 +298,6 @@ class LeftLine(MainLine):
             gr.release(with_check_sens="MPS_SENS_OVEN")
         elif gr.is_position(8):
             # move back to init
-            gr.GRIPPER_OPENED = 9 # reset to default
             gr.init(to_end=True)
             return True
 
@@ -301,7 +312,7 @@ class LeftLine(MainLine):
             if gr.is_position(1):
                 # move to cb1
                 gr.reset_claw()
-                gr.move_to_position(Position(145, 72, 1700), ignore_moving_pos=True)
+                gr.move_to_position(Position(125, 72, 1700), ignore_moving_pos=True)
 
             if gr.is_position(2):
                 # get product from cb1, (move down, grip product, move up)
@@ -312,7 +323,7 @@ class LeftLine(MainLine):
             if gr.is_position(3):
                 self.product_at = gr.name
                 # move to cb2
-                gr.move_to_position(Position(3710, 5, 1700))
+                gr.move_to_position(Position(3715, 5, 1700))
             elif gr.is_position(4):
                 # move down
                 gr.move_to_position(Position(-1, -1, 2500))
@@ -342,7 +353,7 @@ class LeftLine(MainLine):
             if gr.is_position(3):
                 self.product_at = gr.name
                 # move to cb3
-                gr.move_to_position(Position(1960, 10, 2500))
+                gr.move_to_position(Position(1945, 10, 2500))
             elif gr.is_position(4) and self.state_is_free(State.CB3):
                 # release product
                 gr.release()
@@ -369,18 +380,77 @@ class LeftLine(MainLine):
         elif gr.is_position(3):
             self.product_at = gr.name
             # move to out
-            gr.move_to_position(Position(3000, 40, 3500))
+            if self.config.get("end_int"):
+                gr.move_to_position(Position(2500, 15, 3500))
+            else:
+                gr.move_to_position(Position(3000, 40, 3500))
         elif gr.is_position(4):
             # release product
             gr.release()
         elif gr.is_position(5):
-            # release product
-            gr.move_to_position(Position(3000, 40, 3200), ignore_moving_pos=True)
-        elif gr.is_position(6):
             # move back to init
             gr.init(to_end=True)
             return True
 
+
+    def run_vg1(self) -> False:
+        vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 0))
+
+        # init for retrieve
+        if self.state == State.WH_RETRIEVE or self.state == State.VG1_RETRIEVE:
+            if vg.is_position(0):
+                vg.init()
+            if vg.is_position(1):
+                # move to wh if new vg1
+                vg.move_to_position(Position(1800, 100, 0), ignore_moving_pos=True)
+        # init for store
+        else:
+            if self.state_is_free(State.WH):
+                self.run_wh()
+            if vg.is_position(0):
+                vg.init()
+            if vg.is_position(1):
+                # move to cb4_start
+                vg.move_to_position(Position(0, 1350, 1150), ignore_moving_pos=True)
+
+        if self.state == State.VG1_STORE:
+            if vg.is_position(2):
+                # move down, grip product, move up
+                vg.get_product(1450, sensor="CB4_SENS_START")
+            elif vg.is_position(3):
+                self.product_at = vg.name
+                # move to wh
+                vg.move_to_position(Position(1800, 100, 0), ignore_moving_pos=True)
+
+            # wait for warehouse to have a carrier
+            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
+                # move down a bit
+                vg.move_to_position(Position(-1, -1, 500))
+            elif vg.is_position(5):
+                # release product
+                vg.release()
+
+        if self.state == State.VG1_RETRIEVE:
+            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
+                # move down, grip product, move up
+                vg.get_product(550)
+            elif vg.is_position(3):
+                self.product_at = vg.name
+                # move to cb4_start
+                vg.move_to_position(Position(0, 1350, 1100), ignore_moving_pos=True)
+
+            elif vg.is_position(4) and State.CB4_TO_CB5.value[1] == Status.FREE:
+                # move down
+                vg.move_to_position(Position(-1, -1, 1400))
+            elif vg.is_position(5):
+                # release product
+                vg.release(with_check_sens="CB4_SENS_START")
+
+        if vg.is_position(6):      
+            # move back to init
+            vg.init(to_end=True)
+            return True
+        
 
     def run_pm(self) -> False:
         pm: PunchMach = self.get_machine("PM", PunchMach)
@@ -442,88 +512,34 @@ class LeftLine(MainLine):
                 self.run_gr3()
 
 
-    def run_wh_store(self) -> False:
-        wh: Warehouse = self.get_machine("WH", Warehouse, self.WAREHOUSE_CONTENT_FILE)
-        vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 0))
-        if wh.is_position(0):
-            wh.init(for_store=True)
-        if vg.is_position(0):
-            vg.init()
+    def run_wh(self) -> False:
+        wh: Warehouse = self.get_machine("WH", Warehouse)
 
-        if vg.is_position(1):
-            # move to cb4_start
-            vg.move_to_position(Position(0, 1450, 1150), ignore_moving_pos=True)
+        # init for retrieve
+        if self.state == State.WH_RETRIEVE:
+            if self.state_is_free(State.VG1):
+                self.run_vg1()
 
-        elif vg.is_position(2) and self.state == State.WH_STORE:
-            # move down, grip product, move up
-            vg.get_product(1450, sensor="CB4_SENS_START")
-        elif vg.is_position(3):
-            self.product_at = vg.name
-            # move to wh
-            vg.move_to_position(Position(1800, 140, 0), ignore_moving_pos=True)
+            if wh.is_position(0):
+                wh.init(for_retrieve=True)
+            if wh.is_position(1):
+                self.product_at = wh.name
+                wh.retrieve_product(color=self.config["color"])
+        # init for store
+        else:
+            if wh.is_position(0):
+                wh.init(for_store=True)
+            
+        if self.state == State.WH_STORE:
+            if wh.is_position(1):
+                self.product_at = wh.name
+                wh.store_product(color=self.config["color"])
 
-        # wait for warehouse to have a carrier
-        elif vg.is_position(4) and wh.ready_for_product == True:
-            # move down a bit
-            vg.move_to_position(Position(-1, -1, 500))
-        elif vg.is_position(5):
-            # release product
-            vg.release()
-            # move up a bit
-            vg.move_to_position(Position(-1, -1, 0))
-
-        elif wh.is_position(1) and vg.is_position(7):
-            self.product_at = wh.name
-            wh.store_product(color=self.config["color"])
-
-        elif vg.is_position(7) and self.config["end_at"] == State.WH_STORE:
-                vg.init(to_end=False)
-
-        elif wh.is_position(2):
-            if self.config["end_at"] == State.WH_STORE:
-                wh.init(to_end=True)
-                vg.switch_state(MainState.END)
-            else:
-                wh.position = 1
-                vg.position = 2
+        # move back to init
+        if wh.is_position(2):
+            wh.init(to_end=True)
             return True
 
-
-    def run_wh_retrieve(self) -> False:
-        wh: Warehouse = self.get_machine("WH", Warehouse, self.WAREHOUSE_CONTENT_FILE)
-        vg: VacRobot = self.get_machine("VG1", VacRobot, Position(-1, -1, 0))
-        if wh.is_position(0):
-            wh.init(for_retrieve=True)
-        if vg.is_position(0):
-            vg.init()
-
-        if wh.is_position(1):
-            self.product_at = wh.name
-            wh.retrieve_product(color=self.config["color"])
-        if vg.is_position(1):
-            # move to wh if new vg1
-            vg.move_to_position(Position(1800, 140, 0), ignore_moving_pos=True)
-        elif vg.is_position(2) and (wh.is_position(2) or wh.is_position(3)):
-            # move down, grip product, move up
-            vg.get_product(550)
-        elif vg.is_position(3):
-            self.product_at = vg.name
-            # move to cb4_start
-            vg.move_to_position(Position(0, 1450, 1100), ignore_moving_pos=True)
-            wh.init(to_end=False)
-
-        elif vg.is_position(4) and State.CB4_TO_CB5.value[1] == Status.FREE:
-            # move down
-            vg.move_to_position(Position(-1, -1, 1400))
-        elif vg.is_position(5):
-            # release product
-            vg.release(with_check_sens="CB4_SENS_START")
-        elif vg.is_position(6):      
-            # move back to init
-            vg.init(to_end=True)
-            wh.switch_state(MainState.END)
-            return True
-        
 
 if __name__ == "__main__":
     # Start and run the factory

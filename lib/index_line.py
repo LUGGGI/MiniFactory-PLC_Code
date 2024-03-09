@@ -85,7 +85,7 @@ class IndexLine(Machine):
 
             
             # move product to pusher_in
-            cb_start.run_to_stop_sensor("", self.name + "_SENS_PUSH1", stop_delay_in_ms=750, as_thread=False)
+            cb_start.run_for_time("", 1.7, as_thread=False)
             pusher_in.run_to_sensor("FWD", self.name + "_REF_SW_PUSH1_FRONT", timeout_in_s=5, as_thread=True) 
             cb_mill.run_to_stop_sensor("", self.name + "_SENS_MILL", as_thread=False)
             # move pusher back to back
