@@ -211,7 +211,7 @@ class LeftLine(MainLine):
                 cb.switch_state(MainState.END)
                 return True
             
-            if State.WH_STORE != self.config["end_at"] or (self.state_is_free(State.WH) and self.state_is_free(State.VG1)):
+            if State.WH_STORE != self.config["end_at"]:
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
                 return True
             elif self.state_is_free(State.WH) and self.state_is_free(State.VG1):
@@ -432,7 +432,7 @@ class LeftLine(MainLine):
                 vg.move_to_position(Position(1790, 90, 0), ignore_moving_pos=True)
 
             # wait for warehouse to have a carrier
-            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value(with_log=True):
+            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
                 # move down a bit
                 vg.move_to_position(Position(-1, -1, 500))
             elif vg.is_position(5):
@@ -440,7 +440,7 @@ class LeftLine(MainLine):
                 vg.release()
 
         if self.state == State.VG1_RETRIEVE:
-            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value(with_log=True):
+            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
                 # move down, grip product, move up
                 vg.get_product(550)
             elif vg.is_position(3):
