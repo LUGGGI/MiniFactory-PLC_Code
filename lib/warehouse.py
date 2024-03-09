@@ -139,7 +139,7 @@ class Warehouse(Machine):
 
             if for_store:
                 # get empty carrier if non is available
-                if Sensor(self.revpi, self.name + "_SENS_OUT", self.line_name).get_current_value() == False:
+                if Sensor(self.revpi, self.name + "_SENS_OUT", self.line_name).get_current_value(with_log=True) == False:
                     self.retrieve_product(color="Carrier", as_thread=False)
                 self.ready_for_product = True
                 # move arm to cb
@@ -149,7 +149,7 @@ class Warehouse(Machine):
                 self.__motor_loading.run_to_sensor("FWD", self.__ref_sw_arm_front)
             elif for_retrieve:
                 # if carrier at cb, move it into storage
-                if Sensor(self.revpi, self.name + "_SENS_OUT", self.line_name).get_current_value() == True:
+                if Sensor(self.revpi, self.name + "_SENS_OUT", self.line_name).get_current_value(with_log=True) == True:
                     # move arm to cb
                     self.switch_state(State.MOVING_TO_CB)
                     Actuator(self.revpi, self.name + "_CB_BWD", self.line_name).run_for_time("", 0.5)

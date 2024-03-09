@@ -387,7 +387,7 @@ class LeftLine(MainLine):
         elif gr.is_position(4):
             if self.config.get("end_int"):
                 # check for obstruction
-                if Sensor(self.revpi, "GR1_ROTATION_ENCODER", self.line_name).get_current_value() < 1950:
+                if Sensor(self.revpi, "GR1_ROTATION_ENCODER", self.line_name).get_current_value(with_log=True) < 1950:
                     gr.move_to_position(Position(2200, 20, 3500))
                 elif not gr.exception_msg:
                     gr.warning_handler(ObstructionError(f"{gr.name} :GR1 is in the way waiting for clear path"))
@@ -432,7 +432,7 @@ class LeftLine(MainLine):
                 vg.move_to_position(Position(1790, 90, 0), ignore_moving_pos=True)
 
             # wait for warehouse to have a carrier
-            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
+            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value(with_log=True):
                 # move down a bit
                 vg.move_to_position(Position(-1, -1, 500))
             elif vg.is_position(5):
@@ -440,13 +440,13 @@ class LeftLine(MainLine):
                 vg.release()
 
         if self.state == State.VG1_RETRIEVE:
-            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
+            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value(with_log=True):
                 # move down, grip product, move up
                 vg.get_product(550)
             elif vg.is_position(3):
                 self.product_at = vg.name
                 # move to cb4_start
-                vg.move_to_position(Position(0, 1350, 1100), ignore_moving_pos=True)
+                vg.move_to_position(Position(50, 1350, 1100), ignore_moving_pos=True)
 
             elif vg.is_position(4) and State.CB4_TO_CB5.value[1] == Status.FREE:
                 # move down

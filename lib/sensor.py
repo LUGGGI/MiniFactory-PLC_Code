@@ -80,8 +80,11 @@ class Sensor():
         self.log.debug(f"Destroyed {type(self).__name__}({self.type.name}): {self.name}")
 
 
-    def get_current_value(self):
+    def get_current_value(self, with_log=False):
         '''Get the current value of the sensor.
+
+        Args:
+            with_log(Bool): If set to true the function will log the value.
         
         Returns:
             Value depending on SensorType.
@@ -101,7 +104,8 @@ class Sensor():
             # self.type == SensorType.REF_SWITCH
             value = self.__revpi.io[self.name].value
 
-        self.log.debug(f"Got {self.type.name} value: {value}")
+        if with_log:
+            self.log.debug(f"Got {self.name}({self.type.name}) value: {value}")
         return value
 
 

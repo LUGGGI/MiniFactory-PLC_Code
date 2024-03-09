@@ -175,7 +175,7 @@ class Robot3D(Machine):
                 self.__move_all_axes(Position(-1, -1, start_vertical_position))
 
                 # check if product still at sensor, if so try to grip again
-                if sensor and Sensor(self.revpi, sensor, self.line_name).get_current_value() == True:
+                if sensor and Sensor(self.revpi, sensor, self.line_name).get_current_value(with_log=True) == True:
                     self.warning_handler(GetProductError(f"{self.name} :Product still at Sensor, try nr.: {try_num}"))
                     self.reset_claw(as_thread=False)
                 else:
@@ -338,7 +338,7 @@ class Robot3D(Machine):
         if with_check_sens:
             if self.exception_msg and self.exception_msg.args[0] == f"{self.name} :Transport was not successful, trying again":
                 raise GetProductError(f"{self.name} :Transport was not successful")
-            elif Sensor(self.revpi, with_check_sens, self.line_name).get_current_value() == False:
+            elif Sensor(self.revpi, with_check_sens, self.line_name).get_current_value(with_log=True) == False:
                 # product not detected at sensor
                 self.warning_handler(GetProductError(f"{self.name} :Transport was not successful, trying again"))
                 self.position = -1

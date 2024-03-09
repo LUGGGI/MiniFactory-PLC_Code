@@ -431,7 +431,7 @@ class RightLine(MainLine):
                 vg.move_to_position(Position(1800, 140, 0), ignore_moving_pos=True)
 
             # wait for warehouse to have a carrier
-            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
+            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value(with_log=True):
                 # move down a bit
                 vg.move_to_position(Position(-1, -1, 500))
             elif vg.is_position(5):
@@ -439,7 +439,7 @@ class RightLine(MainLine):
                 vg.release()
 
         if self.state == State.VG1_RETRIEVE:
-            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
+            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value(with_log=True):
                 # move down, grip product, move up
                 vg.get_product(550)
             elif vg.is_position(3):

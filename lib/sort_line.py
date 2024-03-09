@@ -106,7 +106,7 @@ class SortLine(Machine):
             compressor.stop()
             # check if in bay
             sleep(1)
-            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}", self.line_name).get_current_value() == False:
+            if Sensor(self.revpi, f"{self.name}_SENS_{self.color}", self.line_name).get_current_value(with_log=True) == False:
                 # no detection at sensor
                 raise(NoDetectionError(f"{self.name} :Product not in right bay"))
 
