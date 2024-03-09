@@ -14,7 +14,7 @@ __email__ = "st166506@stud.uni-stuttgart.de"
 __copyright__ = "Lukas Beck"
 
 __license__ = "GPL"
-__version__ = "2024.02.27"
+__version__ = "2024.03.09"
 
 from enum import Enum
 
@@ -23,7 +23,7 @@ from lib.sensor import Sensor
 from lib.conveyor import Conveyor
 from lib.punch_mach import PunchMach
 from lib.mp_station import MPStation
-from lib.grip_robot import GripRobot, Position
+from lib.grip_robot import GripRobot, Position, ObstructionError
 from lib.vac_robot import VacRobot
 from lib.sort_line import SortLine
 from lib.warehouse import Warehouse
@@ -481,13 +481,28 @@ class RightLine(MainLine):
             self.product_at = vg.name
             # move to out
             if self.config.get("end_int"):
-                vg.move_to_position(Position(2970, 0, 1750))
+                vg.move_to_position(Position(2300, 0, 1750))
             else:
                 vg.move_to_position(Position(0, 300, 1750))
+        elif vg.is_position(4):
+            if self.config.get("end_int"):
+                # check for obstruction
+                if Sensor(self.revpi, "GR1_ROTATION_ENCODER", self.line_name).get_current_value(with_log=True) < 1950:
+                    vg.move_to_position(Position(2970, 0, 1750))
+                elif not vg.exception_msg:
+                    vg.warning_handler(ObstructionError(f"{vg.name} :GR1 is in the way waiting for clear path"))
+            else:
+                vg.position += 1
         elif vg.is_position(4):
             # release product
             vg.release()
         elif vg.is_position(5):
+            # move back to init
+            if self.config.get("end_int"):
+                vg.move_to_position(Position(2200, 0, 1750))
+            else:
+                vg.position += 1
+        elif vg.is_position(6):
             # move back to init
             vg.init(to_end=True)
             return True
