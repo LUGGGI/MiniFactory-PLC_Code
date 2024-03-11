@@ -119,7 +119,7 @@ class Robot3D(Machine):
         self.__motor_rot = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_rot, type="rotation")
         if self.name[:2] == "VG":
             # change pwm value for vg
-            self.__motor_hor = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_hor, pwm_value=30, type="horizontal")
+            self.__motor_hor = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_hor, pwm_slow_value=30, type="horizontal")
         else:
             self.__motor_hor = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_hor, type="horizontal")
         self.__motor_ver = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_ver, type="vertical")
