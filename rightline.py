@@ -433,7 +433,9 @@ class RightLine(MainLine):
             # wait for warehouse to have a carrier
             elif vg.is_position(4):
                 # check for carrier at wh out.
-                if not self.wh_sens:
+                try: 
+                    self.wh_sens
+                except AttributeError:
                     self.wh_sens = Sensor(self.revpi, "WH_SENS_OUT", self.line_name)
                 if not self.wh_sens.get_current_value():
                     return False
