@@ -231,7 +231,7 @@ class LeftLine(MainLine):
         if self.state == State.CB4_TO_WH:
             if cb.is_position(1):
                 self.product_at = cb.name
-                cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=0)
+                cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_START", stop_delay_in_ms=100)
             elif cb.is_position(2):
                 cb.switch_state(MainState.END)
                 return True
@@ -425,7 +425,7 @@ class LeftLine(MainLine):
         if self.state == State.VG1_STORE:
             if vg.is_position(2):
                 # move down, grip product, move up
-                vg.get_product(1500, sensor="CB4_SENS_START")
+                vg.get_product(1400, sensor="CB4_SENS_START")
             elif vg.is_position(3):
                 self.product_at = vg.name
                 # move to wh
@@ -446,7 +446,7 @@ class LeftLine(MainLine):
             elif vg.is_position(3):
                 self.product_at = vg.name
                 # move to cb4_start
-                vg.move_to_position(Position(50, 1350, 1100), ignore_moving_pos=True)
+                vg.move_to_position(Position(0, 1350, 1100), ignore_moving_pos=True)
 
             elif vg.is_position(4) and State.CB4_TO_CB5.value[1] == Status.FREE:
                 # move down
