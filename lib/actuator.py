@@ -49,7 +49,7 @@ class Actuator():
     __PWM_WINDOW = 300
     __PWM_DURATION = 100
 
-    def __init__(self, revpi: RevPiModIO, name: str, line_name: str, pwm: str=None, type: str=None):
+    def __init__(self, revpi: RevPiModIO, name: str, line_name: str, pwm: str=None, pwm_value=20, type: str=None):
         '''Initializes Actuator.
         
         Args:
@@ -57,12 +57,14 @@ class Actuator():
             name: Exact name of the machine in PiCtory (everything before first '_').
             line_name: Name of current line.
             pwm: Name of PWM-pin, Slows motor down, before reaching the value.
+            pwm_value: Percentage to that the motor slows.
             type (str): Specifier for motor name.
         '''
         self.__revpi = revpi
         self.name = name
         self.line_name = line_name
         self.__pwm = pwm
+        self.__pwm_value = pwm_value
         self.__type = ("_" + type) if type else ""
 
         self.__thread = None
@@ -244,7 +246,7 @@ class Actuator():
                     encoder.wait_for_encoder(trigger_value+offset, self.__ENCODER_TRIGGER_THRESHOLD, timeout_in_s)
 
                 # run at 20% speed for PWM_WINDOW values    
-                self.set_pwm(20)
+                self.set_pwm(self.__pwm_value)
                 self.start(direction)                
             
             # run to trigger_value

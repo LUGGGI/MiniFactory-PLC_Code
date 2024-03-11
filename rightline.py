@@ -361,7 +361,7 @@ class RightLine(MainLine):
             if gr.is_position(3):
                 self.product_at = gr.name
                 # move to cb3
-                gr.move_to_position(Position(1960, 10, 2500))
+                gr.move_to_position(Position(1970, 10, 2500))
             elif gr.is_position(4) and self.state_is_free(State.CB3):
                 # release product
                 gr.release()

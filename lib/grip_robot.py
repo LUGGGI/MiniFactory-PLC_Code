@@ -46,10 +46,6 @@ class GripRobot(Robot3D):
         global log
         self.log = log.getChild(f"{self.line_name}(Grip)")
 
-        # change encoder to counter
-        self._Robot3D__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_COUNTER", self.line_name, SensorType.COUNTER)
-        self._Robot3D__MOVE_THRESHOLD_HOR = 2
-
         # get encoder and motor for claw
         self.__encoder_claw = Sensor(self.revpi, self.name + "_CLAW_COUNTER", self.line_name, SensorType.COUNTER)
         self.__motor_claw = Actuator(self.revpi, self.name, self.line_name, type="claw")

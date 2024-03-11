@@ -101,7 +101,13 @@ class Robot3D(Machine):
 
         # get encoder
         self.__encoder_rot = Sensor(self.revpi, self.name + "_ROTATION_ENCODER", self.line_name)
-        self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER", self.line_name)
+        if self.name[:2] == "VG":
+            # encoder for vg
+            self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_ENCODER", self.line_name)
+        else:
+            # counter for GR
+            self.__encoder_hor = Sensor(self.revpi, self.name + "_HORIZONTAL_COUNTER", self.line_name)
+            self._Robot3D__MOVE_THRESHOLD_HOR = 2
         self.__encoder_ver = Sensor(self.revpi, self.name + "_VERTICAL_ENCODER", self.line_name)
 
         # get pwm pins
@@ -111,7 +117,11 @@ class Robot3D(Machine):
 
         # get motors
         self.__motor_rot = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_rot, type="rotation")
-        self.__motor_hor = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_hor, type="horizontal")
+        if self.name[:2] == "VG":
+            # change pwm value for vg
+            self.__motor_hor = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_hor, pwm_value=30, type="horizontal")
+        else:
+            self.__motor_hor = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_hor, type="horizontal")
         self.__motor_ver = Actuator(self.revpi, self.name, self.line_name, pwm=pwm_ver, type="vertical")
 
 
