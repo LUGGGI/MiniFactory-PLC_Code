@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
@@ -14,10 +14,20 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Python: Module",
-            "type": "python",
+            "name": "Python: rightline",
+            "type": "debugpy",
             "request": "launch",
             "module": "rightline",
+            "justMyCode": true,
+            "env": {
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "20"
+            }
+        },
+        {
+            "name": "Python: leftline",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "leftline",
             "justMyCode": true,
             "env": {
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "20"
