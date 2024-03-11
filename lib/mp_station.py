@@ -51,6 +51,7 @@ class MPStation(Machine):
         '''
         super().__init__(revpi, name, line_name)
         self.table = Actuator(self.revpi, self.name + "_TABLE", self.line_name, self.name + "_TABLE_PWM")
+        self.table.set_pwm(75)
 
         global log
         self.log = log.getChild(f"{self.line_name}(Mps)")
@@ -157,7 +158,6 @@ class MPStation(Machine):
             if with_saw:
                 # rotate table to saw
                 self.switch_state(State.TO_SAW)
-                self.table.set_pwm(75)
                 self.table.run_to_sensor("CW", self.name + "_REF_SW_TABLE_SAW")
 
                 # sawing

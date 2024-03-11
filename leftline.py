@@ -432,7 +432,14 @@ class LeftLine(MainLine):
                 vg.move_to_position(Position(1770, 90, 0), ignore_moving_pos=True)
 
             # wait for warehouse to have a carrier
-            elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
+            elif vg.is_position(4):
+                # check for carrier at wh out.
+                if not self.wh_sens:
+                    self.wh_sens = Sensor(self.revpi, "WH_SENS_OUT", self.line_name)
+                if not self.wh_sens.get_current_value():
+                    return False
+                del self.wh_sens
+                
                 # move down a bit
                 vg.move_to_position(Position(-1, -1, 500))
             elif vg.is_position(5):
@@ -440,11 +447,10 @@ class LeftLine(MainLine):
                 vg.release()
 
         if self.state == State.VG1_RETRIEVE:
-            if vg.is_position(2) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
+            if vg.is_position(2):
                 # move down, grip product, move up
                 vg.get_product(550)
             elif vg.is_position(3):
-                self.product_at = vg.name
                 # move to cb4_start
                 vg.move_to_position(Position(0, 1375, 1100), ignore_moving_pos=True)
 
@@ -455,7 +461,8 @@ class LeftLine(MainLine):
                 # release product
                 vg.release(with_check_sens="CB4_SENS_START")
 
-        if vg.is_position(6):      
+        if vg.is_position(6):
+            self.product_at = vg.name # first point where transport was for sure successful for retrieve
             # move back to init
             vg.init(to_end=True)
             return True

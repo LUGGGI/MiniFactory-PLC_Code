@@ -155,7 +155,7 @@ class MainLine(Machine):
         if isinstance(state, MainState):
             return True
         if state.value[1] == Status.FREE or state.value[2] == self.name:
-            self.log.debug(f"State: {state.name} is free")
+            # self.log.debug(f"State: {state.name} is free")
             return True
         else:
             return False

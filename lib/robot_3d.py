@@ -346,12 +346,13 @@ class Robot3D(Machine):
             GetProductError: No Product detected after release.
         '''
         if with_check_sens:
-            if self.exception_msg and self.exception_msg.args[0] == f"{self.name} :Transport was not successful, trying again":
-                raise GetProductError(f"{self.name} :Transport was not successful")
-            elif Sensor(self.revpi, with_check_sens, self.line_name).get_current_value(with_log=True) == False:
-                # product not detected at sensor
-                self.warning_handler(GetProductError(f"{self.name} :Transport was not successful, trying again"))
-                self.position = -1
+            if Sensor(self.revpi, with_check_sens, self.line_name).get_current_value(with_log=True) == False:
+                if self.exception_msg and self.exception_msg.args[0] == f"{self.name} :Transport was not successful, trying again":
+                    raise GetProductError(f"{self.name} :Transport was not successful")
+                else:
+                    # product not detected at sensor
+                    self.warning_handler(GetProductError(f"{self.name} :Transport was not successful, trying again"))
+                    self.position = -1
 
 
     def reset_claw(self, as_thread=True):

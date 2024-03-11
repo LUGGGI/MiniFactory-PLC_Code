@@ -60,7 +60,6 @@ class Warehouse(Machine):
         __MOVE_THRESHOLD_VER (int): Only moves the vertical axis if movement is more.
         __LIFT_VALUE_RACK (int): Value that the arm lifts a Carrier at rack.
         __LIFT_VALUE_CB (int): Value that the arm lifts a Carrier at cb.
-        ready_for_product (bool): True if a carrier is at input for store.
         __ref_sw_arm_front (str): Reference switch name for arm in extended state.
         __ref_sw_arm_back (str): Reference switch name for arm in retracted state.
         __cb (Conveyor): Conveyor object for in-/output conveyor.
@@ -88,8 +87,6 @@ class Warehouse(Machine):
             line_name (str): Name of current line.
         '''
         super().__init__(revpi, name, line_name)
-
-        self.ready_for_product = False
 
         self.__ref_sw_arm_front = self.name + "_REF_SW_ARM_FRONT"
         self.__ref_sw_arm_back = self.name + "_REF_SW_ARM_BACK"
@@ -141,7 +138,6 @@ class Warehouse(Machine):
                 # get empty carrier if non is available
                 if Sensor(self.revpi, self.name + "_SENS_OUT", self.line_name).get_current_value(with_log=True) == False:
                     self.retrieve_product(color="Carrier", as_thread=False)
-                self.ready_for_product = True
                 # move arm to cb
                 self.switch_state(State.MOVING_TO_CB)
                 Actuator(self.revpi, self.name + "_CB_BWD", self.line_name).run_for_time("", 0.5)
