@@ -410,7 +410,7 @@ class RightLine(MainLine):
                 vg.init()
             if vg.is_position(1):
                 # move to wh if new vg1
-                vg.move_to_position(Position(1800, 140, 0), ignore_moving_pos=True)
+                vg.move_to_position(Position(1800, 100, 0), ignore_moving_pos=True)
         # init for store
         else:
             if self.state_is_free(State.WH):
@@ -419,16 +419,16 @@ class RightLine(MainLine):
                 vg.init()
             if vg.is_position(1):
                 # move to cb4_start
-                vg.move_to_position(Position(0, 1450, 1150), ignore_moving_pos=True)
+                vg.move_to_position(Position(0, 1350, 1150), ignore_moving_pos=True)
 
         if self.state == State.VG1_STORE:
             if vg.is_position(2):
                 # move down, grip product, move up
-                vg.get_product(1500, sensor="CB4_SENS_START")
+                vg.get_product(1400, sensor="CB4_SENS_START")
             elif vg.is_position(3):
                 self.product_at = vg.name
                 # move to wh
-                vg.move_to_position(Position(1800, 140, 0), ignore_moving_pos=True)
+                vg.move_to_position(Position(1800, 100, 0), ignore_moving_pos=True)
 
             # wait for warehouse to have a carrier
             elif vg.is_position(4) and Sensor(self.revpi, "WH_SENS_OUT", self.line_name).get_current_value():
@@ -445,7 +445,7 @@ class RightLine(MainLine):
             elif vg.is_position(3):
                 self.product_at = vg.name
                 # move to cb4_start
-                vg.move_to_position(Position(0, 1450, 1100), ignore_moving_pos=True)
+                vg.move_to_position(Position(0, 1350, 1100), ignore_moving_pos=True)
 
             elif vg.is_position(4) and State.CB4_TO_CB5.value[1] == Status.FREE:
                 # move down
