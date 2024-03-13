@@ -36,17 +36,17 @@ line_config = [
         "name": "Line1", 	# Name of the line, can be any string
         "run": True,		# If False line will stop (or not start)
         "start_at": "start",	# Position where the Line starts can be "start", "storage", or any machine in short form ("CB1", "MPS"...)
-        "end_at": "end",	# Position where the Line ebds can be "end", "storage", or any machine in short form ("CB1", "MPS"...)
+        "end_at": "end",	# Position where the Line ends can be "end", "storage", or any machine in short form ("CB1", "MPS"...)
 	"with_oven": True,
         "with_saw": True,
-        "with_PM": True,	# with_... if uses the specific machine on the line, if missing or False the machine will be scipped
+        "with_PM": True,	# with_... if uses the specific machine on the line, if missing or False the machine will be skipped
         "with_mill": True,
         "with_drill": True,
         "color": "BLUE",	# Set the color of the product, can be "WHITE", "RED", "BLUE", "COLOR_UNKNOWN"
         "restart": True,	# If True the line will restart at "start_at" when it reaches "end_at"
         "start_when": "Line0",	# Only starts the line when the configured line (here "Line0") has ended
-	"start_int": True,	# Uses an internal positon for "start" coincides with the "end_int" position
-        "end_int": True,	# Uses an internal positon for "end" coincides with the "start_int" position
+	"start_int": True,	# Uses an internal position for "start" coincides with the "end_int" position
+        "end_int": True,	# Uses an internal position for "end" coincides with the "start_int" position
     },
 ]
 ```
@@ -67,8 +67,8 @@ Command the factory
 
 ```python
 factory_command = {
-    "run": True,		# Factory only runs if set to True, if False the factory will halt at next posible time
-    "stop": False,		# If True factory will stop immediatly
+    "run": True,		# Factory only runs if set to True, if False the factory will halt at next possible time
+    "stop": False,		# If True factory will stop immediately
 }
 ```
 
@@ -101,13 +101,13 @@ wh_content = [
 
 ## Get and Data Messages
 
-Get the data by sending an empty messange top the topic with the wanteed subject and `/Get` (for example `LineConfig/Get`)
+Get the data by sending an empty message top the topic with the wanted subject and `/Get` (for example `LineConfig/Get`)
 
-Some data will also be send out peridcaly or it if changes
+Some data will also be send out it if changes
 
 | Subject        | Explanation                                                                              |
 | -------------- | ---------------------------------------------------------------------------------------- |
-| LineConfig     | See all lineconfigs currently active in the factory, format will be like in Set messages |
+| LineConfig     | See all line configs currently active in the factory, format will be like in Set messages |
 | FactoryConfig  | see Set messages                                                                         |
 | FactoryCommand | see Set messages                                                                         |
 | WHContent      | see Set messages                                                                         |
@@ -135,7 +135,7 @@ Examples:
 {'Line1': {'self': {'state': 'GR1', 'product_at': 'GR1'}, 'GR1': {'status': 'GRIPPING'}, 'MPS': {'status': 'INIT'}}}
 	# Line1 is GRIPPING with GR1 and INIT at MPS, product is now at GR1
 {'LineE1': {'self': {'state': 'PROBLEM', 'product_at': 'CB1'}, 'CB1': {'status': 'PROBLEM', 'PROBLEM': 'SensorTimeoutError: CB1_SENS_END no detection in time'}}}
-	# there was a PROBLEM in LineE1, the problom occured in CB1 with the given message
+	# there was a PROBLEM in LineE1, the problem occurred in CB1 with the given message
 ```
 
 ### FactoryStatus
@@ -156,5 +156,5 @@ Examples:
 {"status": "Program stopped"}
 	# Factory program stopped
 {'ERROR': "Error in line Line1w: ...."}
-	# Fatel error that can't be recoverd from, should never happen
+	# Fatal error that can't be recovered from, should never happen
 ```
