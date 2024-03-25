@@ -209,24 +209,23 @@ class RightLine(MainLine):
         
         if cb.is_position(1):
             self.product_at = cb.name
-            cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
+            cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")          
 
         if cb.is_position(2):
             if self.is_end_state():
                 cb.switch_state(MainState.END)
                 return True
-            
-            if State.WH_STORE != self.config["end_at"]:
+            # if line doesn't run to the WH
+            elif State.WH_STORE != self.config["end_at"]:
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
                 return True
             elif self.state_is_free(State.WH) and self.state_is_free(State.VG1):
-                self.run_wh()
-                self.run_vg1()
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
                 return True
         
-        # init vg1 & wh
-        if not self.is_end_state() and self.state_is_free(State.WH) and self.state_is_free(State.VG1):
+        # init vg1 & wh if needed
+        if State.WH_STORE == self.config["end_at"] and not self.is_end_state() and self.state_is_free(State.WH) and self.state_is_free(State.VG1):
+            self.run_wh()
             self.run_vg1()
         
 
@@ -319,7 +318,7 @@ class RightLine(MainLine):
         if self.state == State.CB1 or self.state == State.GR2_CB1_TO_PM or self.state == State.GR2_CB1_TO_CB3:
             if gr.is_position(1):
                 # move to cb1
-                gr.reset_claw()
+                gr.reset_claw(8)
                 gr.move_to_position(Position(150, 72, 1700), ignore_moving_pos=True)
 
             if gr.is_position(2):
@@ -457,7 +456,7 @@ class RightLine(MainLine):
 
             elif vg.is_position(4) and State.CB4_TO_CB5.value[1] == Status.FREE:
                 # move down
-                vg.move_to_position(Position(-1, -1, 1400))
+                vg.move_to_position(Position(-1, -1, 1450))
             elif vg.is_position(5):
                 # release product
                 vg.release(with_check_sens="CB4_SENS_START")

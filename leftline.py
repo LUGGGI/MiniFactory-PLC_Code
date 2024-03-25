@@ -204,24 +204,23 @@ class LeftLine(MainLine):
         
         if cb.is_position(1):
             self.product_at = cb.name
-            cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")
+            cb.run_to_stop_sensor("FWD", stop_sensor=f"{cb.name}_SENS_END")          
 
         if cb.is_position(2):
             if self.is_end_state():
                 cb.switch_state(MainState.END)
                 return True
-            
-            if State.WH_STORE != self.config["end_at"]:
+            # if line doesn't run to the WH
+            elif State.WH_STORE != self.config["end_at"]:
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
                 return True
             elif self.state_is_free(State.WH) and self.state_is_free(State.VG1):
-                self.run_wh()
-                self.run_vg1()
                 cb.run_to_stop_sensor("FWD", stop_sensor="CB4_SENS_START", end_machine=True)
                 return True
         
-        # init vg1 & wh
-        if not self.is_end_state() and self.state_is_free(State.WH) and self.state_is_free(State.VG1):
+        # init vg1 & wh if needed
+        if State.WH_STORE == self.config["end_at"] and not self.is_end_state() and self.state_is_free(State.WH) and self.state_is_free(State.VG1):
+            self.run_wh()
             self.run_vg1()
         
 
